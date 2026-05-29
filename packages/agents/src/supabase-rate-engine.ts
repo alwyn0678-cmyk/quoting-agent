@@ -1,62 +1,14 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { RateCard } from "./rate-card.js";
 import { priceQuote, type PriceRequest, type RateEngine } from "./rate-engine.js";
+import { assembleRateCard, type RateCardSource, type RateCardLineRow } from "./rate-card-source.js";
 import type { RateQuote } from "./schemas.js";
 
 /**
  * SupabaseTable adapter (1B.3): the shippable production rate engine. It reads the active rate card
- * for a {tenant, lane} from Supabase, assembles the same in-memory `RateCard` shape the Phase 0
- * StaticCard uses, and delegates to the SAME pure `priceQuote()`. So its `RateQuote` is identical to
- * the StaticCard's by construction (AC-3) — no pricing logic is reimplemented here, only sourcing.
+ * for a {tenant, lane} from Supabase via a `RateCardSource`, assembles the StaticCard-shaped
+ * `RateCard` (rate-card-source.ts), and delegates to the SAME pure `priceQuote()` — so its
+ * `RateQuote` is identical to the StaticCard's by construction (AC-3); no pricing is reimplemented.
  */
-
-/** Raw rows as stored by the 1B.1 schema. */
-export interface RateCardRow {
-  version: string;
-  validity_through: string; // 'YYYY-MM-DD' from a Postgres date
-  lane: string;
-}
-export interface RateCardLineRow {
-  kind: "base" | "surcharge_per_container" | "per_shipment_fee";
-  code: string;
-  container_type: string | null;
-  amount: number;
-  sort_order: number;
-}
-
-/** Source of rate-card rows for a {tenant, lane}. Abstracted so the adapter is unit-testable without a DB. */
-export interface RateCardSource {
-  fetchActiveCard(
-    tenantId: string,
-    lane: string,
-  ): Promise<{ card: RateCardRow; lines: RateCardLineRow[] } | null>;
-}
-
-/**
- * Assemble the in-memory `RateCard` from DB rows. surcharges / per_shipment_fees are ordered by
- * `sort_order` (within kind) so the produced arrays match the StaticCard exactly — the row order a
- * SELECT returns is otherwise unspecified.
- */
-export function assembleRateCard(card: RateCardRow, lines: RateCardLineRow[]): RateCard {
-  const base: Record<string, number> = {};
-  for (const l of lines) {
-    if (l.kind === "base" && l.container_type) base[l.container_type] = l.amount;
-  }
-  const ordered = (kind: RateCardLineRow["kind"]) =>
-    lines.filter((l) => l.kind === kind).sort((a, b) => a.sort_order - b.sort_order);
-
-  return {
-    version: card.version,
-    validity_through: card.validity_through,
-    supported_lane: card.lane,
-    base_per_container: base as RateCard["base_per_container"],
-    surcharges: ordered("surcharge_per_container").map((l) => ({
-      code: l.code,
-      amount_per_container: l.amount,
-    })),
-    per_shipment_fees: ordered("per_shipment_fee").map((l) => ({ code: l.code, amount: l.amount })),
-  };
-}
 
 export class SupabaseTableRateEngine implements RateEngine {
   constructor(

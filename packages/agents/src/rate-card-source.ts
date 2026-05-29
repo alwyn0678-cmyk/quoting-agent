@@ -1,0 +1,55 @@
+import type { RateCard } from "./rate-card.js";
+
+/**
+ * The generic rate-card source seam, shared by every row/cell-backed RateEngine adapter
+ * (SupabaseTable, ExcelOnline). A source yields the raw card + line rows for a {tenant, lane};
+ * `assembleRateCard` turns them into the same in-memory RateCard the Phase 0 StaticCard uses, so
+ * any adapter that delegates to `priceQuote()` produces an identical RateQuote (AC-3).
+ */
+
+/** Raw rows as stored by the 1B.1 schema (or read from any equivalent source, e.g. an Excel sheet). */
+export interface RateCardRow {
+  version: string;
+  validity_through: string; // 'YYYY-MM-DD'
+  lane: string;
+}
+export interface RateCardLineRow {
+  kind: "base" | "surcharge_per_container" | "per_shipment_fee";
+  code: string;
+  container_type: string | null;
+  amount: number;
+  sort_order: number;
+}
+
+export interface RateCardSource {
+  fetchActiveCard(
+    tenantId: string,
+    lane: string,
+  ): Promise<{ card: RateCardRow; lines: RateCardLineRow[] } | null>;
+}
+
+/**
+ * Assemble the in-memory RateCard from rows. surcharges / per_shipment_fees are ordered by
+ * `sort_order` (within kind) so the produced arrays match the StaticCard exactly — source row order
+ * is otherwise unspecified.
+ */
+export function assembleRateCard(card: RateCardRow, lines: RateCardLineRow[]): RateCard {
+  const base: Record<string, number> = {};
+  for (const l of lines) {
+    if (l.kind === "base" && l.container_type) base[l.container_type] = l.amount;
+  }
+  const ordered = (kind: RateCardLineRow["kind"]) =>
+    lines.filter((l) => l.kind === kind).sort((a, b) => a.sort_order - b.sort_order);
+
+  return {
+    version: card.version,
+    validity_through: card.validity_through,
+    supported_lane: card.lane,
+    base_per_container: base as RateCard["base_per_container"],
+    surcharges: ordered("surcharge_per_container").map((l) => ({
+      code: l.code,
+      amount_per_container: l.amount,
+    })),
+    per_shipment_fees: ordered("per_shipment_fee").map((l) => ({ code: l.code, amount: l.amount })),
+  };
+}

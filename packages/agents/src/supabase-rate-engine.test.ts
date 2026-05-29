@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
+import { SupabaseTableRateEngine } from "./supabase-rate-engine.js";
 import {
   assembleRateCard,
-  SupabaseTableRateEngine,
   type RateCardSource,
   type RateCardLineRow,
   type RateCardRow,
-} from "./supabase-rate-engine.js";
+} from "./rate-card-source.js";
 import { StaticCardRateEngine, type PriceRequest } from "./rate-engine.js";
 import { RATE_CARD } from "./rate-card.js";
 
