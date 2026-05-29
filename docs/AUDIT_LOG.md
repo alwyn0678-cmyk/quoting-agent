@@ -56,7 +56,12 @@ P1 + both P2s applied (migration **0006** + the callback fix) and re-verified: *
 documented-and-declined. No correctness/tenant-isolation defect remained.
 
 ### Sign-off
-_Pending — presented to Alwyn for sign-off; on approval, `phase-1c` merges to `main` (`--no-ff`)._
+Ready — the Phase 1C reviewer surface is complete: an RLS-isolated multi-tenant dashboard with
+magic-link auth, a DB-enforced send-free approve → simulated-send gate, escalation/injection safe-state
+UX, and a usage/cost observability view — all proven by the offline suite (109/109), hermetic SQL
+(ac6/ac8), and live browser-path evals (web-ac5/web-approve/web-injection/web-usage). **Approved by
+Alwyn 2026-05-29; `phase-1c` merged to `main` (`--no-ff`).** Next: 1C.1/1C.2 (Trigger.dev poll + durable
+agent run) as their own phase, gated on the Trigger.dev project + live MS Graph registration (D-21).
 
 ---
 
