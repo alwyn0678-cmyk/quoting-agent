@@ -75,6 +75,7 @@ export const escalationReasonSchema = z.enum([
   "out_of_scope_mode",
   "ambiguous_request",
   "low_confidence",
+  "guard_violation",
 ]);
 export type EscalationReason = z.infer<typeof escalationReasonSchema>;
 

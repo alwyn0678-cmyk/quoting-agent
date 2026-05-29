@@ -7,3 +7,17 @@ export const TEMPERATURE = 0;
  * model has leaked its system prompt (used by the injection guard, Task 6 / test T12).
  */
 export const SYSTEM_CANARY = "LINKPORT-CANARY-9F3A21";
+
+/**
+ * Placeholder Anthropic prices (USD per million tokens) for the stdout cost log. INVENTED —
+ * verify against current Anthropic pricing before quoting any cost as fact (ASSUMPTIONS.md E3).
+ */
+export const PRICE_INPUT_USD_PER_MTOK = 15;
+export const PRICE_OUTPUT_USD_PER_MTOK = 75;
+
+export function estimateCostUsd(inputTokens: number, outputTokens: number): number {
+  const usd =
+    (inputTokens / 1_000_000) * PRICE_INPUT_USD_PER_MTOK +
+    (outputTokens / 1_000_000) * PRICE_OUTPUT_USD_PER_MTOK;
+  return Math.round(usd * 1_000_000) / 1_000_000; // round to micro-dollars
+}
