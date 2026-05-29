@@ -8,6 +8,16 @@ export const dynamic = "force-dynamic";
 
 const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
 
+// Human labels for the escalation taxonomy (schemas.ts escalationReasonSchema / gate.ts).
+const REASON_LABELS: Record<string, string> = {
+  missing_required_field: "Missing a required field",
+  out_of_scope_lane: "Lane not in the rate card",
+  out_of_scope_mode: "Mode not supported (FCL only)",
+  ambiguous_request: "Ambiguous request",
+  low_confidence: "Low extraction confidence",
+  guard_violation: "Safety guard tripped — failed closed",
+};
+
 function Breakdown({ quote }: { quote: NonNullable<RequestView["quote"]> }) {
   return (
     <div className="breakdown">
@@ -44,8 +54,11 @@ function RequestCard({ r }: { r: RequestView }) {
     <div className="card">
       <div className="head">
         <span className="from">{r.from_email ?? "(unknown sender)"}</span>
-        <span className={`badge ${r.status}`}>
-          {r.status === "sent" ? "SIMULATED SEND" : r.status.replace(/_/g, " ")}
+        <span className="badges">
+          {r.injection_flag && <span className="badge flag">⚠ injection flagged</span>}
+          <span className={`badge ${r.status}`}>
+            {r.status === "sent" ? "SIMULATED SEND" : r.status.replace(/_/g, " ")}
+          </span>
         </span>
       </div>
       <div className="subject">{r.subject ?? "(no subject)"}</div>
@@ -53,7 +66,23 @@ function RequestCard({ r }: { r: RequestView }) {
       {r.quote ? (
         <Breakdown quote={r.quote} />
       ) : (
-        <div className="breakdown lane">No quote — request was escalated for human review.</div>
+        <div className="escalation">
+          <strong>
+            Escalated
+            {r.escalation_reason
+              ? ` — ${REASON_LABELS[r.escalation_reason] ?? r.escalation_reason}`
+              : ""}
+            .
+          </strong>{" "}
+          No quote was produced; this needs a human. No reply can be sent from here.
+        </div>
+      )}
+
+      {r.injection_flag && r.quote && (
+        <div className="flagnote">
+          The sender&apos;s message contained text resembling an injection attempt. The price was
+          computed by code (not the model) and the safety guard passed — review before approving.
+        </div>
       )}
 
       {r.draft && (

@@ -13,6 +13,8 @@ export interface RequestView {
   from_email: string | null;
   subject: string | null;
   created_at: string;
+  escalation_reason: string | null;
+  injection_flag: boolean;
   quote: {
     lane: string;
     container_type: string;
@@ -34,6 +36,8 @@ export interface RawRequestRow {
   from_email: string | null;
   subject: string | null;
   created_at: string;
+  escalation_reason: string | null;
+  injection_flag: boolean;
   quotes: { breakdown_snapshot: RateQuote }[] | { breakdown_snapshot: RateQuote } | null;
   drafts:
     | { subject: string; body: string; simulated_sent_at: string | null }[]
@@ -57,6 +61,8 @@ export function buildRequestView(row: RawRequestRow): RequestView {
     from_email: row.from_email,
     subject: row.subject,
     created_at: row.created_at,
+    escalation_reason: row.escalation_reason,
+    injection_flag: row.injection_flag,
     quote: snap
       ? {
           lane: snap.lane,
@@ -77,7 +83,7 @@ export function buildRequestView(row: RawRequestRow): RequestView {
 }
 
 const SELECT =
-  "id, status, from_email, subject, created_at, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
+  "id, status, from_email, subject, created_at, escalation_reason, injection_flag, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
 
 /**
  * The narrow slice of a Supabase client this lib actually uses: `from(table).select(cols).order(...)`
