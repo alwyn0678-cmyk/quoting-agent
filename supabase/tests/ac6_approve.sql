@@ -32,6 +32,17 @@ insert into public.drafts (request_id, tenant_id, subject, body) values
   ('0c000000-0000-4000-8000-0000000000a1','0a000000-0000-4000-8000-0000000000a1','Re','draft A'),
   ('0c000000-0000-4000-8000-0000000000b1','0b000000-0000-4000-8000-0000000000b1','Re','draft B');
 
+-- Trigger (0006): the privileged session role bypasses RLS and holds DML, yet a DIRECT update to
+-- 'sent' must STILL be blocked — only approve_request() (which sets a one-shot flag) may set it.
+do $$
+begin
+  begin
+    update public.quote_requests set status = 'sent' where id = '0c000000-0000-4000-8000-0000000000a1';
+    raise exception 'AC-6 FAIL: privileged direct UPDATE to sent succeeded (enforce-sent trigger missing)';
+  exception when check_violation then null;  -- expected: the trigger blocks it
+  end;
+end $$;
+
 -- ── caller = user A (tenant A) ──
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"1a000000-0000-4000-8000-0000000000a1"}', true);
@@ -88,4 +99,4 @@ end $$;
 
 rollback;
 
-select 'AC-6 + P-APPROVE-AUTH PASS — approve sets sent+simulated_sent_at for own tenant; direct UPDATE denied; cross-tenant approve refused and B unchanged' as result;
+select 'AC-6 + P-APPROVE-AUTH PASS — sent unreachable except via approve_request (privileged direct UPDATE blocked by trigger; authenticated direct UPDATE denied by grant); approve sets sent+simulated_sent_at for own tenant; cross-tenant approve refused and B unchanged' as result;

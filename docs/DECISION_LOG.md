@@ -3,6 +3,30 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1C — reviewer surface (2026-05-29)
+
+- **D-21 · Phase 1C boundary was split: the reviewer surface (1C.3–1C.6) is audited + merged ahead of
+  the autonomous ingest (1C.1/1C.2).** · *1C.1/1C.2 (Trigger.dev poll + durable agent run) require a
+  Trigger.dev project + a live MS Graph app registration — account actions outside the codebase. The
+  dashboard, approve→simulated-send, safe-state UX, and observability are complete, proven, and
+  independently shippable; gating their merge on external account setup adds no value. The autonomous
+  ingest becomes its own phase with its own audit gate.* · **Accepted (Alwyn).**
+- **D-20 · "Sent" is a DATABASE invariant, not a per-role grant.** A BEFORE UPDATE trigger
+  (`enforce_sent_via_approve`, migration 0006) blocks any transition into `status='sent'` unless a
+  one-shot transaction flag is set — and ONLY `approve_request()` sets it. · *Grants alone made "sent
+  only via approve" true only for `authenticated`; `service_role` bypasses RLS and holds DML (codex
+  Gate-4 P1). The trigger makes it hold for **all** roles, and structurally enforces the HITL rule that
+  the autonomous run (1C.2) can never auto-send.* · **Accepted.**
+- **D-19 · The reviewer dashboard is a self-contained nested Next.js 16 app (`apps/web`, folders not
+  workspaces); auth = magic-link (PKCE) via `@supabase/ssr`; the shared libs are typed against narrow
+  structural client interfaces, not the concrete `SupabaseClient`.** · *The nested install keeps the
+  root (agents/CLI/evals/vitest) untouched but introduces a second `@supabase/supabase-js` copy, which
+  split the `SupabaseClient` type identity and broke the root typecheck. Depending only on the capability
+  used (`from/select/order`, `rpc`) removes the supabase-js type dependency from the libs entirely —
+  immune to dependency duplication, and trivially fakeable. Tenant scoping stays in RLS (browser uses
+  only the `NEXT_PUBLIC_` anon key + session); the `service_role` key never reaches the client.* ·
+  **Accepted.**
+
 ## Phase 1B — implementation (2026-05-29)
 
 - **D-18 · Browser (anon/authenticated) is READ-ONLY in 1B; `profiles` is never writable by
