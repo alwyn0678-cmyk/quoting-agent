@@ -1,9 +1,21 @@
 /**
- * Pinned model for all LLM calls (confirmed 2026-05-29). Opus 4.8 deprecates the `temperature`
- * parameter (the API rejects it), so we don't send it — determinism rests on structured output
- * + tolerant/pass-band assertions, never on the sampling temperature.
+ * Per-step model routing (D-07). Extraction is ambiguity/security-sensitive → the stronger model;
+ * drafting is constrained prose over already-verified figures → the cheaper/faster one. Changing
+ * any id is a logged change that re-runs the golden set. These are Phase-1 routing targets — VERIFY
+ * against the live model list before relying on them (ASSUMPTIONS.md E3). No `temperature` is sent
+ * for any model (Opus 4.8 deprecates it and determinism never relied on it).
  */
-export const MODEL = "claude-opus-4-8";
+export const EXTRACTION_MODEL = "claude-sonnet-4-6";
+export const DRAFT_MODEL = "claude-haiku-4-5-20251001";
+/** Single-model fallback: one model for both steps when per-step routing is disabled. */
+export const FALLBACK_MODEL = "claude-sonnet-4-6";
+
+export interface ModelRouting {
+  extraction: string;
+  draft: string;
+}
+export const PER_STEP_ROUTING: ModelRouting = { extraction: EXTRACTION_MODEL, draft: DRAFT_MODEL };
+export const SINGLE_MODEL_ROUTING: ModelRouting = { extraction: FALLBACK_MODEL, draft: FALLBACK_MODEL };
 
 /**
  * Sentinel placed in system prompts. It must NEVER appear in agent output — if it does, the
@@ -14,6 +26,8 @@ export const SYSTEM_CANARY = "LINKPORT-CANARY-9F3A21";
 /**
  * Placeholder Anthropic prices (USD per million tokens) for the stdout cost log. INVENTED —
  * verify against current Anthropic pricing before quoting any cost as fact (ASSUMPTIONS.md E3).
+ * A single pair across all routed models — a deliberate placeholder, not per-model; per-model
+ * pricing is a 1C.6 (observability) refinement.
  */
 export const PRICE_INPUT_USD_PER_MTOK = 15;
 export const PRICE_OUTPUT_USD_PER_MTOK = 75;

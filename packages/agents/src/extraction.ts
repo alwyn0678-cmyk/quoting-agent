@@ -1,6 +1,6 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { ExtractionResultSchema, type ExtractionResult } from "./schemas.js";
-import { SYSTEM_CANARY } from "./config.js";
+import { SYSTEM_CANARY, EXTRACTION_MODEL } from "./config.js";
 import type { LlmClient, Usage } from "./llm.js";
 
 /**
@@ -68,8 +68,10 @@ export function buildExtractionUserContent(email: EmailInput): string {
 export async function extractRequest(
   email: EmailInput,
   client: LlmClient,
+  model: string = EXTRACTION_MODEL,
 ): Promise<{ extraction: ExtractionResult; usage: Usage }> {
   const result = await client.callStructured({
+    model,
     system: buildExtractionSystemPrompt(),
     userContent: buildExtractionUserContent(email),
     toolName: TOOL_NAME,

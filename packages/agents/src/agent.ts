@@ -3,7 +3,7 @@ import { decide } from "./gate.js";
 import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
-import { MODEL, estimateCostUsd, SYSTEM_CANARY } from "./config.js";
+import { estimateCostUsd, SYSTEM_CANARY, PER_STEP_ROUTING, type ModelRouting } from "./config.js";
 import {
   AgentOutputSchema,
   type AgentOutput,
@@ -23,9 +23,14 @@ export async function runAgent(
   email: EmailInput,
   client: LlmClient,
   engine: RateEngine = new StaticCardRateEngine(),
+  routing: ModelRouting = PER_STEP_ROUTING,
 ): Promise<AgentOutput> {
-  const { extraction, usage: extractionUsage } = await extractRequest(email, client);
+  const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
   const gate = decide(extraction);
+
+  // Track which LLM steps actually ran, so usage.model reports the truth (drafting fires only on
+  // the quote path; on a gate-escalation only extraction runs).
+  let draftCalled = false;
 
   let decision: "quote" | "escalate" = gate.decision;
   let escalationReason: EscalationReason | null = gate.reason;
@@ -53,7 +58,9 @@ export async function runAgent(
         quote,
       },
       client,
+      routing.draft,
     );
+    draftCalled = true;
     draft = drafted.draft;
     draftUsage = drafted.usage;
 
@@ -78,7 +85,10 @@ export async function runAgent(
     quote,
     draft,
     usage: {
-      model: MODEL,
+      // Honest: report the model(s) that actually ran (drafting fires only on the quote path).
+      model: draftCalled
+        ? `${routing.extraction} (extract), ${routing.draft} (draft)`
+        : `${routing.extraction} (extract)`,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       est_cost_usd: estimateCostUsd(inputTokens, outputTokens),

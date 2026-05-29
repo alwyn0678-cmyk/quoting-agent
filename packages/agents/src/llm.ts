@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { MODEL } from "./config.js";
 
 /**
  * Thin LLM abstraction. The agent depends on this interface, not on the SDK directly, so the
@@ -13,6 +12,8 @@ export interface Usage {
 }
 
 export interface StructuredCall {
+  /** The model id this step routes to (D-07) — extraction and drafting may differ. */
+  model: string;
   system: string;
   userContent: string;
   toolName: string;
@@ -31,7 +32,7 @@ export interface LlmClient {
   callStructured(call: StructuredCall): Promise<StructuredResult>;
 }
 
-/** Real client. Forces a single tool call against the pinned model (Opus 4.8 deprecates `temperature`). */
+/** Real client. Forces a single tool call against the model the caller routes to per step. */
 export class AnthropicLlmClient implements LlmClient {
   private readonly client: Anthropic;
 
@@ -44,7 +45,7 @@ export class AnthropicLlmClient implements LlmClient {
 
   async callStructured(call: StructuredCall): Promise<StructuredResult> {
     const message = await this.client.messages.create({
-      model: MODEL,
+      model: call.model,
       max_tokens: 2048,
       system: call.system,
       messages: [{ role: "user", content: call.userContent }],

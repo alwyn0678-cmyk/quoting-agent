@@ -1,6 +1,6 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { DraftSchema, type Draft, type RateQuote } from "./schemas.js";
-import { SYSTEM_CANARY } from "./config.js";
+import { SYSTEM_CANARY, DRAFT_MODEL } from "./config.js";
 import type { LlmClient, Usage } from "./llm.js";
 
 /**
@@ -72,8 +72,10 @@ export function buildDraftUserContent(input: DraftInput): string {
 export async function generateDraft(
   input: DraftInput,
   client: LlmClient,
+  model: string = DRAFT_MODEL,
 ): Promise<{ draft: Draft; usage: Usage }> {
   const result = await client.callStructured({
+    model,
     system: buildDraftSystemPrompt(),
     userContent: buildDraftUserContent(input),
     toolName: TOOL_NAME,
