@@ -43,3 +43,4 @@ evals/cache/
 
 # Trigger.dev / Cloud
 .trigger.json
+.omx/
