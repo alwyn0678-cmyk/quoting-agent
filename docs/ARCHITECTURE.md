@@ -7,26 +7,24 @@
 ## System context
 
 ```
-   Customer email (Outlook)
-        │  MS Graph (subscription/webhook)
-        ▼
-  ┌─────────────────┐     enqueue      ┌──────────────────────────┐
-  │ apps/web (Vercel)│ ───────────────▶ │ Trigger.dev v3 task       │
-  │  webhook + dash  │                  │  the agent pipeline run   │
-  └─────────────────┘                  └──────────┬───────────────┘
-        ▲  read/approve                            │
-        │                                          │  extract→gate→price→draft→guard
-        │                              ┌───────────┼───────────────────────┐
-        │                              ▼           ▼                       ▼
-        │                       packages/agents  RateEngine port      packages/graph
-        │                       (Phase 0 core)   (adapter)            (Outlook + Excel)
-        │                                          │
-        │                                  ┌───────┴────────┐
-        │                                  ▼                ▼
-        │                          Supabase table     Excel Online (MS Graph)
-        │                          adapter (ship)     adapter (swap-in, Week 6)
-        │
-   Human approves draft in dashboard ──▶ send reply (MS Graph)  ·  all steps logged to Supabase
+  Inbound — two sources:
+    (a) Outlook test mailbox ──▶ MS Graph scheduled POLL (cursor + dedup)   ┐  [production path, D-13]
+    (b) dashboard: paste email / pick a sample ──────────────────────────────┤  [public-demo path]
+                                                                             ▼
+              Trigger.dev v3 — creates quote_request, enqueues the agent run
+                                                                             │
+              agent core: extract → gate → RateEngine.price → draft → injection guard
+                                                                             │  persist
+                                                                             ▼
+              Supabase (requests · quotes · drafts · audit_log) + RLS
+                                                                             │  read
+                                                                             ▼
+              apps/web (Vercel) dashboard — reviewer edits + APPROVES
+                                                                             │
+                                                                             ▼
+              SIMULATED send — set simulated_sent_at, log it · NO Graph send (D-14)
+
+  RateEngine port (the seam): StaticCard (P0) · SupabaseTable (ship, 1B) · ExcelOnline/MS Graph (swap-in, Week 6)
 ```
 
 ## Components
@@ -38,18 +36,18 @@
 | → StaticCard adapter | `packages/agents` | the Phase 0 in-repo card (tests/fallback) | built (P0) |
 | → SupabaseTable adapter | `packages/agents` | rate card rows in Supabase — **the shippable production engine** | 1B |
 | → ExcelOnline adapter | `packages/graph` | reads/writes the forwarder's Excel rate engine via MS Graph — **swap-in at Week-6 gate** | 1B (gated) |
-| **MS Graph wrapper** | `packages/graph` | Outlook (read inbound, create draft, send) + Excel Online (cell read/write) | 1B |
-| **Orchestration** | `packages/orchestration` | Trigger.dev v3 task: one durable run per inbound email (retries, idempotency, queue) | 1C |
-| **Web app + dashboard** | `apps/web` | Next.js on Vercel: Graph webhook receiver, magic-link auth (Supabase Auth), review/approve/send UI, usage/cost views | 1C |
+| **MS Graph wrapper** | `packages/graph` | Outlook (read inbound; create draft — **no send**, D-14) + Excel Online (cell read/write) | 1B |
+| **Orchestration** | `packages/orchestration` | Trigger.dev v3: **scheduled poll** ingest (cursor+dedup, D-13) + one durable agent run per request (retries, idempotency, queue) | 1C |
+| **Web app + dashboard** | `apps/web` | Next.js on Vercel: dashboard (review/approve), magic-link auth (Supabase Auth), paste/sample input, usage/cost views. **No real send** (simulated, D-14) | 1C |
 | **System of record** | Supabase (`quoteagent`, eu-central-1) | requests, quotes, drafts, audit_log, rate_card; Auth; RLS | 1B+ |
 | **CLI** | `apps/cli` | the Phase 0 demo path; kept as a thin harness over the same core | built (P0) |
 
 ## Data flow (happy path)
 
-1. Outlook receives a customer email → MS Graph change notification → `apps/web` webhook validates + persists a `quote_request` (status `received`) in Supabase → enqueues a Trigger.dev task.
+1. **Ingest (D-13):** a Trigger.dev **scheduled poll** lists new Outlook messages via MS Graph (cursor + dedup by message id) and persists a `quote_request` (status `received`) in Supabase. The public demo instead accepts **paste / pick-a-sample** input from the dashboard. Either way → enqueue the agent task. (No public webhook / Graph subscription.)
 2. Trigger.dev task runs the **agent core**: `extract` (Sonnet) → `gate` (code) → if quote: `RateEngine.price()` (Supabase or Excel adapter) → `draft` (Haiku) → `injectionGuard` (fail-closed).
 3. Result persisted to Supabase (`quote`, `draft`, `audit_log` with token/cost usage). Status → `awaiting_review` (quote) or `escalated` (gate/guard).
-4. Human opens the **dashboard**, reviews the draft + the deterministic quote breakdown, edits if needed, and **approves** → `apps/web` sends the reply via MS Graph; status → `sent`. The agent never auto-sends (D-10).
+4. Human opens the **dashboard**, reviews the draft + the deterministic quote breakdown, edits if needed, and **approves** → **simulated send (D-14):** status → `sent`, `simulated_sent_at` recorded, **no Graph `send` call exists in this path** (UI shows a "SIMULATED SEND" badge). The agent never auto-sends (D-10).
 
 Escalation and prompt-injection behave exactly as in the slice (documented reasons; fail-closed), now surfaced as dashboard states rather than stdout.
 
@@ -73,7 +71,8 @@ Escalation and prompt-injection behave exactly as in the slice (documented reaso
 - The inbound email is **untrusted** end to end (extraction prompt framing + delimiter escaping +
   runtime injection guard, all from Phase 0).
 - `service_role` key: server-side only (never in the browser bundle). Dashboard uses `anon` + RLS.
-- Multi-tenant isolation (per-forwarder data) enforced by Supabase RLS — design in Stage 3.
+- Multi-tenant isolation (per-forwarder data) enforced by Supabase RLS **from day one** (D-15);
+  full policy detail in SECURITY.md (Stage 3).
 - The agent **cannot send** without human approval (D-10); no destructive action is autonomous.
 
 ## Alternatives considered
@@ -93,10 +92,10 @@ Escalation and prompt-injection behave exactly as in the slice (documented reaso
   adapter behind the **Wednesday-Week-6 POC gate** (fallback = stay on Supabase adapter, documented here).
 - **1C** — Next.js dashboard + magic-link auth + Trigger.dev wiring + monitoring + landing/case-study.
 
-## Open questions (resolve in SPEC / Stage 2)
+## Open questions — resolved in SPEC + DECISION_LOG
 
-- Email ingest: live Graph webhook vs scheduled poll for the demo (rate-limit + abuse surface).
-- Rate-card schema in Supabase: columns mirroring the static card (base/surcharge/fee), versioned.
-- Multi-tenant model: single forwarder for the demo, or schema-ready for many from day one?
-- Outbound send in the public demo: real send vs simulated "sent" (likely simulated — no real
-  customer inboxes). Decide in SPEC.
+- Email ingest → **scheduled poll** (D-13). · Outbound → **simulated send** (D-14). · Tenancy →
+  **single-tenant + `tenant_id`/RLS seam** (D-15). · Rate-card schema → **versioned + quote
+  snapshots** (D-16). See `SPEC.md` for flows + data model.
+- **Deferred to Stage 2 (CONTEXT.md / AUTONOMY.md):** MS Graph app registration + permissions +
+  auth-to-tenant mapping; action whitelist / kill switch / HITL approval rules.
