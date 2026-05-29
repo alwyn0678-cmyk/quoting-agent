@@ -1,0 +1,24 @@
+{
+  "id": "06-out-of-scope-mode-lcl",
+  "description": "Request for a mode that is not FCL (LCL groupage). Must escalate on mode.",
+  "exercises": ["T8", "T13"],
+  "input": {
+    "from": "warehouse@giftgoods.example",
+    "subject": "LCL shipment Rotterdam to New York",
+    "body": "Hello,\n\nWe have roughly 4 pallets / 6 CBM of homeware for LCL groupage from Rotterdam to New York. Can you quote the LCL rate?\n\nThanks"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_mode",
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "LCL",
+      "container_type": null,
+      "container_qty": null
+    },
+    "quote": null,
+    "notes": "mode = LCL is out of the FCL-only slice scope -> escalate out_of_scope_mode."
+  }
+}

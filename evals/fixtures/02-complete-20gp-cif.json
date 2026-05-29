@@ -1,0 +1,32 @@
+{
+  "id": "02-complete-20gp-cif",
+  "description": "Happy path, different container type and incoterm.",
+  "exercises": ["T1", "T4", "T9", "T10", "T11", "T13"],
+  "input": {
+    "from": "Tom de Vries <sales@dutchceramics.example>",
+    "subject": "FCL rate Rotterdam -> New York, 1x20'",
+    "body": "Hello,\n\nPlease quote ocean freight Rotterdam to New York:\n\n1 x 20GP, ceramic tiles, about 18 tonnes, CIF New York.\n\nThanks,\nTom de Vries\nDutch Ceramics BV"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "FCL",
+      "container_type": "20GP",
+      "container_qty": 1,
+      "incoterm": "CIF",
+      "commodity": "ceramic tiles",
+      "requester_company": "Dutch Ceramics BV"
+    },
+    "quote": {
+      "currency": "EUR",
+      "container_type": "20GP",
+      "container_qty": 1,
+      "all_in_total": 2770
+    },
+    "notes": "all_in = 1 x (1800 base + 860 surcharges) + 110 = 2770."
+  }
+}

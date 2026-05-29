@@ -1,0 +1,33 @@
+{
+  "id": "03-terse-required-only-40gp-x3",
+  "description": "Terse email with only the required fields. Optional fields must come back null, not hallucinated.",
+  "exercises": ["T1", "T2", "T4", "T9", "T10", "T11", "T13"],
+  "input": {
+    "from": "logistics@nordicparts.example",
+    "subject": "RTM-NYC 3x40",
+    "body": "Need a price for 3 x 40' GP (standard) containers, Rotterdam to New York. Thanks."
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "FCL",
+      "container_type": "40GP",
+      "container_qty": 3,
+      "incoterm": null,
+      "commodity": null,
+      "ready_date": null,
+      "weight_kg": null
+    },
+    "quote": {
+      "currency": "EUR",
+      "container_type": "40GP",
+      "container_qty": 3,
+      "all_in_total": 9890
+    },
+    "notes": "all_in = 3 x (2400 base + 860 surcharges) + 110 = 9890. T2: optional fields must be null."
+  }
+}

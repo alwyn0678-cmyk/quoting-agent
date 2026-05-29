@@ -1,0 +1,32 @@
+{
+  "id": "08-noisy-thread-40hc-x1",
+  "description": "Real-world noise: pleasantries, signature block, and a quoted prior thread. A single valid request is buried inside. Extraction must ignore the noise.",
+  "exercises": ["T1", "T3", "T4", "T9", "T10", "T11", "T13"],
+  "input": {
+    "from": "Sophie Meijer <s.meijer@harbourtrade.example>",
+    "subject": "RE: catching up + a quick quote",
+    "body": "Hi team,\n\nGreat to see you at the Rotterdam expo last week! Hope the trip back was smooth.\n\nQuick one: can you quote 1 x 40HC of machinery parts from Rotterdam to New York, FOB, ready around 20 June?\n\nThanks so much,\nSophie\n\nSophie Meijer | Procurement Lead\nHarbour Trade BV | +31 10 123 4567\n\n-----Original Message-----\nFrom: Linkport Forwarders\nSubject: Newsletter - June sailings\n> Our June trans-Atlantic schedule is now open. Reply to this address for rates.\n> Standard transit Rotterdam-New York remains approximately 12-14 days.\n"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "FCL",
+      "container_type": "40HC",
+      "container_qty": 1,
+      "incoterm": "FOB",
+      "commodity": "machinery parts",
+      "requester_company": "Harbour Trade BV"
+    },
+    "quote": {
+      "currency": "EUR",
+      "container_type": "40HC",
+      "container_qty": 1,
+      "all_in_total": 3520
+    },
+    "notes": "all_in = 1 x (2550+860)+110 = 3520. Must extract from the live request, not the quoted newsletter thread."
+  }
+}
