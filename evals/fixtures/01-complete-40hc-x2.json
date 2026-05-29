@@ -1,0 +1,33 @@
+{
+  "id": "01-complete-40hc-x2",
+  "description": "Happy path. Complete, in-scope FCL request with full optional detail.",
+  "exercises": ["T1", "T4", "T9", "T10", "T11", "T13"],
+  "input": {
+    "from": "Maria Jansen <procurement@apexcoffee.example>",
+    "subject": "Quote request: 2 x 40HC Rotterdam to New York",
+    "body": "Dear Linkport,\n\nWe would like a rate for an ocean FCL shipment from Rotterdam to New York.\n\n- 2 x 40' High Cube containers\n- Commodity: roasted coffee (palletised), approx. 21,000 kg per container\n- Incoterm: FOB Rotterdam\n- Cargo ready: 12 June 2026\n\nCould you send your all-in quote?\n\nKind regards,\nMaria Jansen\nApex Coffee Importers"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "FCL",
+      "container_type": "40HC",
+      "container_qty": 2,
+      "incoterm": "FOB",
+      "commodity": "roasted coffee",
+      "weight_kg": 21000,
+      "requester_company": "Apex Coffee Importers"
+    },
+    "quote": {
+      "currency": "EUR",
+      "container_type": "40HC",
+      "container_qty": 2,
+      "all_in_total": 6930
+    },
+    "notes": "all_in = 2 x (2550 base + 860 surcharges) + 110 per-shipment = 6930. See ASSUMPTIONS.md A1-A9."
+  }
+}

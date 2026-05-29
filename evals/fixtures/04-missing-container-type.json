@@ -1,0 +1,24 @@
+{
+  "id": "04-missing-container-type",
+  "description": "Missing required field (no container type, vague quantity). Must escalate, not guess.",
+  "exercises": ["T6", "T13"],
+  "input": {
+    "from": "ops@freshflowers.example",
+    "subject": "Shipping quote Rotterdam to New York",
+    "body": "Hi,\n\nCan you quote us for a couple of containers from Rotterdam to New York next month? Cargo is cut flowers (refrigerated).\n\nThanks"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "missing_required_field",
+    "extraction": {
+      "origin_port_code": "NLRTM",
+      "destination_port_code": "USNYC",
+      "mode": "FCL",
+      "container_type": "UNKNOWN",
+      "container_qty": null
+    },
+    "quote": null,
+    "notes": "container_type is absent -> gate escalates with missing_required_field; no quote, no draft."
+  }
+}
