@@ -55,7 +55,13 @@ export async function pollMailbox(
   store: IngestStore,
 ): Promise<PollResult> {
   const cursor = await store.getCursor(tenantId, mailbox);
-  const { messages, cursor: next } = await reader.listSince(cursor);
+  const { messages } = await reader.listSince(cursor);
+
+  // Advance the cursor ONLY to the latest receivedDateTime actually seen, never backward — robust to a
+  // stale or unsorted page (a non-monotonic cursor would silently skip mail). ISO-8601 sorts
+  // lexicographically = chronologically, so a string compare is a time compare here.
+  let next = cursor;
+  for (const m of messages) if (m.receivedDateTime > next) next = m.receivedDateTime;
 
   const insertedIds: string[] = [];
   let duplicates = 0;

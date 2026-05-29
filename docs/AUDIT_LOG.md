@@ -4,6 +4,43 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1C ingest (hermetic logic) — scheduled poll + durable agent-run · 2026-05-29
+
+### Scope
+The HERMETIC logic for autonomous ingest (1C.1/1C.2), on `phase-1c-ingest`, two increments:
+- **1C.1a** `pollMailbox` — cursor (migration 0007 `poll_state`) + dedup by the UNIQUE
+  `graph_message_id` (AC-1) + re-enqueue stranded `received` (W5); code-level tenant scoping (P-TENANT).
+- **1C.2a** `runAndPersist` — claim → run → insert-once quote + draft → complete; idempotent + tenant-scoped.
+Offline **109 → 117**; live SQL proofs `ac1_poll` (AC-1 + P-TENANT) + `p1c2_run` (P-1C.2 insert-once).
+The LIVE wiring (Trigger.dev deploy, live MS Graph transport, the concrete Supabase stores) is gated
+on the Trigger.dev project + MS Graph registration (D-21).
+
+### Gate 4 — codex (read-only, `git diff main...HEAD`) — 1 round, 4 findings, all valid
+- **[P1] the run trusted a caller-supplied request (incl. its `tenant_id`)** — no tenant-scoped load.
+  → `runAndPersist(tenantId, requestId, …)` now CLAIMS the request scoped to the tenant; a wrong
+  tenant / missing id / already-terminal request is refused with NO model call and NO writes (new
+  negative test asserts the tenant gate).
+- **[P2] terminal outcome wasn't idempotent** — a retry with a different LLM decision could flip
+  `awaiting_review`↔`escalated`. → claim returns null on a terminal request (retry-after-success
+  re-runs nothing), and `complete` is first-writer-wins (only from `processing`). Test: a retry makes
+  zero model calls and leaves exactly one quote / one draft / one usage row.
+- **[P2] W5 re-enqueued in-flight runs** (still `received`) → duplicate LLM runs. → claim moves
+  `received`→`processing`, so the poll (which re-enqueues only `received`) won't pick an active run.
+  Crash-recovery of a stuck `processing` row (a `claimed_at` lease + a Trigger.dev per-request
+  concurrency key) is the live layer's job — logged (D-22), not silently dropped.
+- **[P3] cursor not monotonic** — a stale/unsorted page could move it backward (skipping mail). → the
+  poll now advances only to the max `receivedDateTime` seen; new test with an unsorted/stale page.
+
+### Reconciliation
+All four applied (three fully; #3's claim applied + its crash-recovery lease documented as the gated
+live concern, D-22). Re-verified: typecheck clean, offline **117/117**; SQL proofs `ac1_poll` /
+`p1c2_run` unchanged and still PASS (the DB-level dedup + insert-once foundations the stores rely on).
+
+### Sign-off
+_Pending — presented to Alwyn; on approval `phase-1c-ingest` merges to `main` (`--no-ff`)._
+
+---
+
 ## Phase 1C (reviewer surface) — dashboard + approve + safe-state + observability · 2026-05-29
 
 ### Scope

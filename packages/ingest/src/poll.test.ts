@@ -89,6 +89,19 @@ describe("1C.1 — scheduled poll (cursor + dedup + re-enqueue)", () => {
     expect(await store.getCursor(TA, MB)).toBe("2026-05-25T10:02:00Z");
   });
 
+  it("advances the cursor monotonically — an unsorted/stale page never moves it backward (#4)", async () => {
+    const store = new FakeStore();
+    await pollMailbox(TA, MB, new FakeMailbox([[msg("m1"), msg("m2")]]), store); // cursor -> 10:02
+    expect(await store.getCursor(TA, MB)).toBe("2026-05-25T10:02:00Z");
+
+    // Unsorted page: a NEW message (10:05) followed by a STALE one (10:01). The cursor must jump to the
+    // max (10:05), not regress to the last element (10:01) — else newer mail would be polled forever.
+    const at = (rdt: string, id: string): InboundMessage => ({ id, from: "a@b.example", subject: "s", body: "b", receivedDateTime: rdt });
+    const r = await pollMailbox(TA, MB, new FakeMailbox([[at("2026-05-25T10:05:00Z", "m5"), at("2026-05-25T10:01:00Z", "m1b")]]), store);
+    expect(r.cursor).toBe("2026-05-25T10:05:00Z");
+    expect(await store.getCursor(TA, MB)).toBe("2026-05-25T10:05:00Z");
+  });
+
   it("P-TENANT: a poll for tenant A inserts/re-enqueues only A's rows, never B's", async () => {
     const store = new FakeStore();
     // B already has a stranded 'received' row from its own ingest.
