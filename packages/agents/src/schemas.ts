@@ -78,7 +78,8 @@ export const escalationReasonSchema = z.enum([
 ]);
 export type EscalationReason = z.infer<typeof escalationReasonSchema>;
 
-const draftSchema = z.object({ subject: z.string(), body: z.string() });
+export const DraftSchema = z.object({ subject: z.string(), body: z.string() });
+export type Draft = z.infer<typeof DraftSchema>;
 
 const usageSchema = z.object({
   model: z.string(),
@@ -99,7 +100,7 @@ export const AgentOutputSchema = z
     injection_flag: z.boolean(),
     escalation_reason: escalationReasonSchema.nullable(),
     quote: RateQuoteSchema.nullable(),
-    draft: draftSchema.nullable(),
+    draft: DraftSchema.nullable(),
     usage: usageSchema,
   })
   .superRefine((o, ctx) => {
