@@ -4,6 +4,41 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Stage 1 — Specification (Phase 1+) · 2026-05-29
+
+### What was produced
+`ARCHITECTURE.md` (Option C — hybrid pipeline + swappable `RateEngine` port), `PRD.md`, `SPEC.md`
+(flows + Supabase data model + AC-1…AC-8), `DECISION_LOG.md` (D-01…D-16). Four open questions
+resolved: poll ingest (D-13), simulated send (D-14), single-tenant + `tenant_id`/RLS seam (D-15),
+versioned rate cards + quote snapshots (D-16). No code changed.
+
+### Gate 3 — self-critique
+- ARCHITECTURE was drafted before D-13/D-14 were decided, so it drifted from PRD/SPEC (caught below).
+- The spec is design-forward; several Supabase/RLS/idempotency details are correct-in-principle but
+  only provable when the schema is actually built (1B).
+
+### Gate 4 — codex (codex-cli 0.125.0, `codex exec review --base main`, read-only) — 4 rounds
+- **R1 (ARCHITECTURE):** [P2] webhook vs D-13 poll; [P1] real Graph send vs D-14 simulate. → fixed.
+- **R2 (SPEC):** [P2] no user→tenant mapping for RLS; [P2] missing 1:1 unique keys for retry
+  idempotency; [P2] injection lumped with escalation (breaks fixture-07 quote-and-flag / AC-2);
+  [P3] reserved `from`. → fixed (profiles table, unique `request_id`, quote-and-flag wording, `from_email`).
+- **R3 (SPEC):** [P2] self-referential RLS recursion. → fixed (`profiles` direct policy + SECURITY
+  DEFINER `auth_tenant_id()`).
+- **R4 (SPEC):** [P2] `rate_card_lines` lacks tenant scope; [P2] poll can strand a message if enqueue
+  fails after insert. → fixed (parent-join RLS for lines; re-enqueue stuck `received` requests).
+
+### Decision — codex loop capped at R4
+Findings converged from contradictions (R1, blocking) to implementation-level DB/RLS/idempotency
+detail (R3–R4). **No contradictions remain.** Remaining fine-grained schema concerns are re-reviewed
+when the migration is actually written (Stage 1B), not gating the Stage-1 spec.
+
+### Sign-off
+Ready — Stage 1 spec coherent, all contradictions resolved. **Approved by Alwyn 2026-05-29;
+`phase-1-spec` merged to `main` (`--no-ff`).** Stage 2 (CONTEXT.md / AUTONOMY.md /
+IMPLEMENTATION_PLAN) follows on its own branch.
+
+---
+
 ## Phase 0 — Vertical Slice · 2026-05-29
 
 ### What was built
