@@ -9,7 +9,7 @@
 Steps [1] extraction and [4] drafting are LLM calls. We never assert exact-string equality on
 model output. Instead:
 
-1. **Temperature 0** on every LLM call.
+1. **No `temperature`** — Opus 4.8 deprecates the parameter (the API rejects it), so we omit it. Determinism never relied on it; the levers below do the work.
 2. **Pinned model id** (a single constant; bumping it is a deliberate, logged change that re-runs
    the golden set).
 3. **Structured output** — extraction and the quote object come back as JSON validated against the

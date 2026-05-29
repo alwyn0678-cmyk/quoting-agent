@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { MODEL, TEMPERATURE } from "./config.js";
+import { MODEL } from "./config.js";
 
 /**
  * Thin LLM abstraction. The agent depends on this interface, not on the SDK directly, so the
@@ -31,7 +31,7 @@ export interface LlmClient {
   callStructured(call: StructuredCall): Promise<StructuredResult>;
 }
 
-/** Real client. Forces a single tool call at temperature 0 against the pinned model. */
+/** Real client. Forces a single tool call against the pinned model (Opus 4.8 deprecates `temperature`). */
 export class AnthropicLlmClient implements LlmClient {
   private readonly client: Anthropic;
 
@@ -46,7 +46,6 @@ export class AnthropicLlmClient implements LlmClient {
     const message = await this.client.messages.create({
       model: MODEL,
       max_tokens: 2048,
-      temperature: TEMPERATURE,
       system: call.system,
       messages: [{ role: "user", content: call.userContent }],
       tools: [

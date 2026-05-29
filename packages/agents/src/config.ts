@@ -1,6 +1,9 @@
-/** Pinned model + sampling for all LLM calls (confirmed 2026-05-29). */
+/**
+ * Pinned model for all LLM calls (confirmed 2026-05-29). Opus 4.8 deprecates the `temperature`
+ * parameter (the API rejects it), so we don't send it — determinism rests on structured output
+ * + tolerant/pass-band assertions, never on the sampling temperature.
+ */
 export const MODEL = "claude-opus-4-8";
-export const TEMPERATURE = 0;
 
 /**
  * Sentinel placed in system prompts. It must NEVER appear in agent output — if it does, the

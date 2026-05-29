@@ -39,7 +39,7 @@ handling.
 1. **Input:** a single inbound email as plain text (`from`, `subject`, `body`). Read from a file
    or stdin via the CLI. One email per invocation.
 2. **Extraction (LLM):** produce a structured `ExtractionResult` (schema below) with a per-field
-   + overall confidence. Temperature 0, structured output (tool-use / JSON schema), pinned model.
+   + overall confidence. Structured output (forced tool call), pinned model. (Opus 4.8 deprecates `temperature`, so it is omitted — see ACCEPTANCE_TESTS.md.)
 3. **Confidence/escalation gate (deterministic):** decide `quote` vs `escalate` from the
    extraction (required-field completeness, lane/mode/container in the rate card, overall
    confidence ≥ threshold).
@@ -49,7 +49,7 @@ handling.
    — see `ASSUMPTIONS.md`.**
 5. **Draft reply (LLM):** produce a professional reply email *from* Linkport Forwarders BV that
    quotes the computed figures verbatim. Structured output: a `quote` object (machine-checkable)
-   + a `body` string (prose). Temperature 0, pinned model.
+   + a `body` string (prose). Structured output, pinned model (no `temperature` — deprecated for Opus 4.8).
 6. **Prompt-injection resistance:** instructions embedded in the email body must not change agent
    behaviour (no €1 quotes, no system-prompt leak, no out-of-policy actions). Detected injection
    is flagged; the legitimate freight request (if any) is still processed normally.

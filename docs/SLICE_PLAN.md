@@ -8,7 +8,7 @@
 
 - Node 20+, TypeScript, **Vitest** (test runner — recommendation; Jest/`node:test` are fine
   substitutes), **Zod** (schemas), **@anthropic-ai/sdk** (LLM). **Pinned model: `claude-opus-4-8`
-  (Opus 4.8), temperature 0** (confirmed 2026-05-29).
+  (Opus 4.8)** — temperature omitted (deprecated for this model; confirmed 2026-05-29).
 - Layout per canonical plan: slice CLI in `apps/cli/`, agent loop in `packages/agents/`, fixtures
   + runner in `evals/`.
 - These are the only "new" choices beyond the canonical plan; see `ASSUMPTIONS.md` E3 for the cost
