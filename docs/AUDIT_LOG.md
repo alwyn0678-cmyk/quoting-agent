@@ -33,8 +33,9 @@ detail (R3–R4). **No contradictions remain.** Remaining fine-grained schema co
 when the migration is actually written (Stage 1B), not gating the Stage-1 spec.
 
 ### Sign-off
-Ready — Stage 1 spec coherent, all contradictions resolved. Awaiting Alwyn's review before Stage 2
-(CONTEXT.md / AUTONOMY.md / IMPLEMENTATION_PLAN).
+Ready — Stage 1 spec coherent, all contradictions resolved. **Approved by Alwyn 2026-05-29;
+`phase-1-spec` merged to `main` (`--no-ff`).** Stage 2 (CONTEXT.md / AUTONOMY.md /
+IMPLEMENTATION_PLAN) follows on its own branch.
 
 ---
 
