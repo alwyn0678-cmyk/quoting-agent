@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { listRequestsForTenant, type RequestView } from "../src/lib/dashboard";
 import { approveAction } from "./actions";
@@ -132,6 +133,9 @@ export default async function DashboardPage() {
           <div className="sub">Linkport Forwarders — awaiting review</div>
         </div>
         <div className="who">
+          <Link className="linkbtn" href="/usage">
+            Usage
+          </Link>
           <span>{user.email}</span>
           <form action="/auth/signout" method="post">
             <button className="linkbtn" type="submit">

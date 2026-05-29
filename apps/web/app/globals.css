@@ -68,6 +68,8 @@ a {
   padding: 5px 10px;
   font-size: 13px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .linkbtn:hover {
@@ -120,6 +122,16 @@ a {
 .badge.flag {
   color: var(--warn);
   border-color: var(--warn);
+}
+
+.badge.quote {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.badge.escalate {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .badge.awaiting_review {
@@ -187,6 +199,75 @@ a {
   color: var(--muted);
   text-align: center;
   padding: 48px 0;
+}
+
+/* Usage / cost view */
+.totals {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  flex: 1 1 120px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.statn {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.statl {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+table.usage {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.usage th,
+table.usage td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+table.usage th {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+table.usage .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+table.usage .model {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.costnote {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 18px;
 }
 
 .escalation {
