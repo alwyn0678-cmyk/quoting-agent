@@ -18,7 +18,9 @@ describe("P-1C.3 — dashboard render model", () => {
       subject: "Quote RTM->NYC",
       created_at: "2026-05-20T10:00:00Z",
       quotes: [{ breakdown_snapshot: quote }],
-      drafts: [{ subject: "Re: Quote RTM->NYC", body: "Dear Maria, all-in EUR 6,930." }],
+      drafts: [
+        { subject: "Re: Quote RTM->NYC", body: "Dear Maria, all-in EUR 6,930.", simulated_sent_at: null },
+      ],
     };
 
     const view = buildRequestView(row);
@@ -33,6 +35,29 @@ describe("P-1C.3 — dashboard render model", () => {
     expect(view.quote?.lane).toBe("NLRTM-USNYC");
     expect(view.quote?.rate_card_version).toBe(quote.rate_card_version);
     expect(view.draft?.body).toContain("6,930");
+    expect(view.draft?.simulated_sent_at).toBeNull(); // awaiting_review: not yet (simulated-)sent
+  });
+
+  it("surfaces drafts.simulated_sent_at once the request has been approved (SIMULATED SEND)", async () => {
+    const quote = await new StaticCardRateEngine().price({
+      origin_port_code: "NLRTM",
+      destination_port_code: "USNYC",
+      mode: "FCL",
+      container_type: "40HC",
+      container_qty: 1,
+    });
+    const row: RawRequestRow = {
+      id: "r-sent",
+      status: "sent",
+      from_email: "maria@apex.example",
+      subject: "Quote RTM->NYC",
+      created_at: "2026-05-20T10:00:00Z",
+      quotes: [{ breakdown_snapshot: quote }],
+      drafts: [{ subject: "Re", body: "all-in EUR 3,465.", simulated_sent_at: "2026-05-23T09:15:00Z" }],
+    };
+    const view = buildRequestView(row);
+    expect(view.status).toBe("sent");
+    expect(view.draft?.simulated_sent_at).toBe("2026-05-23T09:15:00Z");
   });
 
   it("renders an escalated request with no quote / no draft", () => {

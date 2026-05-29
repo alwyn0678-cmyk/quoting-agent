@@ -178,6 +178,35 @@ a {
   padding: 48px 0;
 }
 
+.actions {
+  margin-top: 14px;
+}
+
+.primarybtn {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primarybtn:hover {
+  filter: brightness(1.08);
+}
+
+.sentinfo {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--ok);
+}
+
+.sentinfo .nosend {
+  color: var(--muted);
+}
+
 /* Login */
 .login {
   max-width: 360px;

@@ -24,7 +24,7 @@ export interface RequestView {
     validity_through: string;
     rate_card_version: string;
   } | null;
-  draft: { subject: string; body: string } | null;
+  draft: { subject: string; body: string; simulated_sent_at: string | null } | null;
 }
 
 /** A joined row as returned by the embedded select below (PostgREST embeds 1:1 relations as arrays). */
@@ -35,7 +35,10 @@ export interface RawRequestRow {
   subject: string | null;
   created_at: string;
   quotes: { breakdown_snapshot: RateQuote }[] | { breakdown_snapshot: RateQuote } | null;
-  drafts: { subject: string; body: string }[] | { subject: string; body: string } | null;
+  drafts:
+    | { subject: string; body: string; simulated_sent_at: string | null }[]
+    | { subject: string; body: string; simulated_sent_at: string | null }
+    | null;
 }
 
 function first<T>(x: T[] | T | null | undefined): T | null {
@@ -67,12 +70,14 @@ export function buildRequestView(row: RawRequestRow): RequestView {
           rate_card_version: snap.rate_card_version,
         }
       : null,
-    draft: draft ? { subject: draft.subject, body: draft.body } : null,
+    draft: draft
+      ? { subject: draft.subject, body: draft.body, simulated_sent_at: draft.simulated_sent_at ?? null }
+      : null,
   };
 }
 
 const SELECT =
-  "id, status, from_email, subject, created_at, quotes(breakdown_snapshot), drafts(subject, body)";
+  "id, status, from_email, subject, created_at, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
 
 /**
  * The narrow slice of a Supabase client this lib actually uses: `from(table).select(cols).order(...)`

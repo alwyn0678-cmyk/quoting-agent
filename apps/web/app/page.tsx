@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { listRequestsForTenant, type RequestView } from "../src/lib/dashboard";
+import { approveAction } from "./actions";
 
 // Reads the signed-in user's cookies → always dynamic, never statically prerendered.
 export const dynamic = "force-dynamic";
@@ -43,7 +44,9 @@ function RequestCard({ r }: { r: RequestView }) {
     <div className="card">
       <div className="head">
         <span className="from">{r.from_email ?? "(unknown sender)"}</span>
-        <span className={`badge ${r.status}`}>{r.status.replace(/_/g, " ")}</span>
+        <span className={`badge ${r.status}`}>
+          {r.status === "sent" ? "SIMULATED SEND" : r.status.replace(/_/g, " ")}
+        </span>
       </div>
       <div className="subject">{r.subject ?? "(no subject)"}</div>
 
@@ -57,6 +60,25 @@ function RequestCard({ r }: { r: RequestView }) {
         <div className="draft">
           <div className="dsubject">{r.draft.subject}</div>
           <div className="dbody">{r.draft.body}</div>
+        </div>
+      )}
+
+      {r.status === "awaiting_review" && r.quote && (
+        <form action={approveAction} className="actions">
+          <input type="hidden" name="requestId" value={r.id} />
+          <button type="submit" className="primarybtn">
+            Approve &amp; simulate send
+          </button>
+        </form>
+      )}
+
+      {r.status === "sent" && (
+        <div className="sentinfo">
+          ✓ Simulated send
+          {r.draft?.simulated_sent_at
+            ? ` · ${new Date(r.draft.simulated_sent_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC`
+            : ""}
+          <span className="nosend"> — no email was actually sent (Graph send is not wired; R1).</span>
         </div>
       )}
     </div>
