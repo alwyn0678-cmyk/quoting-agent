@@ -15,6 +15,16 @@ export interface PriceRequest {
   container_qty: number | null;
 }
 
+/**
+ * The RateEngine port (DECISION_LOG D-11). Pricing lives behind one async interface so the
+ * production adapters (SupabaseTable, ExcelOnline) can swap in without touching the agent core.
+ * Async because those adapters do IO; the Phase 0 `priceQuote()` becomes the synchronous
+ * StaticCard adapter behind this port in 1A.2. Declaring the port has no caller changes (1A.1).
+ */
+export interface RateEngine {
+  price(req: PriceRequest): Promise<RateQuote>;
+}
+
 /** Thrown when a request cannot be priced. The engine refuses rather than fabricate (T5). */
 export class UnpriceableRequestError extends Error {
   constructor(
