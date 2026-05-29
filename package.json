@@ -15,6 +15,7 @@
     "eval:web-approve": "node --env-file-if-exists=.env --import tsx evals/web-approve.ts",
     "eval:web-injection": "node --env-file-if-exists=.env --import tsx evals/web-injection.ts",
     "eval:web-usage": "node --env-file-if-exists=.env --import tsx evals/web-usage.ts",
+    "eval:live-stores": "node --env-file-if-exists=.env --import tsx evals/live-stores.ts",
     "db:migrate": "bash scripts/db.sh supabase/migrations/0001_init.sql",
     "db:seed": "bash scripts/db.sh supabase/seed/linkport_rate_card.sql",
     "db:test:ac1": "bash scripts/db.sh supabase/tests/ac1_poll.sql",
