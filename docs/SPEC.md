@@ -56,9 +56,11 @@
   `simulated_sent_at` nullable). `request_id` is **unique** (1:1 with the request).
 - **audit_log**(`id`, `tenant_id`, `request_id`, `event`, `model`, `input_tokens`, `output_tokens`,
   `est_cost_usd`, `injection_flag`, `created_at`).
-- **RLS:** every tenant-scoped table restricts rows to the caller's tenant, resolved via `profiles`
-  (`tenant_id in (select tenant_id from profiles where user_id = auth.uid())`). Active with one tenant
-  from day one. `service_role` (server/Trigger.dev) bypasses RLS; the browser uses `anon` + RLS only.
+- **RLS:** `profiles` uses a **direct** policy (`user_id = auth.uid()`). Every **other** tenant-scoped
+  table uses `tenant_id = auth_tenant_id()`, where `auth_tenant_id()` is a **SECURITY DEFINER**
+  function that reads the caller's tenant from `profiles` while **bypassing RLS** — so policies don't
+  recurse (the classic Supabase self-reference trap). Active with one tenant from day one.
+  `service_role` (server/Trigger.dev) bypasses RLS; the browser uses `anon` + RLS only.
 
 ## Interfaces
 ```ts
