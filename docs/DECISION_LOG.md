@@ -3,6 +3,17 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1C — autonomous ingest (hermetic) (2026-05-29)
+
+- **D-22 · The durable agent-run is claim-based: load+claim (`received`→`processing`) scoped to the
+  tenant → run → insert-once persist → complete (`processing`→terminal, first-writer-wins).** · *Makes
+  the run self-sufficient for tenant safety (it never trusts a caller's row) and idempotent under
+  Trigger.dev retries + LLM nondeterminism — a retry after success re-runs nothing, so the outcome
+  can't flip `awaiting_review`↔`escalated` (codex Gate-4 #1/#2). The poll re-enqueues only `received`,
+  so an in-flight run isn't double-triggered (#3). Crash-recovery of a stuck `processing` row (a
+  `claimed_at` lease + a Trigger.dev per-request concurrency key) is deferred to the live layer.* ·
+  **Accepted.**
+
 ## Phase 1C — reviewer surface (2026-05-29)
 
 - **D-21 · Phase 1C boundary was split: the reviewer surface (1C.3–1C.6) is audited + merged ahead of
