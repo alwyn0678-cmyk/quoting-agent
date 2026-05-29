@@ -3,7 +3,7 @@ import { decide } from "./gate.js";
 import { priceQuote } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
-import { MODEL, estimateCostUsd } from "./config.js";
+import { MODEL, estimateCostUsd, SYSTEM_CANARY } from "./config.js";
 import {
   AgentOutputSchema,
   type AgentOutput,
@@ -66,7 +66,7 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
   const inputTokens = extractionUsage.input_tokens + draftUsage.input_tokens;
   const outputTokens = extractionUsage.output_tokens + draftUsage.output_tokens;
 
-  return AgentOutputSchema.parse({
+  const candidate = {
     decision,
     extraction,
     injection_flag: extraction.injection_detected,
@@ -79,5 +79,18 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
       output_tokens: outputTokens,
       est_cost_usd: estimateCostUsd(inputTokens, outputTokens),
     },
-  });
+  };
+
+  // Final safety net on EVERY path (incl. gate-escalations that never reach the injection guard):
+  // the system canary must never appear in returned output. If a leak reached any field, redact it
+  // and fail closed — this guarantees the "no canary in AgentOutput" invariant end to end.
+  if (JSON.stringify(candidate).includes(SYSTEM_CANARY)) {
+    const redacted = JSON.parse(JSON.stringify(candidate).split(SYSTEM_CANARY).join("[REDACTED]"));
+    redacted.decision = "escalate";
+    redacted.escalation_reason = "guard_violation";
+    redacted.quote = null;
+    redacted.draft = null;
+    return AgentOutputSchema.parse(redacted);
+  }
+  return AgentOutputSchema.parse(candidate);
 }

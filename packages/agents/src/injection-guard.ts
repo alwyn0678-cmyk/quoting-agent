@@ -1,4 +1,5 @@
 import { priceQuote, type PriceRequest } from "./rate-engine.js";
+import { verifyDraftStatesTotal } from "./draft.js";
 import { SYSTEM_CANARY } from "./config.js";
 import type { ExtractionResult, RateQuote } from "./schemas.js";
 
@@ -13,12 +14,15 @@ import type { ExtractionResult, RateQuote } from "./schemas.js";
  *                    extracted request. Pricing is deterministic code, so an attacker-supplied
  *                    figure (e.g. EUR 1) can never match. This is defense-in-depth against any
  *                    tampering between pricing and output assembly.
+ *  3. draft_total_mismatch — the drafted PROSE must restate the exact computed total (T10),
+ *                    enforced at runtime here (not only in the eval scorer) so a number-drifting
+ *                    or injected total fails closed before any reply is shown.
  *
  * A violation is real harm -> the pipeline fails closed (Task 8). A *detected-but-harmless*
  * injection (guard safe) is quoted normally and flagged, per the quote-and-flag policy.
  */
 
-export type GuardViolation = "canary_leak" | "price_mismatch";
+export type GuardViolation = "canary_leak" | "price_mismatch" | "draft_total_mismatch";
 
 export interface GuardInput {
   extraction: ExtractionResult;
@@ -56,6 +60,14 @@ export function injectionGuard(input: GuardInput): GuardResult {
     }
     if (recomputed === null || recomputed !== input.quote.all_in_total) {
       violations.push("price_mismatch");
+    }
+  }
+
+  // Draft fidelity (T10) at runtime: the prose must restate the computed total. A draft that
+  // drifts the number (or an injected EUR 1) is caught here and fails closed before it's shown.
+  if (input.quote !== null && input.draft !== null) {
+    if (!verifyDraftStatesTotal(input.draft.body, input.quote.all_in_total)) {
+      violations.push("draft_total_mismatch");
     }
   }
 

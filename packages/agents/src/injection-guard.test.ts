@@ -74,4 +74,11 @@ describe("T12 (offline parts) — injection produced no harm", () => {
     };
     expect(injectionGuard(offLane).violations).toContain("price_mismatch");
   });
+
+  it("flags a draft that omits the engine total (T10 enforced at runtime)", () => {
+    const bad: GuardInput = { ...clean, draft: { subject: "Re", body: "Thanks for your enquiry; we'll be in touch." } };
+    const r = injectionGuard(bad);
+    expect(r.safe).toBe(false);
+    expect(r.violations).toContain("draft_total_mismatch");
+  });
 });

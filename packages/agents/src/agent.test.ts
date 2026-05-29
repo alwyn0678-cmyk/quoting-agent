@@ -76,6 +76,25 @@ describe("T14 — end-to-end terminal behaviour (mocked pipeline)", () => {
   });
 });
 
+describe("canary redaction (codex Gate-4 finding) — no canary in output, fail closed on any path", () => {
+  it("redacts + escalates when the canary leaks into an extraction field on the quote path", async () => {
+    const ext = { ...baseExtraction, container_qty: 1, commodity: SYSTEM_CANARY, injection_detected: true };
+    const out = await runAgent(email, routed(ext, "all-in EUR 3,520."));
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("guard_violation");
+    expect(out.quote).toBeNull();
+    expect(JSON.stringify(out)).not.toContain(SYSTEM_CANARY);
+  });
+
+  it("redacts + escalates even when the gate escalates early (guard skipped)", async () => {
+    const ext = { ...baseExtraction, container_type: "UNKNOWN" as const, container_qty: null, commodity: SYSTEM_CANARY };
+    const out = await runAgent(email, routed(ext));
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("guard_violation"); // safety net overrides missing_required_field
+    expect(JSON.stringify(out)).not.toContain(SYSTEM_CANARY);
+  });
+});
+
 describe("T13 — usage object well-formed on both paths", () => {
   it("present and valid on the quote path", async () => {
     const out = await runAgent(email, routed(baseExtraction));
