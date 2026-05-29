@@ -4,6 +4,50 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1C live — Trigger.dev autonomous loop wired to live Supabase · 2026-05-29
+
+### Scope
+The LIVE wiring the hermetic ingest (1C.1/1C.2) was gated on (D-21), on `phase-1c-live`, five increments:
+- **L0** self-contained Trigger.dev v4 project at `packages/trigger` (own install root, excluded from the
+  root typecheck — D-19 pattern); QuoteAgent project `proj_gstlipolkkbzftxqzcwg` created via MCP.
+- **L1** concrete service_role stores (`SupabaseIngestStore`/`SupabaseRunStore`) + a `StubGraphTransport`
+  at the real `GraphTransport` seam (corpus = golden fixtures 01/04, ASSUMPTIONS D5); live eval 19/19.
+- **L2** the two tasks: `poll-mailbox` (schedule) → `batchTrigger` `run-request` (durable), concurrencyKey=requestId.
+- **L3** live end-to-end run in the dev env (`--env-file ../../.env`): poll → ingest → run → persist, both paths.
+- Offline **117/117** throughout; the live external accounts (Trigger.dev, Supabase) are real.
+
+### Gate 4 — codex (gpt-5.5, xhigh, read-only, `git diff main...HEAD`) — 2 P1 + 3 P2
+- **[P1-a] `graph_message_id` was GLOBALLY unique** (0001) → in multi-tenant (service_role bypasses RLS),
+  one tenant's ingest silently drops another's message on an id collision + leaks a cross-tenant existence
+  signal. **Applied:** migration 0008 → `unique (tenant_id, graph_message_id)`; `insertReceived` onConflict +
+  `ac1_poll` / live-eval regressions (two tenants share an id → both get rows).
+- **[P1-b] run persistence not atomic** across quote/draft/status/audit → a crash between writes could orphan
+  a quote/draft under `escalated`, or leave a terminal row with no usage. **Applied:** migration 0009
+  `persist_run_outcome()` (one txn: insert-once quote+draft, first-writer status flip, usage on the win;
+  returns whether it transitioned). `RunStore`'s 4 methods → `persistOutcome`; new `persist_run_outcome.sql` test.
+- **[P2-c] a row could stay `processing` forever.** **Applied:** run task `onFailure` → `markError` flips a
+  still-`processing` row to `error` after retries exhaust (the full `claimed_at` lease stays D-22).
+- **[P2-d] overlapping polls could regress the cursor.** **Applied:** poll serialized (`queue` limit 1) +
+  `setCursor` → `advance_poll_cursor()` (`greatest(existing,new)`) so the cursor is DB-monotonic.
+- **[P2-e] declare `@supabase`/`@anthropic` under `packages/trigger`.** **Rebutted:** that reintroduces the
+  D-19 second-copy `SupabaseClient` type clash inside the trigger typecheck; the dev bundle/run already
+  resolves them via the monorepo root install (proven L3). Documented as a prod-deploy consideration (D-23).
+- codex cleared as fine: `concurrencyKey`/`concurrencyLimit` semantics, the no-`idempotencyKey`-on-enqueue
+  choice, and the secret boundary (no browser path to `createServiceClient`; `.env` gitignored).
+
+### Reconciliation
+4 of 5 applied; P2-e rebutted with rationale (above) + documented. Re-verified: root typecheck 0, trigger
+typecheck 0, offline **117/117**; live SQL `ac1_poll` (+ P1-a) / `persist_run_outcome` / `p1c2` PASS; live
+eval **22/22**; and the live Trigger.dev loop re-run end-to-end through the new atomic RPC (stub-01 →
+`awaiting_review`/€6,930/draft/1 usage; stub-04 → `escalated`/`missing_required_field`/1 usage).
+
+### Sign-off
+**Approved by Alwyn 2026-05-29; `phase-1c-live` merged to `main` (`--no-ff`).** The full autonomous loop
+is built + live-proven; the only future-gated items are the live MS Graph transport (swap the stub at the
+`GraphTransport` seam) and the `claimed_at` crash-recovery lease (D-22).
+
+---
+
 ## Phase 1C ingest (hermetic logic) — scheduled poll + durable agent-run · 2026-05-29
 
 ### Scope

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runAndPersist, type RunStore, type UsageRecord } from "./run.js";
+import { runAndPersist, type RunStore, type UsageRecord, type PersistOutcome } from "./run.js";
 import { RoutingMockLlmClient } from "../../agents/src/mock-llm.js";
 import { StaticCardRateEngine } from "../../agents/src/rate-engine.js";
 import type { RateQuote, ExtractionResult } from "../../agents/src/schemas.js";
@@ -70,26 +70,26 @@ class FakeRunStore implements RunStore {
     r.status = "processing";
     return { id: r.id, tenant_id: r.tenant_id, from_email: r.from_email, subject: r.subject, body: r.body };
   }
-  async saveQuote(requestId: string, tenantId: string, quote: RateQuote) {
+  // Atomic mirror of persist_run_outcome (one txn): insert-once quote + draft, first-writer status
+  // flip, and usage logged ONLY on the winning transition. Returns whether THIS call transitioned.
+  async persistOutcome(requestId: string, tenantId: string, o: PersistOutcome): Promise<boolean> {
     this.tenantsTouched.add(tenantId);
-    if (!this.quotes.has(requestId)) this.quotes.set(requestId, { tenant_id: tenantId, quote });
-  }
-  async saveDraft(requestId: string, tenantId: string, draft: { subject: string; body: string }) {
-    this.tenantsTouched.add(tenantId);
-    if (!this.drafts.has(requestId)) this.drafts.set(requestId, { tenant_id: tenantId, draft });
-  }
-  async complete(requestId: string, tenantId: string, status: "awaiting_review" | "escalated", reason: string | null, flag: boolean) {
-    this.tenantsTouched.add(tenantId);
+    if (o.quote && !this.quotes.has(requestId)) this.quotes.set(requestId, { tenant_id: tenantId, quote: o.quote });
+    if (o.draft && !this.drafts.has(requestId)) this.drafts.set(requestId, { tenant_id: tenantId, draft: o.draft });
     const r = this.requests.get(requestId);
     if (r && r.tenant_id === tenantId && r.status === "processing") {
-      r.status = status;
-      r.reason = reason;
-      r.flag = flag;
+      r.status = o.status;
+      r.reason = o.escalationReason;
+      r.flag = o.injectionFlag;
+      this.usage.push({
+        tenant_id: tenantId,
+        decision: o.status === "awaiting_review" ? "quote" : "escalate",
+        usage: o.usage,
+        flag: o.injectionFlag,
+      });
+      return true;
     }
-  }
-  async logUsage(_requestId: string, tenantId: string, decision: "quote" | "escalate", usage: UsageRecord, flag: boolean) {
-    this.tenantsTouched.add(tenantId);
-    this.usage.push({ tenant_id: tenantId, decision, usage, flag });
+    return false;
   }
 }
 

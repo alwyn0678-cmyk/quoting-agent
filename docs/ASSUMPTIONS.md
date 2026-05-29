@@ -57,6 +57,7 @@ the invented inputs above**; they are not real quotes.
 | D2 | Requests routinely omit fields (so escalation is realistic, not a strawman) | INVENTED | as D1 |
 | D3 | Emails carry noise (signatures, quoted threads, pleasantries) the extractor must ignore | INVENTED | as D1 |
 | D4 | Linkport Forwarders BV is a fictional Rotterdam SMB; its reply tone/branding is invented | INVENTED | n/a (fictional tenant) |
+| D5 | The Phase-1C stub mailbox corpus (packages/ingest/src/stub-transport.ts) = verbatim copies of golden fixtures 01/04 (so it inherits D1–D4); its `receivedDateTime` timestamps are fabricated, only to drive the poll cursor | INVENTED | n/a (a test stand-in; replaced by real Outlook mail when the live transport is wired) |
 
 ## E. Agent-behaviour thresholds (INVENTED defaults, to tune against fixtures)
 
