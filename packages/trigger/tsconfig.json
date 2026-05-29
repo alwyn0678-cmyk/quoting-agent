@@ -10,19 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
-    "noEmit": true,
-    "rootDir": "."
+    "noEmit": true
   },
-  "include": ["packages", "apps", "evals"],
-  "exclude": [
-    "**/node_modules",
-    "dist",
-    "packages/trigger",
-    "apps/web/app",
-    "apps/web/lib",
-    "apps/web/proxy.ts",
-    "apps/web/next.config.mjs",
-    "apps/web/next-env.d.ts",
-    "apps/web/.next"
-  ]
+  "include": ["src", "trigger.config.ts"]
 }

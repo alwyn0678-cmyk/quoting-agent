@@ -1,0 +1,20 @@
+{
+  "name": "quoteagent-trigger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QuoteAgent Trigger.dev layer (Phase 1C live) — scheduled poll + durable agent-run. Self-contained install root (own node_modules) so @trigger.dev/sdk stays out of the repo-root typecheck.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "npx trigger.dev@4.4.6 dev",
+    "deploy": "npx trigger.dev@4.4.6 deploy"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^4.4.6"
+  },
+  "devDependencies": {
+    "@trigger.dev/build": "^4.4.6",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
