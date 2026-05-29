@@ -4,6 +4,67 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1C (reviewer surface) — dashboard + approve + safe-state + observability · 2026-05-29
+
+### Scope
+The **code-only** half of Phase 1C, audited + merged **ahead of** the autonomous ingest (1C.1/1C.2 —
+Trigger.dev poll + agent run — deferred to a later phase, gated on a Trigger.dev project + a live MS
+Graph app registration; D-21). Six increments on `phase-1c`, one commit each (proving test → stop):
+- **1C.3a/3b** dashboard data-access + view model (AC-5 e2e + P-1C.3) and the Next.js 16 shell +
+  magic-link (PKCE) auth — a self-contained app under `apps/web` (folders, not workspaces; D-19).
+- **1C.4a/4b** approve → simulated send: `approve_request()` SECURITY DEFINER RPC + the Approve button /
+  SIMULATED SEND badge (AC-6 + AC-7 + P-APPROVE-AUTH).
+- **1C.5** escalation reason + injection flag surfaced; quote-and-flag vs `guard_violation` kept
+  distinct (AC-8 + fixture-07 parity).
+- **1C.6** usage & cost view from `audit_log` (P-1C.6 / T13 parity).
+Migrations 0004–0006 applied live. Offline suite **103 → 109**; live evals web-ac5 / web-approve /
+web-injection / web-usage + hermetic SQL ac6 / ac8, all green.
+
+### Gate 3 — self-critique
+- Caught + fixed a real regression the nested install introduced: a duplicate `@supabase/supabase-js`
+  split the `SupabaseClient` type identity and broke the **root** typecheck. Resolved by **decoupling
+  the libs from the concrete client type** (narrow structural `RequestsReader`/`RpcCaller`/`AuditReader`)
+  — no supabase-js type dependency, immune to the duplication, trivially fakeable.
+- Verified the browser bundle uses only the `NEXT_PUBLIC_` anon key + URL (never `service_role`); reads
+  rely on RLS, not app-side filters.
+- Accepted, logged: `next-env.d.ts` is gitignored (create-next-app convention), so a bare `apps/web`
+  typecheck before a first `next build` won't resolve Next types — covered by the normal install→build
+  flow. A double-submit of Approve raises (request no longer `awaiting_review`) → benign error page;
+  security unaffected.
+
+### Gate 4 — codex (read-only, `git diff main...HEAD`) — 1 round, 4 findings
+- **[P1] "sent" was only structurally gated for the browser role.** `authenticated` has no DML (0003)
+  so the browser can reach `sent` only via the RPC — but `service_role` bypasses RLS + holds DML and
+  could set `sent` directly, weakening AC-6 for the autonomous path. → **0006**: a BEFORE UPDATE
+  trigger blocks any transition into `sent` unless a one-shot txn flag is set, and **only**
+  `approve_request()` sets it. "Sent only via approve" is now a **DB invariant for all roles** (and
+  enforces that 1C.2 can never auto-send). The ac6 proof was extended: a privileged direct `sent`
+  UPDATE is blocked.
+- **[P2] approve_request could reach `sent` with no `simulated_sent_at`** (it flipped the request
+  before confirming a draft existed). → rewritten to **stamp the draft of an approvable request first**
+  (own tenant + awaiting_review + has a draft), refusing otherwise, then flip — atomic.
+- **[P2] open redirect in `/auth/callback`**: `next` was concatenated onto `origin` unvalidated
+  (`next=@evil.test` → external host, demonstrated). → only same-origin relative paths accepted.
+- **[P3] eval `listUsers()` caps at 200 (copied helper).** **Declined, with rationale:** eval-only,
+  uniquely-named test emails, and cleanup is tenant-scoped (deletes by `tenant_id`), so residue is
+  bounded — a known test-harness limitation, not a product defect.
+
+### Reconciliation
+P1 + both P2s applied (migration **0006** + the callback fix) and re-verified: **db:test:ac6 PASS**
+(now incl. the trigger proof), **eval:web-approve PASS**, offline **109/109**, web typecheck +
+`next build` clean; AC-5 / web-injection / web-usage unaffected (0006 is additive). The P3 is
+documented-and-declined. No correctness/tenant-isolation defect remained.
+
+### Sign-off
+Ready — the Phase 1C reviewer surface is complete: an RLS-isolated multi-tenant dashboard with
+magic-link auth, a DB-enforced send-free approve → simulated-send gate, escalation/injection safe-state
+UX, and a usage/cost observability view — all proven by the offline suite (109/109), hermetic SQL
+(ac6/ac8), and live browser-path evals (web-ac5/web-approve/web-injection/web-usage). **Approved by
+Alwyn 2026-05-29; `phase-1c` merged to `main` (`--no-ff`).** Next: 1C.1/1C.2 (Trigger.dev poll + durable
+agent run) as their own phase, gated on the Trigger.dev project + live MS Graph registration (D-21).
+
+---
+
 ## Phase 1B — Data layer + adapters (Phase 1+) · 2026-05-29
 
 ### What was built

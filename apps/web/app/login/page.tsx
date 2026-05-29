@@ -1,0 +1,50 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { createSupabaseBrowserClient } from "../../lib/supabase/client";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("sending");
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setStatus("error");
+      setMessage(error.message);
+    } else {
+      setStatus("sent");
+      setMessage(`Magic link sent to ${email}. Check your inbox to sign in.`);
+    }
+  }
+
+  return (
+    <div className="login">
+      <h1>QuoteAgent reviewer</h1>
+      <p>Sign in with a magic link to review your tenant&apos;s quote requests.</p>
+      <form onSubmit={onSubmit}>
+        <input
+          type="email"
+          required
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={status === "sending" || status === "sent"}
+        />
+        <button type="submit" disabled={status === "sending" || status === "sent"}>
+          {status === "sending" ? "Sending…" : "Send magic link"}
+        </button>
+      </form>
+      {message && (
+        <div className={`notice ${status === "error" ? "err" : "ok"}`}>{message}</div>
+      )}
+    </div>
+  );
+}
