@@ -37,7 +37,11 @@ live concern, D-22). Re-verified: typecheck clean, offline **117/117**; SQL proo
 `p1c2_run` unchanged and still PASS (the DB-level dedup + insert-once foundations the stores rely on).
 
 ### Sign-off
-_Pending — presented to Alwyn; on approval `phase-1c-ingest` merges to `main` (`--no-ff`)._
+Ready — the hermetic ingest logic is complete + proven (offline 117/117; SQL `ac1_poll` + `p1c2_run`):
+poll dedup / monotonic cursor / re-enqueue, and a claim-based, tenant-scoped, idempotent durable run.
+**Approved by Alwyn 2026-05-29; `phase-1c-ingest` merged to `main` (`--no-ff`).** The live wiring
+(Trigger.dev `task()` wrappers, MS Graph transport, the concrete Supabase stores) remains gated on the
+Trigger.dev project + MS Graph registration (D-21).
 
 ---
 
