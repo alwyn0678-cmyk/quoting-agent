@@ -4,6 +4,47 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1A — RateEngine port + model routing (Phase 1+) · 2026-05-29
+
+### What was built
+Three tasks on `phase-1a`, one commit each, each proving its named test then stopping for review:
+- **1A.1** — the `RateEngine` port interface (D-11); no caller changes.
+- **1A.2** — `StaticCardRateEngine` wraps `priceQuote()` behind the port; `runAgent` calls an
+  **injected** engine (default StaticCard). Behaviour identical.
+- **1A.3** — per-step model routing (D-07): extraction → Sonnet 4.6, draft → Haiku 4.5,
+  single-model fallback Sonnet, threaded through the `LlmClient` seam; `usage.model` reports the
+  model(s) that actually ran (drafting fires only on the quote/guard paths).
+
+### Verification
+- Offline suite **81/81**, `tsc --noEmit` clean.
+- Live eval **8/8 GATE PASS** after 1A.2 (Opus, refactor-equivalent) **and** after 1A.3 — the
+  **first run on Sonnet/Haiku**, with the injection T12 must-pass holding on Haiku drafting.
+- P-1A.2 (deterministic refactor-equivalence) + P-1A.3 (routing + fallback + honest usage) green.
+
+### Gate 4 — codex code review (read-only, `git diff main...HEAD`) — 1 round
+**No pricing or pipeline-semantic defect.** Three findings, all test-strength / API hygiene:
+- **[P2]** the barrel dropped `MODEL` and didn't export the port types. → **Exported
+  `RateEngine` / `PriceRequest` / `StaticCardRateEngine`** (the seam 1B builds on); **declined** the
+  suggested `FALLBACK_MODEL as MODEL` compat alias — there is no consumer and it would misrepresent
+  the now-removed "single pinned model" semantics.
+- **[P3]** the adapter error-parity test covered one case. → **parameterised across all four
+  unpriceable cases**, comparing `reason` **and** `message`.
+- **[P3]** the `usage.model` tests used substring matches and skipped the guard-violation path. →
+  **exact-string assertions** on quote / gate-escalate + a **guard-violation** case (drafting fired,
+  so both models are reported).
+
+### Decision — codex capped at R1
+No contradictions or semantic defects surfaced; every finding was hygiene and is applied. Nothing
+to re-loop.
+
+### Sign-off
+Ready — Phase 1A is complete and behaviour-preserving: pricing is behind the `RateEngine` port and
+the slice runs on the routed Sonnet/Haiku models at 8/8. **Approved by Alwyn 2026-05-29; `phase-1a`
+merged to `main` (`--no-ff`).** Next: Phase 1B (Supabase schema + RLS, SupabaseTable adapter, Graph
+wrapper).
+
+---
+
 ## Stage 2 — Context / Autonomy / Plan (Phase 1+) · 2026-05-29
 
 ### What was produced

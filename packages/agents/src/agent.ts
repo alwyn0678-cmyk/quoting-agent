@@ -1,9 +1,9 @@
 import { extractRequest, type EmailInput } from "./extraction.js";
 import { decide } from "./gate.js";
-import { priceQuote } from "./rate-engine.js";
+import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
-import { MODEL, estimateCostUsd, SYSTEM_CANARY } from "./config.js";
+import { estimateCostUsd, SYSTEM_CANARY, PER_STEP_ROUTING, type ModelRouting } from "./config.js";
 import {
   AgentOutputSchema,
   type AgentOutput,
@@ -19,9 +19,18 @@ import type { LlmClient, Usage } from "./llm.js";
  * presentation. Token usage is summed across both LLM calls. On a guard violation the pipeline
  * FAILS CLOSED: the quote and draft are dropped and the request is escalated.
  */
-export async function runAgent(email: EmailInput, client: LlmClient): Promise<AgentOutput> {
-  const { extraction, usage: extractionUsage } = await extractRequest(email, client);
+export async function runAgent(
+  email: EmailInput,
+  client: LlmClient,
+  engine: RateEngine = new StaticCardRateEngine(),
+  routing: ModelRouting = PER_STEP_ROUTING,
+): Promise<AgentOutput> {
+  const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
   const gate = decide(extraction);
+
+  // Track which LLM steps actually ran, so usage.model reports the truth (drafting fires only on
+  // the quote path; on a gate-escalation only extraction runs).
+  let draftCalled = false;
 
   let decision: "quote" | "escalate" = gate.decision;
   let escalationReason: EscalationReason | null = gate.reason;
@@ -30,8 +39,8 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
   let draftUsage: Usage = { input_tokens: 0, output_tokens: 0 };
 
   if (gate.decision === "quote") {
-    // Deterministic pricing (the gate guarantees this is priceable).
-    quote = priceQuote({
+    // Deterministic pricing via the injected engine (the gate guarantees this is priceable).
+    quote = await engine.price({
       origin_port_code: extraction.origin.port_code,
       destination_port_code: extraction.destination.port_code,
       mode: extraction.mode,
@@ -49,7 +58,9 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
         quote,
       },
       client,
+      routing.draft,
     );
+    draftCalled = true;
     draft = drafted.draft;
     draftUsage = drafted.usage;
 
@@ -74,7 +85,10 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
     quote,
     draft,
     usage: {
-      model: MODEL,
+      // Honest: report the model(s) that actually ran (drafting fires only on the quote path).
+      model: draftCalled
+        ? `${routing.extraction} (extract), ${routing.draft} (draft)`
+        : `${routing.extraction} (extract)`,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       est_cost_usd: estimateCostUsd(inputTokens, outputTokens),

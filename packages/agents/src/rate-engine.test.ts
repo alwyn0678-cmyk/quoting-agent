@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { priceQuote, UnpriceableRequestError, type PriceRequest } from "./rate-engine.js";
+import {
+  priceQuote,
+  StaticCardRateEngine,
+  UnpriceableRequestError,
+  type PriceRequest,
+} from "./rate-engine.js";
 
 const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
   origin_port_code: "NLRTM",
@@ -72,4 +77,45 @@ describe("T5 — unknown key is never fabricated", () => {
     expect(() => priceQuote(inScope({ container_qty: 0 }))).toThrow(UnpriceableRequestError);
     expect(() => priceQuote(inScope({ container_qty: null }))).toThrow(UnpriceableRequestError);
   });
+});
+
+describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()", () => {
+  const cases: Partial<PriceRequest>[] = [
+    { container_type: "40HC", container_qty: 2 },
+    { container_type: "20GP", container_qty: 1 },
+    { container_type: "40GP", container_qty: 3 },
+    { container_type: "40HC", container_qty: 1 },
+  ];
+
+  for (const over of cases) {
+    it(`adapter price() === priceQuote() for ${over.container_qty} x ${over.container_type}`, async () => {
+      const req = inScope(over);
+      const viaAdapter = await new StaticCardRateEngine().price(req);
+      expect(viaAdapter).toEqual(priceQuote(req));
+    });
+  }
+
+  const unpriceable: { label: string; over: Partial<PriceRequest>; reason: string }[] = [
+    { label: "out-of-scope mode (LCL)", over: { mode: "LCL" }, reason: "out_of_scope_mode" },
+    { label: "out-of-scope lane", over: { destination_port_code: "USLAX" }, reason: "out_of_scope_lane" },
+    { label: "unknown container", over: { container_type: "UNKNOWN" }, reason: "out_of_scope_container" },
+    { label: "invalid quantity", over: { container_qty: 0 }, reason: "invalid_quantity" },
+  ];
+  for (const u of unpriceable) {
+    it(`rejects identically to priceQuote() on ${u.label}`, async () => {
+      const req = inScope(u.over);
+      let sync: UnpriceableRequestError | undefined;
+      try {
+        priceQuote(req);
+      } catch (e) {
+        sync = e as UnpriceableRequestError;
+      }
+      expect(sync?.reason).toBe(u.reason); // priceQuote() itself threw the expected reason
+      await expect(new StaticCardRateEngine().price(req)).rejects.toMatchObject({
+        name: "UnpriceableRequestError",
+        reason: u.reason,
+        message: sync?.message, // same reason AND same message — true error parity
+      });
+    });
+  }
 });

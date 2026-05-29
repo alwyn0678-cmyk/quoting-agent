@@ -8,4 +8,7 @@ export { AnthropicLlmClient } from "./llm.js";
 export type { LlmClient } from "./llm.js";
 export type { EmailInput } from "./extraction.js";
 export type { AgentOutput } from "./schemas.js";
-export { MODEL } from "./config.js";
+export { EXTRACTION_MODEL, DRAFT_MODEL, FALLBACK_MODEL } from "./config.js";
+// The RateEngine seam (D-11) — the 1B SupabaseTable/ExcelOnline adapters implement this.
+export { StaticCardRateEngine } from "./rate-engine.js";
+export type { RateEngine, PriceRequest } from "./rate-engine.js";

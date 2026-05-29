@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { formatAgentOutput } from "./format.js";
-import { runAgent } from "../../../packages/agents/src/index.js";
+import { runAgent, EXTRACTION_MODEL } from "../../../packages/agents/src/index.js";
 import { RoutingMockLlmClient } from "../../../packages/agents/src/mock-llm.js";
 import type { EmailInput } from "../../../packages/agents/src/index.js";
 import type { ExtractionResult } from "../../../packages/agents/src/schemas.js";
@@ -40,7 +40,7 @@ describe("T14 — terminal rendering", () => {
     expect(text).toContain("DRAFT REPLY");
     expect(text).toContain("6,930"); // in the draft body
     expect(text).toContain("all-in EUR 6930"); // machine summary line
-    expect(text).toContain("[usage] model=claude-opus-4-8");
+    expect(text).toContain(`[usage] model=${EXTRACTION_MODEL}`);
   });
 
   it("escalate: prints the reason, no draft, and still the usage line", async () => {
