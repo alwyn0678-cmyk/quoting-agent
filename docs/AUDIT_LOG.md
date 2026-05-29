@@ -4,6 +4,62 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Stage 2 — Context / Autonomy / Plan (Phase 1+) · 2026-05-29
+
+### What was produced
+`CONTEXT.md` (per-agent prompts + model routing D-07, the tool/RAG stance, least-context data scope,
+and the concrete Linkport rate-engine schema mapping the Phase 0 static card to `rate_cards` /
+`rate_card_lines` rows), `AUTONOMY.md` (action whitelist W1–W6, refuse-list R1–R8, HITL gates G1–G3,
+kill switch K1–K3 — each tied to an enforcing mechanism + a proving test), `IMPLEMENTATION_PLAN.md`
+(1A/1B/1C, one task per iteration, each naming its proving test — AC-1…AC-8 + task-local P-tests).
+No code changed. Branch `phase-1-context`.
+
+### Gate 3 — self-critique
+- Drafted the three docs directly (single coherent voice, full repo + code context), then put the
+  **verification** through a multi-agent adversarial audit rather than fanning out authorship.
+- Grounded CONTEXT's data-scope + schema claims in the real code (`draft.ts` DraftInput, `rate-card.ts`
+  codes) *before* writing them — which is exactly where the seed-code defect was later caught.
+
+### Gate 4a — multi-agent adversarial audit (Claude workflow; 4 lenses × 2 skeptic verifications/finding)
+14 raw findings → **11 confirmed** (each survived ≥1 independent refutation attempt); 3 refuted (the
+canary "every path", the AC-7 split-citation, an Excel read/write framing — all correctly refuted as
+misreads; I agree). Confirmed + fixed:
+- **[P1] `service_role` bypasses RLS** — R6/W4 rewritten: the autonomous path's isolation is
+  code-level `tenant_id` scoping (new test **P-TENANT**), not RLS/AC-5 (which covers the browser path).
+- **[P1] 1A.2 cited AC-3** before the SupabaseTable adapter exists → **P-1A.2** refactor-equivalence.
+- **[P1/P2] seed codes ≠ StaticCard codes** (`THC_ORIGIN/THC_DEST/DOC_BL`) → `THC_RTM/THC_NYC/DOC`
+  + a note that `BASE_*` codes are internal (never emitted into `RateQuote`), so AC-3 parity holds.
+- **[P2]** the "eval stays 8/8" criterion → **≥6/8** (matches T15/AC-2). **[P2]** R7 read-only →
+  no-write-method (**P-EXCEL-RO**). **[P2]** unproven task halves → **P-1B.5** (read), **P-1C.3**
+  (render). **[P3]** model-id format → a VERIFY note on the Sonnet-alias / Haiku-snapshot asymmetry.
+
+### Gate 4b — codex external second-opinion (codex-cli, `review` read-only vs main) — 2 rounds
+- **R1 — 6 findings, all valid.** The tenant trio deepened the `service_role` theme: **[P1]**
+  `rate_card_lines` is parent-join scoped (no `tenant_id`); **[P1]** the poll re-enqueue *reads*
+  rows; **[P1]** approve needs tenant authorization → new **P-APPROVE-AUTH**. Plus **[P2]** prove the
+  requested Graph scopes exclude `Mail.Send`; **[P2] D-07 routing had no covering task** → added
+  **1A.3**; **[P2]** codex pushed *against* the workflow's 8/8→≥6/8 fix.
+- **Reconciling the one conflict (workflow coh-2 vs codex-6):** both are right about different things.
+  Behaviour-unchanged for the *deterministic* refactor is proven exactly by **P-1A.2**; the *live eval*
+  is nondeterministic, so its binding gate is **≥6/8** (8/8 expected). The plan now states both
+  separately — ≥6/8 no longer masquerades as the parity proof, and 8/8 is not asserted as a hard
+  pass/fail on LLM output.
+- **R2 — no new contradictions or autonomy/security gaps; AC-1…AC-8 all covered.** Two
+  test-completeness items only (prove the Sonnet fallback; prove `createDraft` positively) — applied.
+
+### Decision — codex loop capped at R2
+Findings converged from R1 contradictions + coverage gaps (incl. **3 P1 tenant-isolation defects**) to
+R2 "add one more unit assertion", with **no contradictions remaining and full AC-1…AC-8 coverage**.
+The residual items are unit-test detail, proven when the code is written (1A–1C), not gating the spec.
+
+### Sign-off
+Ready — the three Stage-2 docs are coherent with the signed-off specs and the real Phase 0 code, and
+the sharpest finding (the `service_role`/RLS isolation gap) is now an **explicit, tested** control
+(P-TENANT / P-APPROVE-AUTH). **Approved by Alwyn 2026-05-29; `phase-1-context` merged to `main`
+(`--no-ff`).** Building Phase 1A next — one task at a time, each proving its named test.
+
+---
+
 ## Stage 1 — Specification (Phase 1+) · 2026-05-29
 
 ### What was produced
