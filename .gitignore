@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+.vercel/
+.trigger/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+.env.production
+*.pem
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+
+# Eval runs (artifacts, not source)
+evals/runs/
+evals/cache/
+
+# Trigger.dev / Cloud
+.trigger.json
