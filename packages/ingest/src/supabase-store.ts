@@ -1,4 +1,4 @@
-import { type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { RateQuote } from "../../agents/src/schemas.js";
 import { quoteToRow } from "../../agents/src/quote-store.js";
 import type { IngestStore, ReceivedRequest } from "./poll.js";
@@ -11,6 +11,17 @@ import type { RunStore, RequestRow, UsageRecord } from "./run.js";
  * interfaces proven hermetically (poll.test.ts / run.test.ts); their behaviour against the REAL DB is
  * proven by the live eval (evals/live-stores.ts).
  */
+
+/** Build a service_role client from env (server-side ONLY — bypasses RLS; never ships to a browser).
+ *  Mirrors createSupabaseRateEngine's env handling; used by the autonomous poll + run tasks (1C live). */
+export function createServiceClient(): SupabaseClient {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY required for the service_role stores");
+  }
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
 
 export class SupabaseIngestStore implements IngestStore {
   constructor(private readonly client: SupabaseClient) {}
