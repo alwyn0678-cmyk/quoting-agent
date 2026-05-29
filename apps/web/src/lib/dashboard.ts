@@ -1,11 +1,27 @@
-import type { RateQuote } from "../../../../packages/agents/src/schemas.js";
-
 /**
  * Dashboard data access (1C.3). Reads the caller's quote_requests with their quote + draft. Tenant
  * scoping is enforced by Supabase RLS on the caller's JWT (browser anon + session), NOT by a filter
  * here — that is exactly what AC-5 proves. The rendered quote breakdown is read from the immutable
  * `breakdown_snapshot` (the priced RateQuote), so the view is consistent with AC-4 (never the live card).
  */
+
+/**
+ * The fields the dashboard renders from a quote's immutable `breakdown_snapshot` (the priced RateQuote
+ * frozen at pricing time). Declared LOCALLY so apps/web carries NO cross-package type dependency
+ * (extends the D-19 decoupling) — which also lets the dashboard build standalone with Vercel's root
+ * directory = apps/web. A full RateQuote satisfies this structurally; we only read these fields.
+ */
+interface QuoteSnapshot {
+  lane: string;
+  rate_card_version: string;
+  container_type: string;
+  container_qty: number;
+  base_per_container: number;
+  surcharges: { code: string; amount_per_container: number }[];
+  per_shipment_fees: { code: string; amount: number }[];
+  all_in_total: number;
+  validity_through: string;
+}
 
 export interface RequestView {
   id: string;
@@ -38,7 +54,7 @@ export interface RawRequestRow {
   created_at: string;
   escalation_reason: string | null;
   injection_flag: boolean;
-  quotes: { breakdown_snapshot: RateQuote }[] | { breakdown_snapshot: RateQuote } | null;
+  quotes: { breakdown_snapshot: QuoteSnapshot }[] | { breakdown_snapshot: QuoteSnapshot } | null;
   drafts:
     | { subject: string; body: string; simulated_sent_at: string | null }[]
     | { subject: string; body: string; simulated_sent_at: string | null }
