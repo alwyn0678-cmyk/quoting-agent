@@ -2,9 +2,10 @@
 
 > What each agent **knows, is told, and may touch** — prompts, model routing, the tool/RAG
 > stance, the per-agent data scope, and the concrete Linkport rate-engine schema. The agent core
-> is the Phase 0 code reused unchanged (ARCHITECTURE.md); this doc makes its context contracts
-> explicit so each can be defended without hand-waving (DECISION_LOG D-02). Every rate figure
-> below is an **assumption** logged in `ASSUMPTIONS.md`, never a fact.
+> is the Phase 0 code reused unchanged (ARCHITECTURE.md) bar one seam — per-step model selection
+> (1A.3, D-07); this doc makes its context contracts explicit so each can be defended without
+> hand-waving (DECISION_LOG D-02). Every rate figure below is an **assumption** logged in
+> `ASSUMPTIONS.md`, never a fact.
 
 ## Agent inventory — two LLM boundaries, three deterministic steps
 
