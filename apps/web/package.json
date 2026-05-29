@@ -1,0 +1,25 @@
+{
+  "name": "quoteagent-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "QuoteAgent reviewer dashboard (1C.3) — Next.js shell over the proven dashboard lib; magic-link auth (Supabase) + RLS-scoped request list. Self-contained package (folders, not workspaces).",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}

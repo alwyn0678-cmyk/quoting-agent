@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RateQuote } from "../../../../packages/agents/src/schemas.js";
 
 /**
@@ -75,8 +74,23 @@ export function buildRequestView(row: RawRequestRow): RequestView {
 const SELECT =
   "id, status, from_email, subject, created_at, quotes(breakdown_snapshot), drafts(subject, body)";
 
+/**
+ * The narrow slice of a Supabase client this lib actually uses: `from(table).select(cols).order(...)`
+ * awaited to `{ data, error }`. Typed structurally (not as the concrete `SupabaseClient`) so the lib
+ * carries NO supabase-js type dependency — it is immune to dependency duplication across the
+ * folders-not-workspaces roots, and trivially fakeable in tests. Any real SupabaseClient satisfies it.
+ */
+type QueryResult = PromiseLike<{ data: unknown; error: unknown }>;
+export interface RequestsReader {
+  from(table: string): {
+    select(columns: string): {
+      order(column: string, options: { ascending: boolean }): QueryResult;
+    };
+  };
+}
+
 /** List the caller's requests (RLS scopes to their tenant), newest first, as view models. */
-export async function listRequestsForTenant(client: SupabaseClient): Promise<RequestView[]> {
+export async function listRequestsForTenant(client: RequestsReader): Promise<RequestView[]> {
   const { data, error } = await client
     .from("quote_requests")
     .select(SELECT)

@@ -10,6 +10,10 @@ build/
 .vercel/
 .trigger/
 
+# TypeScript / Next build artifacts (auto-generated)
+*.tsbuildinfo
+next-env.d.ts
+
 # Env / secrets
 .env
 .env.local
