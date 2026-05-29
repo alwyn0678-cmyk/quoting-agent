@@ -42,7 +42,7 @@ eval **22/22**; and the live Trigger.dev loop re-run end-to-end through the new 
 `awaiting_review`/€6,930/draft/1 usage; stub-04 → `escalated`/`missing_required_field`/1 usage).
 
 ### Sign-off
-_Pending Alwyn sign-off; merge `phase-1c-live` → `main` (`--no-ff`) on approval._ The full autonomous loop
+**Approved by Alwyn 2026-05-29; `phase-1c-live` merged to `main` (`--no-ff`).** The full autonomous loop
 is built + live-proven; the only future-gated items are the live MS Graph transport (swap the stub at the
 `GraphTransport` seam) and the `claimed_at` crash-recovery lease (D-22).
 
