@@ -22,7 +22,7 @@ model-routing seam (1A.3); these tasks build around it.
 |---|---|---|---|
 | **1A.1** | Define `interface RateEngine { price(req): Promise<RateQuote> }` + `PriceRequest` in `packages/agents`. No caller changes yet. | `tsc --noEmit` clean **and** existing **70/70** offline tests still green (zero behaviour change). | The port type. |
 | **1A.2** | Refactor Phase 0 `priceQuote()` into a `StaticCardRateEngine` implementing the port; `runAgent` calls an **injected** engine (default = StaticCard). | **P-1A.2** refactor-equivalence — **the exact, deterministic proof that behaviour is unchanged** (T4/T5 + full offline suite pass against `StaticCardRateEngine`; no `RateQuote` differs from Phase 0). The live eval is expected to stay at its Phase-0 level (8/8 observed), but the **binding gate is ≥6/8** (T12 must-pass) since the LLM steps are nondeterministic and untouched by this refactor. *(AC-3 needs a second adapter — reserved for 1B.3/1B.6.)* | Pricing behind the seam, behaviour identical. |
-| **1A.3** | Per-step **model routing** (D-07): thread a per-step model id through the existing injectable `LlmClient` seam — Sonnet 4.6 for extraction, Haiku 4.5 for drafting, single-model fallback Sonnet. **Pipeline logic unchanged**; only *which* model each step calls becomes config. | **P-1A.3** (a unit asserts extraction is invoked with the Sonnet id and drafting with the Haiku id via the injected client) **and** the golden set re-run on the routed models at **≥6/8** (T12 must-pass) — a model swap always re-runs the eval (logged, never silent). | Step-aware routing; the one model-affecting change in 1A. |
+| **1A.3** | Per-step **model routing** (D-07): thread a per-step model id through the existing injectable `LlmClient` seam — Sonnet 4.6 for extraction, Haiku 4.5 for drafting, single-model fallback Sonnet. **Pipeline logic unchanged**; only *which* model each step calls becomes config. | **P-1A.3** (a unit asserts extraction is invoked with the Sonnet id and drafting with the Haiku id; **and with routing disabled, both calls go through Sonnet** — the fallback) **and** the golden set re-run on the routed models at **≥6/8** (T12 must-pass) — a model swap always re-runs the eval (logged, never silent). | Step-aware routing + fallback; the one model-affecting change in 1A. |
 
 ---
 
@@ -34,7 +34,7 @@ model-routing seam (1A.3); these tasks build around it.
 | **1B.2** | Seed the Linkport rate card as rows (CONTEXT.md schema → `ASSUMPTIONS` A1–A9). | **P-1B.2** seed-sum: the 9 lines yield base + €860/container + €110/shipment, and the four golden requests recompute to 6,930 / 2,770 / 9,890 / 3,520. | The static card, now as rows. |
 | **1B.3** | `SupabaseTableRateEngine` adapter: read the active card + lines for {tenant, lane}, compute by the CONTEXT formula. | **AC-3** (StaticCard ↔ SupabaseTable identical) **and AC-2** (golden set ≥6/8 through the production pipeline on this adapter). | The shippable production rate engine. |
 | **1B.4** | Persist quote snapshots: `quotes` store `breakdown_snapshot` + `rate_card_version` on create; reads use the snapshot. | **AC-4** (editing/superseding a rate version does **not** change an existing quote). | Reproducible historical quotes. |
-| **1B.5** | MS Graph wrapper: Outlook **read** (list by cursor) + **create-draft** (no send scope requested). | **AC-7** mechanism (a mocked Graph client fails the test if `send` is invoked) **and** a unit asserting the wrapper exposes **no** send method **and** a config assertion that the requested Graph scopes **exclude `Mail.Send`** (R1's enforcement, not just runtime) **and P-1B.5** (a list-by-cursor unit: the wrapper returns only messages newer than the cursor and advances it). | Ingest-read + draft-create, send-free at scope + method + call level, both halves proven. |
+| **1B.5** | MS Graph wrapper: Outlook **read** (list by cursor) + **create-draft** (no send scope requested). | **AC-7** mechanism (a mocked Graph client fails the test if `send` is invoked) **and** a unit asserting the wrapper exposes **no** send method **and** a config assertion that the requested Graph scopes **exclude `Mail.Send`** (R1's enforcement, not just runtime) **and P-1B.5** (a list-by-cursor unit: the wrapper returns only messages newer than the cursor and advances it) **and** a unit that `createDraft` **positively** saves via the draft path (and never the send path). | Ingest-read + draft-create, send-free at scope + method + call level, both halves proven. |
 | **1B.6** | ExcelOnline adapter **behind the Wednesday-Week-6 POC gate**: read cells → `RateQuote` on the seed card. | **AC-3** parity with StaticCard on the seed card **and P-EXCEL-RO** (the adapter/wrapper exposes **no** Excel-write method — R7). **Gated:** if the POC slips, fallback = stay on SupabaseTable, **logged in DECISION_LOG** (not silent). | Swap-in Excel engine **or** a recorded fallback decision. |
 
 ---
@@ -56,10 +56,12 @@ model-routing seam (1A.3); these tasks build around it.
 - **P-1A.2** — refactor-equivalence: no `RateQuote` differs before vs after the `StaticCardRateEngine`
   port (T4/T5 + full offline suite green; AC-3 can't run yet — only one adapter exists).
 - **P-1A.3** — per-step model routing: extraction is invoked with the Sonnet id and drafting with the
-  Haiku id (via the injected client); golden set re-run on the routed models at ≥6/8 (D-07).
+  Haiku id (via the injected client); **with routing disabled both calls use Sonnet** (the fallback);
+  golden set re-run on the routed models at ≥6/8 (D-07).
 - **P-1B.2** — seed-sum / card-as-rows parity (above).
 - **P-1B.5** — Outlook read-by-cursor: the wrapper returns only messages newer than the cursor and
-  advances it (proves the read half of 1B.5), **and** the requested Graph scopes exclude `Mail.Send`.
+  advances it (proves the read half of 1B.5), **and** the requested Graph scopes exclude `Mail.Send`,
+  **and** `createDraft` positively saves via the draft path (never the send path).
 - **P-EXCEL-RO** — the Graph/Excel wrapper + ExcelOnline adapter expose **no** Excel-write method
   (the enforcement behind refuse-list R7, mirroring R1's "no send method").
 - **P-TENANT** — `service_role` tenant isolation across the **whole autonomous path** (RLS is bypassed
