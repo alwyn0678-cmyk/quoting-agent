@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { priceQuote, UnpriceableRequestError, type PriceRequest } from "./rate-engine.js";
+import {
+  priceQuote,
+  StaticCardRateEngine,
+  UnpriceableRequestError,
+  type PriceRequest,
+} from "./rate-engine.js";
 
 const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
   origin_port_code: "NLRTM",
@@ -71,5 +76,28 @@ describe("T5 — unknown key is never fabricated", () => {
   it("throws on an invalid quantity", () => {
     expect(() => priceQuote(inScope({ container_qty: 0 }))).toThrow(UnpriceableRequestError);
     expect(() => priceQuote(inScope({ container_qty: null }))).toThrow(UnpriceableRequestError);
+  });
+});
+
+describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()", () => {
+  const cases: Partial<PriceRequest>[] = [
+    { container_type: "40HC", container_qty: 2 },
+    { container_type: "20GP", container_qty: 1 },
+    { container_type: "40GP", container_qty: 3 },
+    { container_type: "40HC", container_qty: 1 },
+  ];
+
+  for (const over of cases) {
+    it(`adapter price() === priceQuote() for ${over.container_qty} x ${over.container_type}`, async () => {
+      const req = inScope(over);
+      const viaAdapter = await new StaticCardRateEngine().price(req);
+      expect(viaAdapter).toEqual(priceQuote(req));
+    });
+  }
+
+  it("rejects with the same error as priceQuote() on an unpriceable request", async () => {
+    await expect(new StaticCardRateEngine().price(inScope({ mode: "LCL" }))).rejects.toBeInstanceOf(
+      UnpriceableRequestError,
+    );
   });
 });

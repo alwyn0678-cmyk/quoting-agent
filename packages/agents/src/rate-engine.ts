@@ -82,3 +82,16 @@ export function priceQuote(req: PriceRequest, card: RateCard = RATE_CARD): RateQ
     validity_through: card.validity_through,
   });
 }
+
+/**
+ * StaticCard adapter (1A.2): the Phase 0 in-repo rate card behind the RateEngine port. `price()`
+ * wraps the synchronous `priceQuote()` unchanged, so its output is byte-identical to Phase 0
+ * (proven by P-1A.2). The card is injectable, defaulting to the in-repo RATE_CARD.
+ */
+export class StaticCardRateEngine implements RateEngine {
+  constructor(private readonly card: RateCard = RATE_CARD) {}
+
+  async price(req: PriceRequest): Promise<RateQuote> {
+    return priceQuote(req, this.card);
+  }
+}

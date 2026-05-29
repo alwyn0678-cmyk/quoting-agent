@@ -1,6 +1,6 @@
 import { extractRequest, type EmailInput } from "./extraction.js";
 import { decide } from "./gate.js";
-import { priceQuote } from "./rate-engine.js";
+import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
 import { MODEL, estimateCostUsd, SYSTEM_CANARY } from "./config.js";
@@ -19,7 +19,11 @@ import type { LlmClient, Usage } from "./llm.js";
  * presentation. Token usage is summed across both LLM calls. On a guard violation the pipeline
  * FAILS CLOSED: the quote and draft are dropped and the request is escalated.
  */
-export async function runAgent(email: EmailInput, client: LlmClient): Promise<AgentOutput> {
+export async function runAgent(
+  email: EmailInput,
+  client: LlmClient,
+  engine: RateEngine = new StaticCardRateEngine(),
+): Promise<AgentOutput> {
   const { extraction, usage: extractionUsage } = await extractRequest(email, client);
   const gate = decide(extraction);
 
@@ -30,8 +34,8 @@ export async function runAgent(email: EmailInput, client: LlmClient): Promise<Ag
   let draftUsage: Usage = { input_tokens: 0, output_tokens: 0 };
 
   if (gate.decision === "quote") {
-    // Deterministic pricing (the gate guarantees this is priceable).
-    quote = priceQuote({
+    // Deterministic pricing via the injected engine (the gate guarantees this is priceable).
+    quote = await engine.price({
       origin_port_code: extraction.origin.port_code,
       destination_port_code: extraction.destination.port_code,
       mode: extraction.mode,
