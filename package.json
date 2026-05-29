@@ -9,7 +9,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "start": "node --env-file-if-exists=.env --import tsx apps/cli/src/main.ts",
-    "eval": "node --env-file-if-exists=.env --import tsx evals/run.ts"
+    "eval": "node --env-file-if-exists=.env --import tsx evals/run.ts",
+    "db:migrate": "bash scripts/db.sh supabase/migrations/0001_init.sql",
+    "db:test:ac5": "bash scripts/db.sh supabase/tests/ac5_tenant_isolation.sql"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
