@@ -14,3 +14,5 @@ export { StaticCardRateEngine } from "./rate-engine.js";
 export type { RateEngine, PriceRequest } from "./rate-engine.js";
 export { SupabaseTableRateEngine, createSupabaseRateEngine } from "./supabase-rate-engine.js";
 export { LINKPORT_TENANT_ID, DEFAULT_LANE } from "./config.js";
+export { SupabaseQuoteStore, quoteToRow } from "./quote-store.js";
+export type { QuoteStore, QuoteRow } from "./quote-store.js";
