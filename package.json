@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "start": "node --env-file-if-exists=.env --import tsx apps/cli/src/main.ts",
     "eval": "node --env-file-if-exists=.env --import tsx evals/run.ts",
+    "eval:adapter": "node --env-file-if-exists=.env --import tsx evals/adapter.ts",
     "db:migrate": "bash scripts/db.sh supabase/migrations/0001_init.sql",
     "db:seed": "bash scripts/db.sh supabase/seed/linkport_rate_card.sql",
     "db:test:ac5": "bash scripts/db.sh supabase/tests/ac5_tenant_isolation.sql",
@@ -23,6 +24,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@supabase/supabase-js": "^2.106.2",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   }

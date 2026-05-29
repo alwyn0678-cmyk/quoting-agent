@@ -16,16 +16,17 @@ on conflict (id) do update
       validity_through = excluded.validity_through, is_active = excluded.is_active;
 
 delete from public.rate_card_lines where rate_card_id = '22222222-2222-4222-8222-222222222222';
-insert into public.rate_card_lines (rate_card_id, kind, code, container_type, amount) values
-  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_20GP', '20GP', 1800),  -- A1
-  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_40GP', '40GP', 2400),  -- A2
-  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_40HC', '40HC', 2550),  -- A3
-  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'BAF',     null, 320),  -- A4
-  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'THC_RTM', null, 225),  -- A5
-  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'THC_NYC', null, 290),  -- A6
-  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'ISPS',    null,  25),  -- A7
-  ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'DOC',            null,  65),  -- A8
-  ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'EXPORT_CUSTOMS', null,  45);  -- A9
+-- sort_order pins the per-kind array order to match the Phase 0 StaticCard (rate-card.ts).
+insert into public.rate_card_lines (rate_card_id, kind, code, container_type, amount, sort_order) values
+  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_20GP', '20GP', 1800, 0),  -- A1
+  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_40GP', '40GP', 2400, 1),  -- A2
+  ('22222222-2222-4222-8222-222222222222', 'base', 'BASE_40HC', '40HC', 2550, 2),  -- A3
+  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'BAF',     null, 320, 0),  -- A4
+  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'THC_RTM', null, 225, 1),  -- A5
+  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'THC_NYC', null, 290, 2),  -- A6
+  ('22222222-2222-4222-8222-222222222222', 'surcharge_per_container', 'ISPS',    null,  25, 3),  -- A7
+  ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'DOC',            null,  65, 0),  -- A8
+  ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'EXPORT_CUSTOMS', null,  45, 1);  -- A9
 
 select 'seeded Linkport card 2026-06-v1: ' || count(*)::text || ' lines' as result
 from public.rate_card_lines where rate_card_id = '22222222-2222-4222-8222-222222222222';
