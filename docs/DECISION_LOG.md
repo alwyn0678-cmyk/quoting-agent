@@ -5,6 +5,20 @@ Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, a
 
 ## Stage 1 — Specification (2026-05-29)
 
+- **D-16 · Versioned rate cards; quotes snapshot their breakdown.** `rate_cards` are versioned;
+  each `quote` stores an immutable `breakdown_snapshot` (jsonb) + the `rate_card_version`. · *Rate
+  changes must not alter historical quotes; snapshot guarantees reproducibility even if a version
+  row is later edited.* · **Accepted.**
+- **D-15 · Single-tenant demo, with a `tenant_id` column AND RLS from day one.** · *Design-for-change
+  seam without a future migration; RLS keyed on `tenant_id` makes isolation real, not cosmetic.* ·
+  **Accepted.**
+- **D-14 · Outbound is a labelled SIMULATED send — never a real Graph send.** No `send` call exists
+  in the approve path; UI shows a "SIMULATED SEND" badge. · *No real customer inboxes; eliminates the
+  worst-case (emailing a real person). Optional: create a real Outlook draft, never sent.* · **Accepted.**
+- **D-13 · Email ingest = scheduled poll (Trigger.dev), not a webhook.** Poll with a cursor + dedup
+  by Graph message id. The public demo uses paste/sample input; polling runs against a controlled
+  test mailbox. · *Smaller attack surface, no public ingress or subscription-renewal cron.* · **Accepted.**
+
 - **D-12 · Production architecture = Option C (hybrid + swappable RateEngine port).** Full pipeline
   (Trigger.dev v3 + MS Graph/Outlook + Supabase + Next.js dashboard + magic-link) with pricing
   behind a `RateEngine` interface. · *Keeps the "operate your existing Excel" wedge as the target
