@@ -47,6 +47,24 @@ begin
   select count(*) into n from public.rate_card_lines where amount = 9999;  -- B's line, via parent join
   if n <> 0 then raise exception 'AC-5 FAIL: tenant A can see tenant-B rate_card_lines (parent-join leak)'; end if;
 end $$;
+
+-- privilege-escalation guard (codex Gate-4): authenticated must NOT be able to repoint its profile
+-- at another tenant, nor write the immutable quote snapshot. Both must be denied (no DML grant).
+do $$
+begin
+  begin
+    update public.profiles set tenant_id = '0b000000-0000-4000-8000-000000000002'
+      where user_id = '1a000000-0000-4000-8000-000000000001';
+    raise exception 'AC-5 FAIL: authenticated UPDATED its profile (tenant escalation)';
+  exception when insufficient_privilege then null;  -- expected: permission denied
+  end;
+  begin
+    insert into public.quotes (request_id, tenant_id, rate_card_version, container_type, container_qty, all_in_total, breakdown_snapshot, validity_through)
+      values (gen_random_uuid(), '0a000000-0000-4000-8000-000000000001', 'x', '40HC', 1, 1, '{}'::jsonb, '2026-06-30');
+    raise exception 'AC-5 FAIL: authenticated INSERTED a quote (snapshot tamper)';
+  exception when insufficient_privilege then null;  -- expected: permission denied
+  end;
+end $$;
 reset role;
 
 -- ── caller = user B (tenant B), reverse direction ──

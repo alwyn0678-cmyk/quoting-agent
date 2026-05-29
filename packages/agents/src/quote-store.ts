@@ -34,20 +34,29 @@ export function quoteToRow(requestId: string, tenantId: string, quote: RateQuote
 }
 
 export interface QuoteStore {
-  /** Insert or update (by unique request_id) the quote for a request. Returns the row id. */
-  upsertQuote(requestId: string, tenantId: string, quote: RateQuote): Promise<string>;
+  /**
+   * Persist the quote for a request ONCE. A retry keeps the existing quote UNCHANGED and returns its
+   * id — the snapshot is never overwritten, so it stays immutable even if the rate card changed
+   * between the first run and the retry (AC-4). Returns the row id.
+   */
+  saveQuote(requestId: string, tenantId: string, quote: RateQuote): Promise<string>;
 }
 
 export class SupabaseQuoteStore implements QuoteStore {
   constructor(private readonly client: SupabaseClient) {}
 
-  async upsertQuote(requestId: string, tenantId: string, quote: RateQuote): Promise<string> {
-    const { data, error } = await this.client
+  async saveQuote(requestId: string, tenantId: string, quote: RateQuote): Promise<string> {
+    // Insert-once: ignore on conflict so a retry does NOT rewrite the immutable snapshot (AC-4).
+    const { error } = await this.client
       .from("quotes")
-      .upsert(quoteToRow(requestId, tenantId, quote), { onConflict: "request_id" })
-      .select("id")
-      .single();
+      .upsert(quoteToRow(requestId, tenantId, quote), { onConflict: "request_id", ignoreDuplicates: true });
     if (error) throw error;
+    const { data, error: selErr } = await this.client
+      .from("quotes")
+      .select("id")
+      .eq("request_id", requestId)
+      .single();
+    if (selErr) throw selErr;
     return data.id as string;
   }
 }
