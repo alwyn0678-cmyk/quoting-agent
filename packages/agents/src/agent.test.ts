@@ -105,20 +105,25 @@ describe("canary redaction (codex Gate-4 finding) — no canary in output, fail 
 describe("T13 — usage object well-formed on both paths", () => {
   it("present and valid on the quote path (reports both routed models)", async () => {
     const out = await runAgent(email, routed(baseExtraction));
-    expect(out.usage.model).toContain(EXTRACTION_MODEL);
-    expect(out.usage.model).toContain(DRAFT_MODEL);
+    expect(out.usage.model).toBe(`${EXTRACTION_MODEL} (extract), ${DRAFT_MODEL} (draft)`);
     expect(out.usage.input_tokens).toBeGreaterThan(0);
     expect(out.usage.output_tokens).toBeGreaterThan(0);
     expect(out.usage.est_cost_usd).toBeGreaterThan(0);
   });
-  it("present and valid on the escalate path (extraction model + usage only)", async () => {
+  it("present and valid on the gate-escalate path (extraction model + usage only)", async () => {
     const client = routed({ ...baseExtraction, container_type: "UNKNOWN", container_qty: null });
     const out = await runAgent(email, client);
-    expect(out.usage.model).toContain(EXTRACTION_MODEL);
-    expect(out.usage.model).not.toContain(DRAFT_MODEL); // drafting never ran
+    expect(out.usage.model).toBe(`${EXTRACTION_MODEL} (extract)`); // drafting never ran
     expect(out.usage.input_tokens).toBe(300);
     expect(out.usage.output_tokens).toBe(90);
     expect(out.usage.est_cost_usd).toBeGreaterThan(0);
+  });
+  it("reports both models on the guard-violation path (drafting ran before fail-closed)", async () => {
+    const ext = { ...baseExtraction, container_qty: 1, commodity: SYSTEM_CANARY, injection_detected: true };
+    const out = await runAgent(email, routed(ext, "all-in EUR 3,520."));
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("guard_violation");
+    expect(out.usage.model).toBe(`${EXTRACTION_MODEL} (extract), ${DRAFT_MODEL} (draft)`);
   });
 });
 

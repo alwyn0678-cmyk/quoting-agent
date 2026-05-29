@@ -95,9 +95,27 @@ describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()",
     });
   }
 
-  it("rejects with the same error as priceQuote() on an unpriceable request", async () => {
-    await expect(new StaticCardRateEngine().price(inScope({ mode: "LCL" }))).rejects.toBeInstanceOf(
-      UnpriceableRequestError,
-    );
-  });
+  const unpriceable: { label: string; over: Partial<PriceRequest>; reason: string }[] = [
+    { label: "out-of-scope mode (LCL)", over: { mode: "LCL" }, reason: "out_of_scope_mode" },
+    { label: "out-of-scope lane", over: { destination_port_code: "USLAX" }, reason: "out_of_scope_lane" },
+    { label: "unknown container", over: { container_type: "UNKNOWN" }, reason: "out_of_scope_container" },
+    { label: "invalid quantity", over: { container_qty: 0 }, reason: "invalid_quantity" },
+  ];
+  for (const u of unpriceable) {
+    it(`rejects identically to priceQuote() on ${u.label}`, async () => {
+      const req = inScope(u.over);
+      let sync: UnpriceableRequestError | undefined;
+      try {
+        priceQuote(req);
+      } catch (e) {
+        sync = e as UnpriceableRequestError;
+      }
+      expect(sync?.reason).toBe(u.reason); // priceQuote() itself threw the expected reason
+      await expect(new StaticCardRateEngine().price(req)).rejects.toMatchObject({
+        name: "UnpriceableRequestError",
+        reason: u.reason,
+        message: sync?.message, // same reason AND same message — true error parity
+      });
+    });
+  }
 });
