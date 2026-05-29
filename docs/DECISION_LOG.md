@@ -3,6 +3,22 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1B — implementation (2026-05-29)
+
+- **D-18 · Browser (anon/authenticated) is READ-ONLY in 1B; `profiles` is never writable by
+  `authenticated`; quote snapshots are insert-once.** · *Least privilege: `auth_tenant_id()` trusts
+  `profiles`, so a writable profile = a tenant-escalation hole (codex Gate-4 P1); and a blanket DML
+  grant would let the browser mutate the "immutable" snapshot. Writes (paste request, approve draft)
+  arrive in 1C behind narrow per-operation grants / service-role server actions.* · **Accepted.**
+- **D-17 · ExcelOnline adapter built hermetically; the LIVE Excel POC stays gated at Week-6;
+  SupabaseTable is the shipped engine.** The adapter logic (read workbook cells → assemble RateCard
+  → the shared `priceQuote()`) is implemented and proven over a fake transport (AC-3 parity with the
+  StaticCard + P-EXCEL-RO read-only). The live Excel-via-Graph transport + client-credentials auth,
+  and the swap-in-vs-fallback decision, are deferred to 1C / the Wednesday-Week-6 POC. · *Neutralises
+  the plan's top schedule risk (D-11/D-12): the demo ships on SupabaseTable regardless, and Excel
+  swaps in behind the same `RateEngine` port only if the POC passes — never load-bearing.* ·
+  **Accepted.**
+
 ## Stage 1 — Specification (2026-05-29)
 
 - **D-16 · Versioned rate cards; quotes snapshot their breakdown.** `rate_cards` are versioned;

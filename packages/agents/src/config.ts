@@ -17,6 +17,10 @@ export interface ModelRouting {
 export const PER_STEP_ROUTING: ModelRouting = { extraction: EXTRACTION_MODEL, draft: DRAFT_MODEL };
 export const SINGLE_MODEL_ROUTING: ModelRouting = { extraction: FALLBACK_MODEL, draft: FALLBACK_MODEL };
 
+/** The seeded demo tenant + lane (1B.2) the SupabaseTable adapter reads. */
+export const LINKPORT_TENANT_ID = "11111111-1111-4111-8111-111111111111";
+export const DEFAULT_LANE = "NLRTM-USNYC";
+
 /**
  * Sentinel placed in system prompts. It must NEVER appear in agent output — if it does, the
  * model has leaked its system prompt (used by the injection guard, Task 6 / test T12).

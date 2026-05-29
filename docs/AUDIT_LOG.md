@@ -4,6 +4,48 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1B — Data layer + adapters (Phase 1+) · 2026-05-29
+
+### What was built
+Six tasks on `phase-1b`, one commit each (each proving its named test, then stop-for-review):
+- **1B.1** multi-tenant schema + RLS (8 tables, `auth_tenant_id()` SECURITY DEFINER, parent-join for
+  `rate_card_lines`) applied to the **live** project → AC-5.
+- **1B.2** Linkport card seeded as rows → P-1B.2 (6930/2770/9890/3520).
+- **1B.3** `SupabaseTableRateEngine` (rows → `assembleRateCard` → shared `priceQuote()`) → AC-3 parity
+  + AC-2 8/8 on the Supabase adapter.
+- **1B.4** quote snapshots (`breakdown_snapshot` + `rate_card_version`, insert-once) → AC-4.
+- **1B.5** Graph/Outlook wrapper (read-by-cursor + create-draft, send-free) → AC-7 + P-1B.5.
+- **1B.6** ExcelOnline adapter (read-only, hermetic) → AC-3 + P-EXCEL-RO; D-17 (live POC gated Week-6).
+
+Offline suite **70 → 100**; live AC-5 / AC-4 (SQL proofs via the Management API) + AC-3 / AC-2 (adapter eval).
+
+### Gate 4 — codex code review (read-only, `git diff main...HEAD`) — 1 round, 4 findings, all valid
+- **[P1]** the blanket `grant insert/update/delete … to authenticated` + a `profiles` `for all`
+  policy let a browser user **repoint their own `profiles.tenant_id`** at another tenant — and
+  `auth_tenant_id()` trusts `profiles`, so that reads another tenant's rows. **An AC-5 hole my
+  SELECT-only proof missed.** → **0003** revokes `authenticated` DML; `profiles` is SELECT-only; the
+  AC-5 test now asserts the escalation (profile UPDATE + quote INSERT) is **denied**.
+- **[P2]** that same grant made the "immutable" snapshot mutable via PostgREST → the browser is
+  **read-only** in 1B (D-18); writes land in 1C behind narrow grants / service-role actions.
+- **[P2]** the quote upsert **overwrote the snapshot on retry** → `saveQuote` is **insert-once**
+  (`ignoreDuplicates`), preserving AC-4 even if the card changed between the run and the retry.
+- **[P2]** `0002`'s `sort_order DEFAULT 0` risked wrong array order if migrate ran after seed →
+  **0003 backfills** the Linkport lines.
+
+### Decision — codex capped at R1
+No adapter / pricing / SQL-correctness defects surfaced; the four findings were grants + idempotency
+hardening, all applied and re-verified: **AC-5 PASS incl. the new escalation guard**, offline
+**100/100**, adapter **AC-3 + AC-2 8/8**.
+
+### Sign-off
+Ready — Phase 1B is complete: a live multi-tenant data layer with RLS + tested isolation (now
+including a privilege-escalation guard), the production rate engine at parity, reproducible
+insert-once snapshots, and send-free / read-only Graph adapters. **Approved by Alwyn 2026-05-29;
+`phase-1b` merged to `main` (`--no-ff`).** Next: Phase 1C (Trigger.dev poll + agent run, dashboard +
+magic-link auth, simulated send, observability).
+
+---
+
 ## Phase 1A — RateEngine port + model routing (Phase 1+) · 2026-05-29
 
 ### What was built
