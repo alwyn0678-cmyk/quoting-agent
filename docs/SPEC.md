@@ -14,9 +14,13 @@
 ## Flow 1 — Ingest (scheduled poll, D-13)
 1. A Trigger.dev **scheduled task** (e.g. every 5 min) calls MS Graph to list messages in the
    watched mailbox newer than a stored **cursor** (`receivedDateTime`/delta token per tenant).
-2. **Dedup** by Graph message id (unique index); already-seen messages are skipped.
-3. For each new message → insert `quote_request` (`tenant_id`, `source='poll'`, raw from/subject/body,
-   status `received`) → enqueue the agent task. Advance the cursor.
+2. **Dedup** by Graph message id (unique index); already-seen messages are not re-inserted.
+3. For each new message → insert `quote_request` (`tenant_id`, `source='poll'`, raw sender/subject/body,
+   status `received`), then enqueue the agent run.
+4. **No stranded messages:** dedup prevents duplicate *requests*, not duplicate *runs*. Each poll also
+   **re-enqueues any `received` request with no completed run** (the agent task is idempotent per
+   `request_id`), so an enqueue that fails after the insert is retried, not skipped. Advance the cursor
+   only after new requests are persisted.
 - **Public-demo path:** the dashboard also accepts **paste-an-email** or **pick-a-sample**
   (`source='paste'|'sample'`), inserting an identical `quote_request`. The public demo does **not**
   poll a real inbox; polling is demonstrated against a controlled test mailbox.
@@ -56,11 +60,14 @@
   `simulated_sent_at` nullable). `request_id` is **unique** (1:1 with the request).
 - **audit_log**(`id`, `tenant_id`, `request_id`, `event`, `model`, `input_tokens`, `output_tokens`,
   `est_cost_usd`, `injection_flag`, `created_at`).
-- **RLS:** `profiles` uses a **direct** policy (`user_id = auth.uid()`). Every **other** tenant-scoped
-  table uses `tenant_id = auth_tenant_id()`, where `auth_tenant_id()` is a **SECURITY DEFINER**
-  function that reads the caller's tenant from `profiles` while **bypassing RLS** — so policies don't
-  recurse (the classic Supabase self-reference trap). Active with one tenant from day one.
-  `service_role` (server/Trigger.dev) bypasses RLS; the browser uses `anon` + RLS only.
+- **RLS:** `profiles` uses a **direct** policy (`user_id = auth.uid()`). `rate_card_lines` has no own
+  `tenant_id` — it's isolated by a **parent-join** to `rate_cards`
+  (`rate_card_id in (select id from rate_cards where tenant_id = auth_tenant_id())`). Every other
+  tenant-scoped table (those carrying `tenant_id`) uses `tenant_id = auth_tenant_id()`, where
+  `auth_tenant_id()` is a **SECURITY DEFINER** function that reads the caller's tenant from `profiles`
+  while **bypassing RLS** — so policies don't recurse (the classic Supabase self-reference trap).
+  Active with one tenant from day one. `service_role` (server/Trigger.dev) bypasses RLS; the browser
+  uses `anon` + RLS only.
 
 ## Interfaces
 ```ts
