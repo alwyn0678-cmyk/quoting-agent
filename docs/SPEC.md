@@ -26,7 +26,8 @@
    `RateEngine.price()` → `draft` (Haiku) → `injectionGuard` (fail-closed).
 2. Persist: `quote` (with snapshot, below) + `draft` + `audit_log` (model, tokens, est_cost,
    injection_flag). status → `awaiting_review` (quote) or `escalated` (reason shown).
-3. Retries/idempotency are Trigger.dev's; re-running a request is safe (upsert by request id).
+3. Retries/idempotency are Trigger.dev's; `quotes`/`drafts` are **1:1 with the request** (unique
+   `request_id`), so a retry **upserts** rather than duplicating.
 
 ## Flow 3 — Review & simulated send (HITL, D-10 + D-14)
 1. Reviewer opens the request: sees extraction, the **itemised deterministic quote breakdown**, and
@@ -34,26 +35,30 @@
 2. **Approve** → status → `sent`, record `simulated_sent_at` + intended recipient. **No Graph send
    call exists in this path** — the UI shows a clear **"SIMULATED SEND"** badge. (Optional richer
    touch: create a real Outlook *draft* via Graph, never sent.)
-3. Escalated/injection requests show the reason and **no draft to send**; reviewer handles manually.
+3. **Gate-escalations and guard-violations** show the reason and have **no draft** to send. A
+   **flagged-but-harmless injection** follows the slice's quote-and-flag policy: a normal quote +
+   draft, shown with an **`injection_flag` badge** (so fixture 07 / AC-2 parity holds).
 
 ## Data model (Supabase, EU; every table carries `tenant_id` + RLS, D-15)
 - **tenants**(`id`, `name`) — one seeded row for the demo.
+- **profiles**(`user_id` → `auth.users`, `tenant_id` → `tenants`) — maps a magic-link user to a
+  tenant; RLS resolves the caller's tenant through this. No profile row → no tenant → no rows.
 - **rate_cards**(`id`, `tenant_id`, `lane`, `version`, `validity_through`, `is_active`, `created_at`).
 - **rate_card_lines**(`id`, `rate_card_id`, `kind` ∈ {`base`,`surcharge_per_container`,`per_shipment_fee`},
   `code`, `container_type` nullable, `amount` int EUR) — mirrors the Phase 0 static card (D-16).
-- **quote_requests**(`id`, `tenant_id`, `source`, `from`, `subject`, `body`, `graph_message_id` nullable
-  unique, `status`, `created_at`).
+- **quote_requests**(`id`, `tenant_id`, `source`, `from_email`, `subject`, `body`, `graph_message_id`
+  nullable unique, `status`, `created_at`). (`from_email`, not `from` — `from` is a reserved word.)
 - **quotes**(`id`, `request_id`, `tenant_id`, `rate_card_version`, `container_type`, `container_qty`,
   `all_in_total`, **`breakdown_snapshot` jsonb** (immutable copy of the priced line items),
   `validity_through`, `created_at`) — **snapshot makes historical quotes reproducible even if a rate
-  version is later edited (D-16).**
+  version is later edited (D-16).** `request_id` is **unique** (one quote per request → retries upsert).
 - **drafts**(`id`, `request_id`, `tenant_id`, `subject`, `body`, `edited_body` nullable, `status`,
-  `simulated_sent_at` nullable).
+  `simulated_sent_at` nullable). `request_id` is **unique** (1:1 with the request).
 - **audit_log**(`id`, `tenant_id`, `request_id`, `event`, `model`, `input_tokens`, `output_tokens`,
   `est_cost_usd`, `injection_flag`, `created_at`).
-- **RLS:** every table has policies restricting rows to the caller's tenant (`tenant_id = auth tenant`).
-  Active with one tenant from day one. `service_role` (server/Trigger.dev) bypasses RLS; the browser
-  uses `anon` + RLS only.
+- **RLS:** every tenant-scoped table restricts rows to the caller's tenant, resolved via `profiles`
+  (`tenant_id in (select tenant_id from profiles where user_id = auth.uid())`). Active with one tenant
+  from day one. `service_role` (server/Trigger.dev) bypasses RLS; the browser uses `anon` + RLS only.
 
 ## Interfaces
 ```ts
