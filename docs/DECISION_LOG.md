@@ -3,6 +3,24 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1C — live layer (Trigger.dev wiring) (2026-05-29)
+
+- **D-23 · The autonomous loop is wired live as a self-contained Trigger.dev v4 project
+  (`packages/trigger`, own install root, excluded from the root typecheck), the stub mailbox sits at the
+  real `GraphTransport` seam, and the durable run persists through ONE atomic RPC.** · *Four load-bearing
+  choices: (1) `packages/trigger` declares only `@trigger.dev/*` — NOT `@supabase`/`@anthropic` — so there
+  is a single `@supabase/supabase-js` copy and no D-19 type clash; the tasks import sibling packages +
+  shared deps via the monorepo root install (proven by the dev bundle/run). codex flagged that a STANDALONE
+  install could fail; rebutted — it is not independently installable by design, and a hardened prod deploy
+  uses a bundler-external, not a duplicate dep. (2) The stub is a `StubGraphTransport` wrapped by the REAL
+  `OutlookMailbox`, so going live = replace the transport only. (3) `persist_run_outcome()` (migration 0009)
+  replaces the prior 4-call save/complete/log sequence: insert-once quote+draft + first-writer status flip +
+  usage-on-the-win in ONE transaction, eliminating the partial-crash windows codex P1-b found (orphan
+  quote/draft, or a terminal row with no usage). (4) The inbound dedup key is now `(tenant_id,
+  graph_message_id)` (migration 0008) — a global key (codex P1-a) breaks tenant isolation. Dev runs load
+  secrets via `--env-file ../../.env` (the gitignored root env); the service_role key never reaches a
+  browser.* · **Accepted (Alwyn).**
+
 ## Phase 1C — autonomous ingest (hermetic) (2026-05-29)
 
 - **D-22 · The durable agent-run is claim-based: load+claim (`received`→`processing`) scoped to the
