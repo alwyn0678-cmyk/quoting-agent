@@ -76,6 +76,7 @@ export const escalationReasonSchema = z.enum([
   "ambiguous_request",
   "low_confidence",
 ]);
+export type EscalationReason = z.infer<typeof escalationReasonSchema>;
 
 const draftSchema = z.object({ subject: z.string(), body: z.string() });
 
