@@ -21,6 +21,9 @@ const MAILBOX = "inbox";
 export const pollMailboxTask = schedules.task({
   id: "poll-mailbox",
   cron: "*/5 * * * *", // every 5 minutes (UTC)
+  // Serialize poll cycles (codex Gate-4 P2-d): never two poll runs at once, so they can't race on the
+  // cursor. Belt-and-suspenders with the DB-monotonic advance_poll_cursor (greatest()) in setCursor.
+  queue: { concurrencyLimit: 1 },
   run: async () => {
     const tenantId = process.env.QUOTEAGENT_TENANT_ID ?? LINKPORT_TENANT_ID;
     const store = new SupabaseIngestStore(createServiceClient());

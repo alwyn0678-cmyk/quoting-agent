@@ -1,8 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { RateQuote } from "../../agents/src/schemas.js";
 import { quoteToRow } from "../../agents/src/quote-store.js";
 import type { IngestStore, ReceivedRequest } from "./poll.js";
-import type { RunStore, RequestRow, UsageRecord } from "./run.js";
+import type { RunStore, RequestRow, PersistOutcome } from "./run.js";
 
 /**
  * Concrete service_role stores for the autonomous path (Phase 1C live, L1). The poll + durable run
@@ -38,21 +37,23 @@ export class SupabaseIngestStore implements IngestStore {
   }
 
   async setCursor(tenantId: string, mailbox: string, cursor: string): Promise<void> {
-    const { error } = await this.client
-      .from("poll_state")
-      .upsert(
-        { tenant_id: tenantId, mailbox, cursor, updated_at: new Date().toISOString() },
-        { onConflict: "tenant_id,mailbox" },
-      );
+    // DB-monotonic advance (codex Gate-4 P2-d): the RPC sets cursor = greatest(existing, new), so an
+    // overlapping or late poll can never regress it. ISO-8601 sorts lexicographically = chronologically.
+    const { error } = await this.client.rpc("advance_poll_cursor", {
+      p_tenant_id: tenantId,
+      p_mailbox: mailbox,
+      p_cursor: cursor,
+    });
     if (error) throw error;
   }
 
   async insertReceived(row: ReceivedRequest): Promise<string | null> {
-    // Insert-once on the UNIQUE graph_message_id (on conflict do nothing): a fresh insert returns its
-    // id; a dedup hit returns NO row -> null, which the poll counts as a duplicate (AC-1).
+    // Insert-once on the UNIQUE (tenant_id, graph_message_id) (on conflict do nothing): a fresh insert
+    // returns its id; a dedup hit returns NO row -> null, counted as a duplicate (AC-1). The key is
+    // tenant-scoped (migration 0008, codex Gate-4 P1-a) so one tenant never drops another's message.
     const { data, error } = await this.client
       .from("quote_requests")
-      .upsert(row, { onConflict: "graph_message_id", ignoreDuplicates: true })
+      .upsert(row, { onConflict: "tenant_id,graph_message_id", ignoreDuplicates: true })
       .select("id");
     if (error) throw error;
     const first = data?.[0];
@@ -96,63 +97,39 @@ export class SupabaseRunStore implements RunStore {
     };
   }
 
-  async saveQuote(requestId: string, tenantId: string, quote: RateQuote): Promise<void> {
-    // Reuse the canonical RateQuote -> quotes mapping (immutable breakdown_snapshot, AC-4). Insert-once.
-    const { error } = await this.client
-      .from("quotes")
-      .upsert(quoteToRow(requestId, tenantId, quote), { onConflict: "request_id", ignoreDuplicates: true });
+  async persistOutcome(requestId: string, tenantId: string, o: PersistOutcome): Promise<boolean> {
+    // One atomic txn (persist_run_outcome, migration 0009 — codex Gate-4 P1-b): insert-once quote +
+    // draft (immutable snapshot via the canonical quoteToRow, AC-4), first-writer status flip, and the
+    // usage row logged on the winning transition. Returns whether THIS call won the transition.
+    const { data, error } = await this.client.rpc("persist_run_outcome", {
+      p_request_id: requestId,
+      p_tenant_id: tenantId,
+      p_status: o.status,
+      p_escalation_reason: o.escalationReason,
+      p_injection_flag: o.injectionFlag,
+      p_quote: o.quote ? quoteToRow(requestId, tenantId, o.quote) : null,
+      p_draft: o.draft ? { subject: o.draft.subject, body: o.draft.body } : null,
+      p_usage: {
+        model: o.usage.model,
+        input_tokens: o.usage.input_tokens,
+        output_tokens: o.usage.output_tokens,
+        est_cost_usd: o.usage.est_cost_usd,
+      },
+    });
     if (error) throw error;
+    return Boolean(data);
   }
 
-  async saveDraft(
-    requestId: string,
-    tenantId: string,
-    draft: { subject: string; body: string },
-  ): Promise<void> {
-    const { error } = await this.client
-      .from("drafts")
-      .upsert(
-        { request_id: requestId, tenant_id: tenantId, subject: draft.subject, body: draft.body },
-        { onConflict: "request_id", ignoreDuplicates: true },
-      );
-    if (error) throw error;
-  }
-
-  async complete(
-    requestId: string,
-    tenantId: string,
-    status: "awaiting_review" | "escalated",
-    escalationReason: string | null,
-    injectionFlag: boolean,
-  ): Promise<void> {
-    // First-writer-wins: only a row still in 'processing' transitions. A no-op otherwise — so a retry
-    // whose first attempt already completed never flips a terminal outcome.
+  /** Mark a stuck 'processing' run as 'error' after Trigger.dev exhausts retries (codex Gate-4 P2-c).
+   *  First-writer-safe: only flips a row still 'processing', never clobbers a terminal outcome. Not on
+   *  the RunStore interface — it's the run task's onFailure hook, not part of the happy-path run. */
+  async markError(tenantId: string, requestId: string): Promise<void> {
     const { error } = await this.client
       .from("quote_requests")
-      .update({ status, escalation_reason: escalationReason, injection_flag: injectionFlag })
+      .update({ status: "error" })
       .eq("id", requestId)
       .eq("tenant_id", tenantId)
       .eq("status", "processing");
-    if (error) throw error;
-  }
-
-  async logUsage(
-    requestId: string,
-    tenantId: string,
-    decision: "quote" | "escalate",
-    usage: UsageRecord,
-    injectionFlag: boolean,
-  ): Promise<void> {
-    const { error } = await this.client.from("audit_log").insert({
-      tenant_id: tenantId,
-      request_id: requestId,
-      event: decision,
-      model: usage.model,
-      input_tokens: usage.input_tokens,
-      output_tokens: usage.output_tokens,
-      est_cost_usd: usage.est_cost_usd,
-      injection_flag: injectionFlag,
-    });
     if (error) throw error;
   }
 }

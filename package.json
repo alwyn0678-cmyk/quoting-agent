@@ -24,6 +24,7 @@
     "db:test:ac8": "bash scripts/db.sh supabase/tests/ac8_reason_constraint.sql",
     "db:test:p1b2": "bash scripts/db.sh supabase/tests/p1b2_seed_sum.sql",
     "db:test:p1c2": "bash scripts/db.sh supabase/tests/p1c2_run.sql",
+    "db:test:persist": "bash scripts/db.sh supabase/tests/persist_run_outcome.sql",
     "db:test:ac4": "bash scripts/db.sh supabase/tests/ac4_snapshot.sql"
   },
   "devDependencies": {

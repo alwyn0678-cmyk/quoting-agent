@@ -96,6 +96,11 @@ async function main(): Promise<void> {
   check("insertReceived: first insert returns an id", typeof id1 === "string" && !!id1);
   check("insertReceived: duplicate graph_message_id returns null (dedup)", id2 === null);
 
+  // P1-a (codex Gate-4): dedup is TENANT-SCOPED — two tenants may share a graph_message_id, each its own row.
+  const sharedA = await ingest.insertReceived({ tenant_id: T, source: "poll", graph_message_id: "shared-gid", from_email: "a@x.example", subject: "s", body: "b", status: "received" });
+  const sharedB = await ingest.insertReceived({ tenant_id: TW, source: "poll", graph_message_id: "shared-gid", from_email: "b@x.example", subject: "s", body: "b", status: "received" });
+  check("dedup is tenant-scoped: two tenants share a graph_message_id, both get rows (P1-a)", typeof sharedA === "string" && typeof sharedB === "string" && sharedA !== sharedB);
+
   // ── cursor round-trip through poll_state ──
   await ingest.setCursor(T, MB, "2026-01-01T00:00:00Z");
   check("cursor round-trips through poll_state", (await ingest.getCursor(T, MB)) === "2026-01-01T00:00:00Z");
@@ -122,6 +127,7 @@ async function main(): Promise<void> {
   console.log("SupabaseRunStore — quote path");
   const r1 = await runAndPersist(T, quotableId, deps(routed(baseExtraction)), runStore);
   check("run(quote): ran + decision quote + status awaiting_review", r1.ran === true && r1.decision === "quote" && r1.status === "awaiting_review");
+  check("run(quote): atomic persist won the transition (transitioned=true)", r1.ran === true && r1.transitioned === true);
   const { data: q } = await admin.from("quotes").select("all_in_total").eq("request_id", quotableId).single();
   check("quote row persisted with all_in_total 6930 (snapshot)", (q?.all_in_total as number | undefined) === 6930);
   check("draft row persisted", (await countFor("drafts", quotableId)) === 1);
