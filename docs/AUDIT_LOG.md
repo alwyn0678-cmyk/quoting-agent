@@ -4,6 +4,37 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Deploy — apps/web dashboard to GitHub + Vercel (IN PROGRESS, resume here) · 2026-05-29
+
+### Scope
+Push the repo to GitHub + deploy the reviewer dashboard (apps/web) to Vercel (alwyn0678). Steps:
+- **V1** decoupled apps/web from packages/agents — inlined `QuoteSnapshot` for the one `type RateQuote`
+  import — so it builds standalone with Vercel root = apps/web. Merged to main (`e8a691a`). Verify:
+  apps/web typecheck 0, root 0, tests 117/117, `next build` clean.
+- **V2** PRIVATE GitHub repo **alwyn0678-cmyk/quoting-agent**, `main` pushed (no secrets — `.env*`
+  gitignored; templates scanned clean).
+- **V3** Vercel project **quoteagent-dashboard** (`prj_7qtdv1W7f8mMOugWJlSNWbMqhyeZ`, team
+  alwyn0678-cmyks-projects); `NEXT_PUBLIC_SUPABASE_URL` + `_ANON_KEY` set (production); deployed READY at
+  **https://quoteagent-dashboard.vercel.app**.
+- **V4** Supabase Site URL + redirect allowlist set to the Vercel domain (localhost:3002 kept for dev).
+
+### Gate (right-sized)
+The only code change is V1 (a ~20-line type-inline) — build + typecheck + 117 tests are the proof; a
+codex cloud review would be disproportionate for a type decouple. The deploy's real proof is the live
+URL working (V5, pending). No service_role key reaches the client (NEXT_PUBLIC_ only). Outward-facing
+actions (GitHub repo, Vercel deploy, Supabase URL config) were each done under explicit user sign-off.
+
+### PENDING — resume here tomorrow
+1. **Vercel Deployment Protection** returns 401 on the prod URL. User to toggle Vercel Authentication →
+   "Only Preview Deployments" (or Disabled) at
+   https://vercel.com/alwyn0678-cmyks-projects/quoteagent-dashboard/settings/deployment-protection.
+2. **V5 verify**: open the live URL → magic-link login as **alwyn0678@gmail.com** (mapped to LINKPORT) →
+   confirm the three quotes render (40HC €6,930 `awaiting_review` / escalated / 20GP €2,770). Then sign off this entry.
+3. Also live now: `scripts/ingest_email.ts` + `npm run ingest -- <email.json>` — push any email through
+   the live pipeline into the dashboard (used to add the 20GP €2,770 row).
+
+---
+
 ## Phase 1C live — Trigger.dev autonomous loop wired to live Supabase · 2026-05-29
 
 ### Scope
