@@ -55,7 +55,8 @@ The residual items are unit-test detail, proven when the code is written (1A–1
 ### Sign-off
 Ready — the three Stage-2 docs are coherent with the signed-off specs and the real Phase 0 code, and
 the sharpest finding (the `service_role`/RLS isolation gap) is now an **explicit, tested** control
-(P-TENANT / P-APPROVE-AUTH). Awaiting Alwyn's review before the next stage.
+(P-TENANT / P-APPROVE-AUTH). **Approved by Alwyn 2026-05-29; `phase-1-context` merged to `main`
+(`--no-ff`).** Building Phase 1A next — one task at a time, each proving its named test.
 
 ---
 
