@@ -3,6 +3,21 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1G — scoped RAG (Q3) (2026-05-30)
+
+- **D-26 · RAG grounds ONLY the drafted reply prose, never the price; over an authored, committed,
+  server-side-only corpus, via Gemini Embedding 2 (768-dim) + Supabase pgvector.** · The retrieval
+  query is built from engine-trusted structured fields (surcharge/fee codes, lane, container) plus an
+  allowlist-normalized incoterm — never the raw email. The agent prices first, then retrieves, then
+  drafts; `verifyDraftStatesTotal` + the canary guard run after, unchanged, so retrieval is
+  structurally incapable of moving a number. The corpus is written by an offline indexer and read by
+  the agent, both as `service_role` (`knowledge_chunks` grants no DML/SELECT to browser roles — a
+  poisoned-corpus injection channel that Gate-4 caught and closed). Env-gated stub-safe: no key ⇒
+  `EmptyRetriever` ⇒ today's ungrounded behaviour, byte-identical. · *The point is knowing when NOT to
+  use RAG: pricing must stay deterministic engine code; only the human-facing explanation is grounded.
+  Demonstrates the trusted/untrusted boundary as the load-bearing design idea, not the embedding tech.*
+  · **Accepted; live index/eval deferred to the end-of-project batch (needs `GEMINI_API_KEY` + Supabase).**
+
 ## Phase 1F — serious Excel rate sheet (Q2) (2026-05-30)
 
 - **D-25 · The Excel rate sheet is the human-editable source of truth, imported OFFLINE into Supabase

@@ -10,21 +10,37 @@ export interface KnowledgeRetriever {
   retrieve(query: string, k: number): Promise<KnowledgeChunk[]>;
 }
 
+/** Incoterms 2020 three-letter codes — the allowlist for the one email-derived field that reaches the
+ *  retrieval query. The quote codes/lane/container are engine-trusted; the incoterm is extracted from the
+ *  (untrusted) email as a free string, so it is normalized to a known code before use — never passed
+ *  verbatim. This stops arbitrary attacker text from reaching the embedding API or steering retrieval. */
+const KNOWN_INCOTERMS = new Set([
+  "EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "DAP", "DPU", "DDP",
+]);
+
+function normalizeIncoterm(incoterm: string | null): string | null {
+  if (!incoterm) return null;
+  const code = incoterm.trim().toUpperCase();
+  return KNOWN_INCOTERMS.has(code) ? code : null;
+}
+
 /**
  * Build the retrieval query from TRUSTED STRUCTURED fields only — the quote's surcharge/fee codes, the
- * incoterm, the lane and container. The raw (untrusted) email is never used, preserving the injection
- * boundary: nothing the attacker wrote can steer retrieval.
+ * (allowlist-normalized) incoterm, the lane and container. The raw (untrusted) email is never used, and
+ * an out-of-allowlist incoterm is dropped, preserving the injection boundary: nothing the attacker wrote
+ * can steer retrieval or reach the embedding API.
  */
 export function buildRetrievalQuery(quote: RateQuote, incoterm: string | null): string {
   const codes = [
     ...quote.surcharges.map((s) => s.code),
     ...quote.per_shipment_fees.map((f) => f.code),
   ];
+  const term = normalizeIncoterm(incoterm);
   return [
     `Explain the freight charges and terms for lane ${quote.lane},`,
     `container ${quote.container_type}:`,
     codes.join(", "),
-    incoterm ? `incoterm ${incoterm}` : "",
+    term ? `incoterm ${term}` : "",
   ]
     .filter((s) => s.length > 0)
     .join(" ");

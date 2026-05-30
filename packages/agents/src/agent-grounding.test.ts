@@ -49,6 +49,7 @@ describe("Q3-AC-R5 — agent grounds the draft without touching the price", () =
     const draftCall = c.calls.find((x) => x.toolName === "submit_draft");
     expect(draftCall?.userContent).toContain("Reference knowledge");
     expect(draftCall?.userContent).toContain("BAF");
+    expect(draftCall?.system).toContain("Reference knowledge"); // the grounding rule is wired through
   });
 
   it("with the default EmptyRetriever, the draft carries no grounding block", async () => {
@@ -57,5 +58,6 @@ describe("Q3-AC-R5 — agent grounds the draft without touching the price", () =
     expect(out.quote?.all_in_total).toBe(3520);
     const draftCall = c.calls.find((x) => x.toolName === "submit_draft");
     expect(draftCall?.userContent).not.toContain("Reference knowledge");
+    expect(draftCall?.system).not.toContain("Reference knowledge"); // ungrounded prompt is unchanged
   });
 });

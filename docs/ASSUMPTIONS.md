@@ -129,4 +129,4 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | G2 | Incoterm summaries (FOB, CIF, EXW, DAP) | INVENTED summary | Cross-check ICC Incoterms 2020 |
 | G3 | Linkport quoting policy (validity, port-to-port basis, inclusions/exclusions, booking) | INVENTED (fictional tenant) | n/a (fictional) — confirm shape with a forwarder |
 | G4 | Lane/port notes (NLRTM/USNYC/USLAX/DEHAM) | INVENTED | UN/LOCODE registry; a forwarder for routing/transit |
-| G5 | Gemini embedding model id `gemini-embedding-2`, 768-dim, auto-normalized | VERIFY | Confirm against Google's current Gemini API at the live smoke; the id is one config constant |
+| G5 | Gemini embedding model id `gemini-embedding-2`, 768-dim, auto-normalized; REST body uses camelCase `outputDimensionality` (Gate-4 fix #2) and encodes the task as an in-prompt instruction (no `taskType` param) | VERIFY | Confirm the model id, the 768-dim behaviour, AND the full request shape (field names, task handling) against Google's current Gemini API at the live smoke; the id is one config constant. The 768-dim length assert fails loudly if the live shape is wrong |

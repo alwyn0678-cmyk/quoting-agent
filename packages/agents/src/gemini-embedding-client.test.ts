@@ -18,7 +18,7 @@ function fakeFetch(captured: Captured, vector: number[]): FetchLike {
 }
 
 describe("Q3 GeminiEmbeddingClient (fake fetch)", () => {
-  it("calls the model endpoint with the key header, task instruction, and output_dimensionality", async () => {
+  it("calls the model endpoint with the key header, task instruction, and outputDimensionality", async () => {
     const cap: Captured = {};
     const client = new GeminiEmbeddingClient("KEY123", fakeFetch(cap, new Array(EMBEDDING_DIMS).fill(0.1)));
     const [vec] = await client.embed(["what is BAF"], "query");
@@ -27,7 +27,8 @@ describe("Q3 GeminiEmbeddingClient (fake fetch)", () => {
     expect(cap.url).toContain("models/gemini-embedding-2:embedContent");
     expect(cap.init?.headers["x-goog-api-key"]).toBe("KEY123");
     const body = JSON.parse(cap.init?.body ?? "{}");
-    expect(body.output_dimensionality).toBe(EMBEDDING_DIMS);
+    expect(body.outputDimensionality).toBe(EMBEDDING_DIMS); // camelCase REST field (Gate-4 fix #2)
+    expect(body.output_dimensionality).toBeUndefined(); // the snake_case form must NOT be sent
     expect(body.content.parts[0].text).toContain("search result"); // query task instruction
     expect(body.content.parts[0].text).toContain("what is BAF");
   });

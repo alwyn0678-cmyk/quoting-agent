@@ -39,7 +39,10 @@ export class GeminiEmbeddingClient implements EmbeddingClient {
         headers: { "Content-Type": "application/json", "x-goog-api-key": this.apiKey },
         body: JSON.stringify({
           content: { parts: [{ text: `${TASK_INSTRUCTION[task]} | query: ${text}` }] },
-          output_dimensionality: EMBEDDING_DIMS,
+          // REST request bodies are camelCase (the snake_case form is Python-SDK only) — see
+          // ai.google.dev/api/embeddings. Wrong casing makes the server fall back to the default
+          // dimensionality, which the length assert below then rejects loudly. (Live path = VERIFY, G5.)
+          outputDimensionality: EMBEDDING_DIMS,
         }),
       });
       if (!res.ok) {

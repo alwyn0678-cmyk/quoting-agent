@@ -99,4 +99,10 @@ describe("Q3-AC-R4 — draft grounding block", () => {
   it("omits the block when there is no grounding (unchanged behaviour)", () => {
     expect(buildDraftUserContent(input)).not.toContain("Reference knowledge");
   });
+
+  it("system prompt: omits the grounding rule when ungrounded (backward-compatible), includes it when grounded", () => {
+    expect(buildDraftSystemPrompt()).not.toContain("Reference knowledge"); // default = ungrounded
+    expect(buildDraftSystemPrompt(false)).not.toContain("Reference knowledge");
+    expect(buildDraftSystemPrompt(true)).toContain("Reference knowledge");
+  });
 });

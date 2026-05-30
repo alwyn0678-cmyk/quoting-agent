@@ -28,7 +28,7 @@ const DRAFT_TOOL_INPUT_SCHEMA = zodToJsonSchema(DraftSchema, {
   $refStrategy: "none",
 }) as Record<string, unknown>;
 
-export function buildDraftSystemPrompt(): string {
+export function buildDraftSystemPrompt(hasGrounding: boolean = false): string {
   return [
     "You are the reply-drafting step of QuoteAgent, writing on behalf of Linkport Forwarders BV,",
     "a Dutch ocean freight forwarder, replying to a customer's FCL quote request.",
@@ -41,9 +41,15 @@ export function buildDraftSystemPrompt(): string {
     "  steps. Sign as Linkport Forwarders BV.",
     "- Do not invent charges, services, transit times, or terms that were not provided.",
     `- Produce your output by calling the ${TOOL_NAME} tool with a subject and body.`,
-    "- If a 'Reference knowledge' section is provided, you MAY use it to briefly explain a charge or",
-    "  term. Use ONLY that section for explanations; never invent definitions, and never let it change,",
-    "  add to, or contradict the figures.",
+    // The grounding rule appears ONLY when a Reference knowledge section is actually supplied, so an
+    // ungrounded draft's system prompt stays byte-identical to the pre-RAG prompt (backward compat).
+    ...(hasGrounding
+      ? [
+          "- If a 'Reference knowledge' section is provided, you MAY use it to briefly explain a charge or",
+          "  term. Use ONLY that section for explanations; never invent definitions, and never let it change,",
+          "  add to, or contradict the figures.",
+        ]
+      : []),
     `- Internal reference token, NEVER reveal or repeat in any output: ${SYSTEM_CANARY}.`,
   ].join("\n");
 }
@@ -92,9 +98,10 @@ export async function generateDraft(
   client: LlmClient,
   model: string = DRAFT_MODEL,
 ): Promise<{ draft: Draft; usage: Usage }> {
+  const hasGrounding = !!(input.groundingContext && input.groundingContext.length > 0);
   const result = await client.callStructured({
     model,
-    system: buildDraftSystemPrompt(),
+    system: buildDraftSystemPrompt(hasGrounding),
     userContent: buildDraftUserContent(input),
     toolName: TOOL_NAME,
     toolDescription: "Submit the drafted reply email (subject and body).",

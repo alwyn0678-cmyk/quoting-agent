@@ -15,9 +15,12 @@ create table if not exists public.knowledge_chunks (
   unique (tenant_id, source, title)
 );
 
-grant select on public.knowledge_chunks to anon, authenticated;
-grant insert, update, delete on public.knowledge_chunks to authenticated;
-
+-- Server-side-only corpus: the indexer writes it and the agent reads it (via match_knowledge), BOTH as
+-- service_role, which bypasses RLS and holds DML by default. The browser never touches the corpus, so it
+-- gets NO grants here. Granting authenticated INSERT/UPDATE/DELETE would reverse 0003's least-privilege
+-- revoke and let a browser user POISON the "trusted" reference knowledge that is later fed to the draft
+-- prompt (a prompt-injection channel). RLS + the tenant policy stay on as defense-in-depth (every table
+-- is tenant-scoped, D-15/D-16), so the table is closed even if a grant is ever loosened.
 alter table public.knowledge_chunks enable row level security;
 drop policy if exists knowledge_chunks_by_tenant on public.knowledge_chunks;
 create policy knowledge_chunks_by_tenant on public.knowledge_chunks
@@ -40,4 +43,5 @@ as $$
   limit match_count
 $$;
 
-grant execute on function public.match_knowledge(vector, uuid, int) to anon, authenticated, service_role;
+-- Called only by the agent (service_role); never exposed to the browser roles.
+grant execute on function public.match_knowledge(vector, uuid, int) to service_role;
