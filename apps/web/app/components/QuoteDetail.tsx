@@ -45,6 +45,14 @@ export function QuoteDetail({ r }: { r: RequestView }) {
         </div>
       ) : null}
 
+      {r.injection_flag ? (
+        <div className="flagnote">
+          ⚠ The sender&apos;s message contained text resembling an injection attempt. The price was
+          computed by code (not the model) and the safety guard passed — review carefully before
+          approving.
+        </div>
+      ) : null}
+
       {r.status === "awaiting_review" ? (
         <form action={approveAction} className="approve">
           <input type="hidden" name="requestId" value={r.id} />

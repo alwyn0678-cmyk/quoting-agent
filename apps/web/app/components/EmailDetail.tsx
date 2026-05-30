@@ -27,8 +27,8 @@ export function EmailDetail({ r }: { r: RequestView }) {
 
       {r.injection_flag ? (
         <div className="flagnote">
-          The sender&apos;s message contained text resembling an injection attempt. The price is
-          computed by code (not the model) and the safety guard passed — review before approving.
+          ⚠ The sender&apos;s message contained text resembling an injection attempt — handled
+          safely: pricing is computed by code, never by the model.
         </div>
       ) : null}
 

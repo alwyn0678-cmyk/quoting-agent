@@ -68,6 +68,8 @@ a { color: var(--teal); text-decoration: none; }
 .row .sub { color: var(--muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .row .amt { font-weight: 800; color: var(--ink); font-size: 13px; }
+.badges { display: flex; align-items: center; gap: 6px; }
+.flagmark { color: var(--esc); font-size: 12px; }
 
 /* ---- Status chips ---- */
 .chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 20px; }

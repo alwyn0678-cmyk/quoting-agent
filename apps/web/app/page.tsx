@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sel?: string }>;
+  searchParams: Promise<{ sel?: string | string[] }>;
 }) {
-  const { sel } = await searchParams;
+  const params = await searchParams;
+  const selectedId = Array.isArray(params.sel) ? params.sel[0] ?? null : params.sel ?? null;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -20,12 +21,13 @@ export default async function InboxPage({
   if (!user) redirect("/login");
 
   const requests = await listRequestsForTenant(supabase);
-  const selected = requests.find((r) => r.id === sel) ?? null;
+  const selected = requests.find((r) => r.id === selectedId) ?? null;
   const rows: RowItem[] = requests.map((r) => ({
     id: r.id,
     title: r.from_email ?? "(unknown sender)",
     subtitle: r.subject ?? "(no subject)",
     status: r.status,
+    flag: r.injection_flag,
   }));
   const awaiting = requests.filter((r) => r.status === "awaiting_review").length;
 
@@ -36,7 +38,7 @@ export default async function InboxPage({
       title="Inbox"
       subtitle={`${requests.length} request${requests.length === 1 ? "" : "s"} · ${awaiting} awaiting review`}
     >
-      <RequestList rows={rows} selectedId={sel ?? null} hrefBase="/" />
+      <RequestList rows={rows} selectedId={selectedId} hrefBase="/" />
       {selected ? (
         <EmailDetail r={selected} />
       ) : (

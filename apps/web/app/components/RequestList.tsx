@@ -7,6 +7,7 @@ export interface RowItem {
   subtitle: string;
   status: string;
   amount?: string;
+  flag?: boolean;
 }
 
 export function RequestList({
@@ -37,7 +38,14 @@ export function RequestList({
           <div className="sub">{r.subtitle}</div>
           <div className="meta">
             {r.amount ? <span className="amt">{r.amount}</span> : <span />}
-            <StatusBadge status={r.status} />
+            <span className="badges">
+              {r.flag ? (
+                <span className="flagmark" title="injection flagged">
+                  ⚠
+                </span>
+              ) : null}
+              <StatusBadge status={r.status} />
+            </span>
           </div>
         </Link>
       ))}
