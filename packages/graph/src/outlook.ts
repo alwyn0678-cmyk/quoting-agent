@@ -49,6 +49,7 @@ export class OutlookMailbox {
   constructor(
     private readonly transport: GraphTransport,
     private readonly userId: string,
+    private readonly folderId?: string,
   ) {}
 
   /**
@@ -57,8 +58,11 @@ export class OutlookMailbox {
    * persists each message as a quote_request and advances the stored cursor.
    */
   async listSince(cursor: string): Promise<{ messages: InboundMessage[]; cursor: string }> {
+    const base = this.folderId
+      ? `/users/${this.userId}/mailFolders/${this.folderId}/messages`
+      : `/users/${this.userId}/messages`;
     const path =
-      `/users/${this.userId}/messages` +
+      base +
       `?$filter=receivedDateTime gt ${cursor}` +
       `&$orderby=receivedDateTime asc` +
       `&$select=id,subject,from,body,receivedDateTime&$top=50`;

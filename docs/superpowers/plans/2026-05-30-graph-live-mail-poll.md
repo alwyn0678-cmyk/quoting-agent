@@ -47,7 +47,8 @@ Add this `it` block inside the existing `describe("P-1B.5 — Outlook read by cu
       "/users/alwyn@northscale.studio/mailFolders/AAMk-quote-folder-id/messages",
     );
     expect(transport.gets[0]).toContain("$filter=receivedDateTime gt 2026-05-01T00:00:00Z");
-    expect(transport.gets[0]).not.toContain("/messages?$filter"); // not the whole-mailbox path
+    // not the whole-mailbox path (the folder path has /mailFolders/{id}/messages, not /{user}/messages)
+    expect(transport.gets[0]).not.toContain("/users/alwyn@northscale.studio/messages?$filter");
   });
 ```
 
