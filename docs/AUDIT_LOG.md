@@ -29,11 +29,15 @@ acceptable.
 126/126 tests, root typecheck 0, trigger-package typecheck 0. Auth: `Mail.Read` only, client-credentials,
 folder-scoped, no send path. Secrets in `.env` (gitignored) only.
 
-### PENDING — before merge to main
-1. **AC-G5 live smoke (user):** do `docs/setup/graph-mail-poll-setup.md` (Entra app + `Mail.Read` admin
-   consent + Application Access Policy to the single mailbox + Outlook folder/rule) → fill `.env` →
-   `npm run graph:smoke` confirms a test email from `alwyn0678@gmail.com` reads through.
-2. **Sign-off** (Alwyn) → merge `feat/graph-live-mail-poll` to main `--no-ff`.
+### Sign-off & merge
+**Signed off (Alwyn) · 2026-05-30** → merged `feat/graph-live-mail-poll` to main `--no-ff`. Merging is
+**stub-safe**: without the `GRAPH_*` env vars, `main` behaves exactly as before (the poll uses the stub),
+so the live read activates only when credentials are added.
+
+### Remaining (operational, post-merge — not blocking)
+**AC-G5 live smoke:** do `docs/setup/graph-mail-poll-setup.md` (Entra app + `Mail.Read` admin consent +
+Application Access Policy to the single mailbox + Outlook folder/rule) → fill `.env` → `npm run graph:smoke`
+confirms a test email from `alwyn0678@gmail.com` reads through.
 
 ---
 
