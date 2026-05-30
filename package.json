@@ -12,6 +12,7 @@
     "ingest": "node --env-file-if-exists=.env --import tsx scripts/ingest_email.ts",
     "graph:smoke": "node --env-file-if-exists=.env --import tsx scripts/graph_smoke.ts",
     "rates:gen": "node --env-file-if-exists=.env --import tsx scripts/gen_rate_sheet.ts",
+    "rates:import": "node --env-file-if-exists=.env --import tsx scripts/import_rate_sheet.ts",
     "eval": "node --env-file-if-exists=.env --import tsx evals/run.ts",
     "eval:adapter": "node --env-file-if-exists=.env --import tsx evals/adapter.ts",
     "eval:web-ac5": "node --env-file-if-exists=.env --import tsx evals/web-ac5.ts",
