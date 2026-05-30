@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { GraphFetchTransport } from "./graph-transport.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { GraphFetchTransport, createOutlookMailboxFromEnv, hasGraphEnv } from "./graph-transport.js";
+import { OutlookMailbox } from "./outlook.js";
 
 type Call = { url: string; init?: { method?: string; headers?: Record<string, string>; body?: string } };
 
@@ -57,5 +58,57 @@ describe("GraphFetchTransport", () => {
     const { fn } = fakeFetch(() => ({ ok: false, status: 401, body: "bad creds" }));
     const t = new GraphFetchTransport({ tenantId: "T", clientId: "C", clientSecret: "S" }, fn);
     await expect(t.get("/users/u/messages")).rejects.toThrow(/token request failed: 401/);
+  });
+});
+
+describe("env factory", () => {
+  const KEYS = [
+    "GRAPH_TENANT_ID",
+    "GRAPH_CLIENT_ID",
+    "GRAPH_CLIENT_SECRET",
+    "GRAPH_MAILBOX_USER",
+    "GRAPH_QUOTE_FOLDER",
+  ] as const;
+  const saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const k of KEYS) {
+      saved[k] = process.env[k];
+      delete process.env[k];
+    }
+  });
+  afterEach(() => {
+    for (const k of KEYS) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+
+  function setAll() {
+    process.env.GRAPH_TENANT_ID = "T";
+    process.env.GRAPH_CLIENT_ID = "C";
+    process.env.GRAPH_CLIENT_SECRET = "S";
+    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    process.env.GRAPH_QUOTE_FOLDER = "F";
+  }
+
+  it("AC-G4: hasGraphEnv is false unless ALL vars are present", () => {
+    expect(hasGraphEnv()).toBe(false);
+    process.env.GRAPH_TENANT_ID = "T";
+    process.env.GRAPH_CLIENT_ID = "C";
+    process.env.GRAPH_CLIENT_SECRET = "S";
+    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    expect(hasGraphEnv()).toBe(false); // folder still missing
+    process.env.GRAPH_QUOTE_FOLDER = "F";
+    expect(hasGraphEnv()).toBe(true);
+  });
+
+  it("throws when env is incomplete", () => {
+    expect(() => createOutlookMailboxFromEnv()).toThrow(/required/i);
+  });
+
+  it("builds an OutlookMailbox when env is complete", () => {
+    setAll();
+    expect(createOutlookMailboxFromEnv()).toBeInstanceOf(OutlookMailbox);
   });
 });

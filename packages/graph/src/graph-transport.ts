@@ -69,3 +69,32 @@ export class GraphFetchTransport implements GraphTransport {
     return res.json();
   }
 }
+
+const GRAPH_ENV_KEYS = [
+  "GRAPH_TENANT_ID",
+  "GRAPH_CLIENT_ID",
+  "GRAPH_CLIENT_SECRET",
+  "GRAPH_MAILBOX_USER",
+  "GRAPH_QUOTE_FOLDER",
+] as const;
+
+/** True only when every live-Graph env var is set — the poll uses this to pick live vs stub. */
+export function hasGraphEnv(): boolean {
+  return GRAPH_ENV_KEYS.every((k) => Boolean(process.env[k]));
+}
+
+/** Build the live, folder-scoped OutlookMailbox from env. Throws if any var is missing
+ *  (mirrors createServiceClient's env handling). */
+export function createOutlookMailboxFromEnv(): OutlookMailbox {
+  const tenantId = process.env.GRAPH_TENANT_ID;
+  const clientId = process.env.GRAPH_CLIENT_ID;
+  const clientSecret = process.env.GRAPH_CLIENT_SECRET;
+  const user = process.env.GRAPH_MAILBOX_USER;
+  const folderId = process.env.GRAPH_QUOTE_FOLDER;
+  if (!tenantId || !clientId || !clientSecret || !user || !folderId) {
+    throw new Error(
+      "GRAPH_TENANT_ID / GRAPH_CLIENT_ID / GRAPH_CLIENT_SECRET / GRAPH_MAILBOX_USER / GRAPH_QUOTE_FOLDER required for the live Graph mailbox",
+    );
+  }
+  return new OutlookMailbox(new GraphFetchTransport({ tenantId, clientId, clientSecret }), user, folderId);
+}
