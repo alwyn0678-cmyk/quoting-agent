@@ -54,7 +54,9 @@ New-lane figures (A′: A10–A32) + the 45HC container note (C3) are INVENTED p
 verification paths; A1–A9 + the original totals unchanged (parity). None verified.
 
 ### Sign-off & merge
-Awaiting Alwyn's sign-off before `--no-ff` merge to main. No self-merge.
+**Signed off (Alwyn) · 2026-05-30** → merged `excel-rate-sheet` to main `--no-ff` + pushed to origin;
+branch deleted. `apps/web` untouched (no consequential redeploy). The live `rates:import` run, AC-G5
+(Graph smoke), and V5 (Vercel dashboard) remain deferred to the end-of-project live batch.
 
 ---
 
