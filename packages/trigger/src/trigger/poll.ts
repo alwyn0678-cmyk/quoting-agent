@@ -2,6 +2,7 @@ import { schedules } from "@trigger.dev/sdk";
 import { pollMailbox } from "../../../ingest/src/poll.js";
 import { SupabaseIngestStore, createServiceClient } from "../../../ingest/src/supabase-store.js";
 import { createStubMailbox } from "../../../ingest/src/stub-transport.js";
+import { createOutlookMailboxFromEnv, hasGraphEnv } from "../../../graph/src/graph-transport.js";
 import { LINKPORT_TENANT_ID } from "../../../agents/src/index.js";
 import { runRequestTask } from "./run.js";
 
@@ -9,8 +10,8 @@ const MAILBOX = "inbox";
 
 /**
  * Scheduled poll (Phase 1C live, L2). Each cycle, for the configured tenant mailbox: read newer mail
- * via the REAL OutlookMailbox over the stub transport (createStubMailbox — swap for the live
- * client-credentials transport later, no other change), persist new mail as 'received' deduped by
+ * via the REAL OutlookMailbox over either the live client-credentials transport (when the GRAPH_* env
+ * is set — hasGraphEnv) or the deterministic stub, persist new mail as 'received' deduped by
  * graph_message_id (AC-1), advance the per-tenant cursor, and enqueue the durable run for every id in
  * `toRun` (newly ingested ∪ stranded 'received' — W5 recovery). Each run is keyed by requestId, so a
  * re-enqueue of an in-flight request never runs it twice.
@@ -27,7 +28,7 @@ export const pollMailboxTask = schedules.task({
   run: async () => {
     const tenantId = process.env.QUOTEAGENT_TENANT_ID ?? LINKPORT_TENANT_ID;
     const store = new SupabaseIngestStore(createServiceClient());
-    const mailbox = createStubMailbox();
+    const mailbox = hasGraphEnv() ? createOutlookMailboxFromEnv() : createStubMailbox();
 
     const result = await pollMailbox(tenantId, MAILBOX, mailbox, store);
 
