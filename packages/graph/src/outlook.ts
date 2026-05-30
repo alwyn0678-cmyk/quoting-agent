@@ -59,7 +59,7 @@ export class OutlookMailbox {
    */
   async listSince(cursor: string): Promise<{ messages: InboundMessage[]; cursor: string }> {
     const base = this.folderId
-      ? `/users/${this.userId}/mailFolders/${this.folderId}/messages`
+      ? `/users/${this.userId}/mailFolders/${encodeURIComponent(this.folderId)}/messages`
       : `/users/${this.userId}/messages`;
     const path =
       base +

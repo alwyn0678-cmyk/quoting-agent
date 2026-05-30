@@ -46,14 +46,22 @@ export class GraphFetchTransport implements GraphTransport {
       body,
     });
     if (!res.ok) throw new Error(`Graph token request failed: ${res.status} ${await res.text()}`);
-    const json = (await res.json()) as { access_token: string; expires_in: number };
-    this.token = { value: json.access_token, expiresAt: Date.now() + (json.expires_in - 60) * 1000 };
+    const json = (await res.json()) as { access_token?: unknown; expires_in?: unknown };
+    const value = json.access_token;
+    const expiresIn = json.expires_in;
+    if (typeof value !== "string" || value.length === 0 || typeof expiresIn !== "number" || !Number.isFinite(expiresIn) || expiresIn <= 0) {
+      throw new Error("Graph token response malformed (missing access_token / expires_in)");
+    }
+    this.token = { value, expiresAt: Date.now() + (expiresIn - 60) * 1000 };
     return this.token.value;
   }
 
   async get(path: string): Promise<unknown> {
     const token = await this.accessToken();
-    const res = await this.fetchImpl(`${GRAPH}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await this.fetchImpl(`${GRAPH}${path}`, {
+      // Prefer text bodies: Graph returns HTML by default, but the agent extracts from plain text.
+      headers: { Authorization: `Bearer ${token}`, Prefer: 'outlook.body-content-type="text"' },
+    });
     if (!res.ok) throw new Error(`Graph GET ${path} failed: ${res.status} ${await res.text()}`);
     return res.json();
   }

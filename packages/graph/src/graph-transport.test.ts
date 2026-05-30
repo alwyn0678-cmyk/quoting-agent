@@ -42,6 +42,16 @@ describe("GraphFetchTransport", () => {
     expect(graphCalls).toHaveLength(2);
     expect(graphCalls[0]?.url).toBe("https://graph.microsoft.com/v1.0/users/u/messages");
     expect(graphCalls[0]?.init?.headers?.["Authorization"]).toBe("Bearer tok-123");
+    // request plain-text bodies so the agent never has to parse HTML
+    expect(graphCalls[0]?.init?.headers?.["Prefer"]).toBe('outlook.body-content-type="text"');
+  });
+
+  it("throws when the token response is malformed (no access_token → never 'Bearer undefined')", async () => {
+    const { fn } = fakeFetch((url) =>
+      url.includes(TOKEN_URL) ? { body: { expires_in: 3600 } } : { body: { value: [] } },
+    );
+    const t = new GraphFetchTransport({ tenantId: "T", clientId: "C", clientSecret: "S" }, fn);
+    await expect(t.get("/users/u/messages")).rejects.toThrow(/malformed/i);
   });
 
   it("AC-G2: throws when Graph returns a non-2xx (does not swallow as empty)", async () => {
