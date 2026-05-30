@@ -9,6 +9,7 @@ import {
 import { MockLlmClient } from "./mock-llm.js";
 import { priceQuote } from "./rate-engine.js";
 import { SYSTEM_CANARY } from "./config.js";
+import type { KnowledgeChunk } from "./chunk-corpus.js";
 
 const quote = priceQuote({
   origin_port_code: "NLRTM",
@@ -77,5 +78,25 @@ describe("verifyDraftStatesTotal (T10 mechanism)", () => {
   it("is not fooled by surrounding numbers (date, qty, container)", () => {
     const body = "Dear Maria, 2 x 40HC, valid through 2026-06-30, all-in EUR 6,930.";
     expect(verifyDraftStatesTotal(body, 6930)).toBe(true);
+  });
+});
+
+describe("Q3-AC-R4 — draft grounding block", () => {
+  const grounded: DraftInput = {
+    ...input,
+    groundingContext: [
+      { source: "surcharges", title: "BAF", content: "## BAF\nBunker Adjustment Factor recovers fuel cost." } as KnowledgeChunk,
+    ],
+  };
+
+  it("includes the reference-knowledge block (title + body) when grounding is supplied", () => {
+    const uc = buildDraftUserContent(grounded);
+    expect(uc).toContain("Reference knowledge");
+    expect(uc).toContain("BAF");
+    expect(uc).toContain("Bunker Adjustment Factor recovers fuel cost.");
+  });
+
+  it("omits the block when there is no grounding (unchanged behaviour)", () => {
+    expect(buildDraftUserContent(input)).not.toContain("Reference knowledge");
   });
 });
