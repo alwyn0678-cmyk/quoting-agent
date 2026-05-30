@@ -170,11 +170,38 @@ Version `2026-06-v1`, valid `2026-06-30`. Adds container `45HC` and surcharge `C
 | per_shipment_fee | DOC | | 65 | 0 |
 | per_shipment_fee | EXPORT_CUSTOMS | | 45 | 1 |
 
-**No engine change is needed** for the new container type (`45HC`) or codes (`CAF`, `PSS`,
-`CONGESTION`, `THC_LAX`, `THC_HAM`): `assembleRateCard` keys base by `container_type` and orders
-surcharges/fees by `sort_order` generically. The new lanes are **latent capacity** demonstrated by the
-workbook + parser tests; the Phase-0 demo path stays on `NLRTM-USNYC`, so **no fixture or golden is
-touched**. That is the whole point of the parity strategy.
+New **surcharge/fee codes** (`CAF`, `PSS`, `CONGESTION`, `THC_LAX`, `THC_HAM`) need **no engine
+change** — `RateQuoteSchema` types surcharge/fee `code` as a free `z.string()`, and `assembleRateCard`
+orders them generically by `sort_order`. The new container type **`45HC` is the one exception**: the
+engine's `rateContainerTypeSchema` hard-restricts priceable containers to `20GP/40GP/40HC`, so 45HC
+requires a small, **backward-compatible engine extension** (next section). Apart from that, the new
+lanes are **latent capacity** demonstrated by the workbook + parser tests; the Phase-0 demo path stays
+on `NLRTM-USNYC`, so **no fixture or existing golden is touched**, and NLRTM-USNYC prices byte-identically.
+
+## Engine extension — a 4th priceable container (`45HC`)
+
+The user chose to make `45HC` a real priceable container (not to drop it). This is a deliberate,
+**purely additive** engine change — verified blast radius is one read site:
+
+1. [schemas.ts:27](../../../packages/agents/src/schemas.ts#L27) — `rateContainerTypeSchema`:
+   `z.enum(["20GP","40GP","40HC"])` → `z.enum(["20GP","40GP","40HC","45HC"])`. This enum also backs
+   `RateQuoteSchema.container_type`, so a 45HC quote now validates.
+2. [schemas.ts:22-24](../../../packages/agents/src/schemas.ts#L22-L24) — `extractionContainerTypeSchema`
+   gains `45HC` too, so the extractor's allowed set keeps mirroring the priceable set (a customer may
+   name a 45HC). Additive; the extraction prompt and its goldens are **not** changed.
+3. [rate-card.ts:14](../../../packages/agents/src/rate-card.ts#L14) — `RateCard.base_per_container`:
+   `Record<"20GP"|"40GP"|"40HC", number>` → **`Partial<Record<"20GP"|"40GP"|"40HC"|"45HC", number>>`**.
+   `Partial` is correct because **a card need not price every type** — NLRTM-USNYC has no 45HC base, so
+   the existing StaticCard literal stays valid unchanged.
+4. [rate-engine.ts:66](../../../packages/agents/src/rate-engine.ts#L66) — with the `Partial` type,
+   `card.base_per_container[containerType]` is now `number | undefined` (the compiler enforces this via
+   `noUncheckedIndexedAccess`). Add a guard: a missing base for the requested container throws
+   `UnpriceableRequestError("out_of_scope_container", …)` — so requesting 45HC on a card without it
+   (e.g. NLRTM-USNYC) **refuses** rather than producing `NaN`. This is the only behavioural addition.
+
+Existing 20GP/40GP/40HC pricing on every lane is byte-identical (the guard only fires on an
+absent base, which never happened before). No DB schema change (the `rate_card_lines.container_type`
+column is free text).
 
 ## Importer behaviour (`scripts/import_rate_sheet.ts`)
 
@@ -199,6 +226,9 @@ touched**. That is the whole point of the parity strategy.
 
 ## Testing (every AC = one pass/fail test; all hermetic, no live DB)
 
+- **AC-Q0 (engine extension):** `priceQuote` prices a `45HC` request against a card that defines a 45HC
+  base, and **refuses** a `45HC` request against a card without one (`out_of_scope_container`, e.g.
+  NLRTM-USNYC) → unit test in `rate-engine.test.ts`. Existing 20GP/40GP/40HC pricing stays byte-identical.
 - **AC-Q1 (parser, happy path):** `parseRateSheet` on a hand-built `RawSheet[]` for all three lanes
   returns three `ParsedCard`s with the exact lines/order/types/amounts above → unit test.
 - **AC-Q2 (PARITY — the headline):** the parsed `NLRTM-USNYC` card, fed through `assembleRateCard` +
@@ -207,8 +237,9 @@ touched**. That is the whole point of the parity strategy.
   Excel→card path reproduces the seeded card exactly.
 - **AC-Q3 (new lanes price):** the parsed `NLRTM-USLAX` card prices a `45HC×1` (base 3250 + per-
   container surcharges 360+140+225+310+25+200 = 1260 → 4510, + per-shipment 65+45=110 → **4620**),
-  proving new container types/codes price with **no engine change** → unit test. (Exact expected value
-  pinned in the plan; it is derived, not asserted by re-implementing the sum.)
+  proving 45HC (enabled by the AC-Q0 engine extension) and the new surcharge codes price through the
+  real engine → unit test. (Exact expected value pinned in the plan; it is derived, not asserted by
+  re-implementing the sum.)
 - **AC-Q4 (fail-fast):** an unknown `kind` (or non-numeric amount) makes `parseRateSheet` **throw** →
   unit test. A malformed sheet must not silently import.
 - Tests live in `packages/agents/src/parse-rate-sheet.test.ts`. **Every existing test stays green**
@@ -228,7 +259,9 @@ touched**. That is the whole point of the parity strategy.
 
 ## Out of scope / deferred (explicit)
 
-- **No change** to `excel-rate-card.ts`, the runtime pricing path, the CLI demo, or any eval/golden.
+- **No change** to `excel-rate-card.ts`, the CLI demo, or any existing eval/golden. The pricing engine
+  gains **backward-compatible 45HC support** (a 4th container type, the only engine edit); all existing
+  pricing is byte-identical and NLRTM-USNYC is untouched.
 - **No** file-backed `ExcelWorkbookTransport` to drive the gated `ExcelOnlineRateEngine` off the real
   workbook — a tempting synergy, but YAGNI for Q2; noted as a future follow-on.
 - **No** new DB migration/constraint — the importer is idempotent via natural-key select, so it needs
