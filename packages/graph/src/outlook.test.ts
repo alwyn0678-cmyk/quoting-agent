@@ -53,6 +53,26 @@ describe("P-1B.5 — Outlook read by cursor", () => {
     expect(messages).toEqual([]);
     expect(cursor).toBe("2026-05-10T00:00:00Z");
   });
+
+  it("scopes the read to a folder when a folderId is given (mailFolders path)", async () => {
+    const transport = new FakeTransport({ value: [] });
+    const box = new OutlookMailbox(transport, "alwyn@northscale.studio", "AAMk-quote-folder-id");
+    await box.listSince("2026-05-01T00:00:00Z");
+
+    expect(transport.gets[0]).toContain(
+      "/users/alwyn@northscale.studio/mailFolders/AAMk-quote-folder-id/messages",
+    );
+    expect(transport.gets[0]).toContain("$filter=receivedDateTime gt 2026-05-01T00:00:00Z");
+    // not the whole-mailbox path (the folder path has /mailFolders/{id}/messages, not /{user}/messages)
+    expect(transport.gets[0]).not.toContain("/users/alwyn@northscale.studio/messages?$filter");
+  });
+
+  it("URL-encodes the folderId (opaque Graph ids can contain / + =)", async () => {
+    const transport = new FakeTransport({ value: [] });
+    const box = new OutlookMailbox(transport, "alwyn@northscale.studio", "AAMk/Ab+c==");
+    await box.listSince("2026-05-01T00:00:00Z");
+    expect(transport.gets[0]).toContain("/mailFolders/AAMk%2FAb%2Bc%3D%3D/messages");
+  });
 });
 
 describe("AC-7 / R1 — send-free by construction", () => {

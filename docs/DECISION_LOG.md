@@ -3,6 +3,25 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1D — live MS Graph mail poll (2026-05-30)
+
+- **D-24 · The live MS Graph transport is read-only (`Mail.Read`), client-credentials, folder-scoped,
+  behind the existing `MailboxReader` port; the poll selects live-vs-stub by env (`hasGraphEnv`).** ·
+  *Going live = implement `GraphFetchTransport` (client-credentials token + `fetch`) and point
+  `OutlookMailbox` at a `mailFolder` — the `MailboxReader` port + the whole downstream pipeline are
+  unchanged, so the provider is swappable (a Gmail sibling is future, zero-rework). Scope A is read-only
+  BY PERMISSION (no `Mail.Send`/`Mail.ReadWrite`, no send method) and blast-radius-limited to one mailbox
+  via an Exchange Application Access Policy. Reconciliation of codex Gate-4: APPLIED `folderId`
+  URL-encoding, the `Prefer:text` body header (the agent extracts from plain text, not HTML), and
+  token-response validation. REBUTTED four findings — (a) encoding `userId`: pre-existing interpolation,
+  our UPN is `@`-only (allowed in Graph path segments per RFC 3986), and encoding `@` breaks established
+  tests + exceeds this change's surgical scope; (b) sanitizing error bodies: AAD/Graph errors carry error
+  CODES, never our secret/token, and the body is diagnostic — a single-tenant demo surfaces it
+  deliberately (future hardening if multi-tenant/prod); (c) the smoke script printing sender/subject IS
+  its purpose (AC-G5 verification), not a prod log; (d) a poll injection seam is YAGNI — `pollMailbox` is
+  already injectable and tested with `FakeMailbox`, and the trigger task is thin glue.* ·
+  **Pending live AC-G5 + sign-off (Alwyn).**
+
 ## Phase 1C — live layer (Trigger.dev wiring) (2026-05-29)
 
 - **D-23 · The autonomous loop is wired live as a self-contained Trigger.dev v4 project
