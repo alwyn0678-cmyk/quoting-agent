@@ -30,6 +30,48 @@ Resulting all-in totals used as expected values in fixtures (deterministic, inte
 40HC×2 = €6,930 · 20GP×1 = €2,770 · 40GP×3 = €9,890 · 40HC×1 = €3,520. These are correct **given
 the invented inputs above**; they are not real quotes.
 
+## A′. Additional lanes (all INVENTED — the serious mock rate sheet, Q2)
+
+Two extra lanes added to `rates/linkport-rate-sheet.xlsx` so the workbook is a realistic multi-lane
+sheet. Every figure is INVENTED; a real forwarder substitutes their contracted rates and re-imports.
+Rate-card version `2026-06-v1`, `validity_through = 2026-06-30`, currency EUR.
+
+**Lane NLRTM → USLAX (Rotterdam → Los Angeles), FCL ocean:**
+
+| # | Claim | Value | Source | How to verify |
+|---|---|---|---|---|
+| A10 | Base 20GP | €2,200 / container | INVENTED | as A1 (Freightos/Drewry/Xeneta N. Europe→US West Coast; forwarder) |
+| A11 | Base 40GP | €2,900 / container | INVENTED | as A10 |
+| A12 | Base 40HC | €3,050 / container | INVENTED | as A10 |
+| A13 | Base 45HC | €3,250 / container | INVENTED | as A10; also verify 45HC ≥ 40HC |
+| A14 | BAF | €360 / container | INVENTED | as A4 |
+| A15 | CAF (Currency Adjustment Factor) | €140 / container | INVENTED | Confirm CAF exists & magnitude with a forwarder/carrier tariff |
+| A16 | THC origin (Rotterdam) | €225 / container | INVENTED | as A5 |
+| A17 | THC destination (Los Angeles) | €310 / container | INVENTED | US West Coast terminal tariffs; forwarder |
+| A18 | ISPS / security | €25 / container | INVENTED | as A7 |
+| A19 | PSS (Peak Season Surcharge) | €200 / container | INVENTED | Confirm PSS applicability/season & magnitude |
+| A20 | Documentation / B/L fee | €65 / shipment | INVENTED | as A8 |
+| A21 | Export customs handling | €45 / shipment | INVENTED | as A9 |
+
+**Lane DEHAM → USNYC (Hamburg → New York), FCL ocean:**
+
+| # | Claim | Value | Source | How to verify |
+|---|---|---|---|---|
+| A22 | Base 20GP | €1,900 / container | INVENTED | as A1 |
+| A23 | Base 40GP | €2,500 / container | INVENTED | as A22 |
+| A24 | Base 40HC | €2,650 / container | INVENTED | as A22 |
+| A25 | Base 45HC | €2,850 / container | INVENTED | as A22; verify 45HC ≥ 40HC |
+| A26 | BAF | €330 / container | INVENTED | as A4 |
+| A27 | THC origin (Hamburg) | €240 / container | INVENTED | Hamburg terminal tariffs; forwarder |
+| A28 | THC destination (New York) | €290 / container | INVENTED | as A6 |
+| A29 | ISPS / security | €25 / container | INVENTED | as A7 |
+| A30 | CONGESTION surcharge | €175 / container | INVENTED | Confirm a port-congestion surcharge applies & magnitude |
+| A31 | Documentation / B/L fee | €65 / shipment | INVENTED | as A8 |
+| A32 | Export customs handling | €45 / shipment | INVENTED | as A9 |
+
+Derived check (given the invented inputs): NLRTM→USLAX 45HC×1 = €4,620 (used as the AC-Q3 expected
+value). Not a real quote.
+
 ## B. Pricing structure (STRUCTURAL — modelling choices that may not match practice)
 
 | # | Claim | Source | How to verify |
@@ -46,7 +88,7 @@ the invented inputs above**; they are not real quotes.
 |---|---|---|---|
 | C1 | "Rotterdam" → UN/LOCODE `NLRTM`; "New York" → `USNYC` | VERIFY | UN/LOCODE registry (these codes are real; the *mapping from free-text* is the assumption) |
 | C2 | Quote is **port-to-port** (not door-to-door); incoterm affects what's included but Phase 0 prices port-to-port regardless | STRUCTURAL | Confirm with a forwarder; door/door changes the cost basis |
-| C3 | Container types of interest are 20GP, 40GP, 40HC | STRUCTURAL | Reasonable for trans-Atlantic FCL; confirm 40HC dominance |
+| C3 | Container types of interest are 20GP, 40GP, 40HC, and 45HC (45HC added in Q2 for the new lanes; the demo NLRTM→USNYC lane prices only the first three) | STRUCTURAL | Reasonable for trans-Atlantic/Pacific FCL; confirm 40HC/45HC usage |
 | C4 | Only FCL ocean is in scope; LCL/air/rail → escalate | Plan decision | n/a (scope choice, not a domain fact) |
 
 ## D. "What a typical quote email looks like" (INVENTED)

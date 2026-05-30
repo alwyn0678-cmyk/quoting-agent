@@ -18,13 +18,20 @@ const locationSchema = z.object({
 
 export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "UNKNOWN"]);
 
-/** What the extractor may report — includes UNKNOWN / absent. */
+/**
+ * What the extractor may report — includes UNKNOWN / absent. Deliberately the DEMO LANE's quotable
+ * set (NLRTM-USNYC prices 20GP/40GP/40HC), NOT the engine's full priceable set: the gate's
+ * "quote ⇒ priceable" invariant (gate.ts) relies on every extractable container being priceable on
+ * the demo card. 45HC is priceable by the engine on the new lanes (rateContainerTypeSchema below),
+ * but is not offered on the demo lane, so the extractor does not surface it — a 45HC demo request
+ * resolves to UNKNOWN and escalates rather than reaching priceQuote().
+ */
 export const extractionContainerTypeSchema = z
   .enum(["20GP", "40GP", "40HC", "UNKNOWN"])
   .nullable();
 
-/** What the rate engine can actually price — the real supported set only. */
-export const rateContainerTypeSchema = z.enum(["20GP", "40GP", "40HC"]);
+/** What the rate engine can actually price — the real supported set (broader than the demo lane). */
+export const rateContainerTypeSchema = z.enum(["20GP", "40GP", "40HC", "45HC"]);
 
 const confidence = z.number().min(0).max(1);
 
