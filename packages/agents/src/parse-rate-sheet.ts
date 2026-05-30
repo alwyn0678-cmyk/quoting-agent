@@ -61,24 +61,35 @@ export function parseRateSheet(sheets: RawSheet[]): ParsedCard[] {
       if (!(KINDS as readonly string[]).includes(kindRaw)) {
         throw new Error(`sheet '${sheet.name}' row ${i + 1}: unknown kind '${kindRaw}'`);
       }
+      const kind = kindRaw as RateCardLineRow["kind"];
       const code = cellStr(row[1]);
       if (code === "") throw new Error(`sheet '${sheet.name}' row ${i + 1}: empty code`);
+
+      // container_type keys the base rate, so a base line MUST have one; the other kinds are
+      // container-agnostic and MUST NOT carry one (a stray value would be silently ignored).
       const containerStr = cellStr(row[2]);
-      const amount = Number(row[3]);
-      if (!Number.isFinite(amount) || amount < 0) {
-        throw new Error(`sheet '${sheet.name}' row ${i + 1}: invalid amount '${cellStr(row[3])}'`);
+      const container_type = containerStr === "" ? null : containerStr;
+      if (kind === "base" && container_type === null) {
+        throw new Error(`sheet '${sheet.name}' row ${i + 1}: base line '${code}' has no container_type`);
       }
-      const sort_order = Number(row[4]);
-      if (!Number.isInteger(sort_order)) {
-        throw new Error(`sheet '${sheet.name}' row ${i + 1}: invalid sort '${cellStr(row[4])}'`);
+      if (kind !== "base" && container_type !== null) {
+        throw new Error(
+          `sheet '${sheet.name}' row ${i + 1}: ${kind} line '${code}' must not carry a container_type`,
+        );
       }
-      lines.push({
-        kind: kindRaw as RateCardLineRow["kind"],
-        code,
-        container_type: containerStr === "" ? null : containerStr,
-        amount,
-        sort_order,
-      });
+
+      // amounts and sort orders are whole, non-negative integers — no blank, no decimal, no sign
+      // (ASSUMPTIONS B3). Reject anything else rather than letting Number() coerce '' -> 0 etc.
+      const amountStr = cellStr(row[3]);
+      if (!/^\d+$/.test(amountStr)) {
+        throw new Error(`sheet '${sheet.name}' row ${i + 1}: invalid amount '${amountStr}' (whole EUR >= 0)`);
+      }
+      const sortStr = cellStr(row[4]);
+      if (!/^\d+$/.test(sortStr)) {
+        throw new Error(`sheet '${sheet.name}' row ${i + 1}: invalid sort '${sortStr}'`);
+      }
+
+      lines.push({ kind, code, container_type, amount: Number(amountStr), sort_order: Number(sortStr) });
     }
     if (lines.length === 0) throw new Error(`sheet '${sheet.name}': no line rows`);
 

@@ -77,4 +77,28 @@ describe("Q2-AC-Q4 — parseRateSheet fails fast on a malformed sheet", () => {
     const s: RawSheet = { name: "x", rows: [["Lane", "NLRTM-USNYC"], ["Version", "2026-06-v1"]] };
     expect(() => parseRateSheet([s])).toThrow(/header/i);
   });
+
+  it("throws on a blank amount (does not coerce '' -> 0)", () => {
+    expect(() =>
+      parseRateSheet([sheet("bad", "NLRTM-USNYC", [["base", "BASE_20GP", "20GP", null, 0]])]),
+    ).toThrow(/invalid amount/i);
+  });
+
+  it("throws on a fractional amount (whole EUR only)", () => {
+    expect(() =>
+      parseRateSheet([sheet("bad", "NLRTM-USNYC", [["base", "BASE_20GP", "20GP", 1800.25, 0]])]),
+    ).toThrow(/invalid amount/i);
+  });
+
+  it("throws on a base line with no container_type", () => {
+    expect(() =>
+      parseRateSheet([sheet("bad", "NLRTM-USNYC", [["base", "BASE_20GP", null, 1800, 0]])]),
+    ).toThrow(/no container_type/i);
+  });
+
+  it("throws on a surcharge line that carries a container_type", () => {
+    expect(() =>
+      parseRateSheet([sheet("bad", "NLRTM-USNYC", [["surcharge_per_container", "BAF", "40HC", 320, 0]])]),
+    ).toThrow(/must not carry a container_type/i);
+  });
 });

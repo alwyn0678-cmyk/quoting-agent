@@ -3,6 +3,27 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1F — serious Excel rate sheet (Q2) (2026-05-30)
+
+- **D-25 · The Excel rate sheet is the human-editable source of truth, imported OFFLINE into Supabase
+  (runtime pricing unchanged); the demo lane NLRTM-USNYC is held byte-identical to the seed/StaticCard;
+  45HC is added to the rate ENGINE only, with the extraction enum deliberately NOT extended.** ·
+  *A real, committed multi-lane `.xlsx` (3 lanes) + a pure `parseRateSheet` (exceljs-free, the tested
+  core) + an exceljs reader + an idempotent importer (upsert by `(tenant,lane,version)`, reusing the
+  seeded card id). Excel is where a forwarder swaps in their own rates; the runtime keeps reading
+  Supabase, so AC-3/AC-4/RLS are untouched. Parity (NLRTM-USNYC byte-identical) turns the importer into
+  a correctness proof — the round-trip test asserts `assembleRateCard(NLRTM-USNYC) === RATE_CARD` and
+  6930/2770/3520/9890 from the real workbook (codex independently confirmed). Richness (45HC, CAF, PSS,
+  CONGESTION) lives in the NEW lanes (NLRTM-USLAX, DEHAM-USNYC), so no golden is re-derived. 45HC is a
+  backward-compatible engine extension (`rateContainerTypeSchema` + a `Partial` base map + a missing-base
+  guard refusing `out_of_scope_container`, never `NaN`). Gate-4 reconciliation: the extraction enum is
+  deliberately decoupled from the engine's priceable set and kept to the demo lane's quotable
+  `{20GP,40GP,40HC}` — extending it broke the gate's "quote ⇒ priceable" invariant (a 45HC extraction on
+  the demo lane would reach `priceQuote` and throw); decoupling restores it (45HC demo request → UNKNOWN →
+  escalation). Parser hardened to fail-fast (integer-only amounts/sorts; base⇔container by kind). exceljs
+  is a devDep confined to the reader/scripts/tests — never in the agent/app bundle.* · **Pending live
+  `rates:import` run + sign-off (Alwyn).**
+
 ## Phase 1D — live MS Graph mail poll (2026-05-30)
 
 - **D-24 · The live MS Graph transport is read-only (`Mail.Read`), client-credentials, folder-scoped,

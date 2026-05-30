@@ -40,7 +40,11 @@ async function main(): Promise<void> {
     });
     if (upErr) throw upErr;
 
-    // Replace this card's lines (same pattern as the SQL seed) so re-runs are idempotent.
+    // Replace this card's lines (same pattern as the SQL seed) so re-runs are idempotent. NOTE: the
+    // whole workbook is parsed + validated above BEFORE any DB write, so malformed data never reaches
+    // here. The delete->insert is not a single transaction over the REST client, so a DB/network
+    // failure between the two could leave the card line-less; the script is idempotent (just re-run),
+    // and `npm run db:seed` restores the NLRTM-USNYC demo card. Live run is supervised + deferred.
     const { error: delErr } = await db.from("rate_card_lines").delete().eq("rate_card_id", id);
     if (delErr) throw delErr;
     const { error: insErr } = await db.from("rate_card_lines").insert(

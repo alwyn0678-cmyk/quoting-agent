@@ -35,7 +35,7 @@ export function buildExtractionSystemPrompt(): string {
     "- Recognise origin and destination as free text and, when you know the port, its UN/LOCODE.",
     "  Rotterdam is NLRTM; New York is USNYC (project assumption).",
     "- mode is one of FCL, LCL, AIR, RAIL, or UNKNOWN. container_type is one of 20GP, 40GP, 40HC,",
-    "  45HC, or UNKNOWN. Use null for an optional field that is genuinely absent; use UNKNOWN for a",
+    "  or UNKNOWN. Use null for an optional field that is genuinely absent; use UNKNOWN for a",
     "  required field that is referenced but cannot be classified.",
     "- Do NOT invent values. Do NOT compute or state any price — pricing is handled elsewhere.",
     "- Provide a calibrated overall_confidence (0..1) and per-field confidence for required fields.",

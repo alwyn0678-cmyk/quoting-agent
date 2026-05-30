@@ -186,9 +186,13 @@ The user chose to make `45HC` a real priceable container (not to drop it). This 
 1. [schemas.ts:27](../../../packages/agents/src/schemas.ts#L27) — `rateContainerTypeSchema`:
    `z.enum(["20GP","40GP","40HC"])` → `z.enum(["20GP","40GP","40HC","45HC"])`. This enum also backs
    `RateQuoteSchema.container_type`, so a 45HC quote now validates.
-2. [schemas.ts:22-24](../../../packages/agents/src/schemas.ts#L22-L24) — `extractionContainerTypeSchema`
-   gains `45HC` too, so the extractor's allowed set keeps mirroring the priceable set (a customer may
-   name a 45HC). Additive; the extraction prompt and its goldens are **not** changed.
+2. `extractionContainerTypeSchema` is **deliberately NOT extended** (resolved at Gate-4, P1a). The
+   gate's "quote ⇒ priceable" invariant ([gate.ts](../../../packages/agents/src/gate.ts)) relies on
+   every *extractable* container being priceable on the **demo card** (NLRTM-USNYC, which offers only
+   20GP/40GP/40HC). So the extraction enum stays the demo lane's quotable set; the engine's priceable
+   set is broader (45HC for the new lanes). The two are intentionally decoupled — a 45HC demo request
+   resolves to UNKNOWN and escalates, never reaching `priceQuote()`. The extraction prompt + goldens
+   are unchanged.
 3. [rate-card.ts:14](../../../packages/agents/src/rate-card.ts#L14) — `RateCard.base_per_container`:
    `Record<"20GP"|"40GP"|"40HC", number>` → **`Partial<Record<"20GP"|"40GP"|"40HC"|"45HC", number>>`**.
    `Partial` is correct because **a card need not price every type** — NLRTM-USNYC has no 45HC base, so

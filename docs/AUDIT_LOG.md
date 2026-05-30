@@ -4,6 +4,60 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1F — Q2 serious Excel rate sheet (real .xlsx → import → Supabase) · 2026-05-30
+
+### Scope
+A real, committed, multi-lane Excel rate sheet + an offline importer that upserts it into Supabase;
+the pricing engine extended to a 4th container type (45HC). 7 TDD task-slices on `excel-rate-sheet`
+(`aa73385`→`91a48d2`, + Gate fixes): engine 45HC (enum + `Partial` base + missing-base guard), pure
+`parseRateSheet` (no exceljs), exceljs generator + committed `rates/linkport-rate-sheet.xlsx`
+(3 lanes — NLRTM-USNYC at parity, NLRTM-USLAX, DEHAM-USNYC), exceljs reader + round-trip parity/45HC
+test, idempotent importer (live run deferred), ASSUMPTIONS A′. exceljs is a devDep confined to the
+reader/scripts/tests; the agent runtime never imports it. NLRTM-USNYC held byte-identical to the
+seed/StaticCard.
+
+### Gate-3 (self-review)
+Caught a prompt/schema inconsistency: the extraction tool schema (`zodToJsonSchema`) auto-gained 45HC
+but the hardcoded prompt line still listed 3 types (fixed in `f18dd7b`; later superseded — see P1a).
+Engine change verified minimal: blast radius is the single `priceQuote` read site; the `Partial` base
+map keeps the StaticCard literal valid; the guard refuses (`out_of_scope_container`) rather than `NaN`.
+
+### Gate-4 (codex, read-only on `git diff main...HEAD`; codex-cli 0.125.0)
+codex independently verified parity (assembled NLRTM-USNYC === `RATE_CARD`; 6930/2770/3520/9890;
+USLAX 45HC = 4620). 3×P1 + 1×P2; **I reconcile: all valid, all addressed.**
+- **[P1a] gate invariant broken by 45HC in the extraction enum** — `gate.ts:43-46` only checks the
+  container is present, trusting `lane==supported_lane` to guarantee priceability (its docstring
+  promises "quote ⇒ priceable"). Adding 45HC to the **extraction** enum let the extractor emit a
+  container the demo card can't price → "quote" → `priceQuote` throws. **FIX (root-cause, minimal):
+  revert the extraction enum to the demo lane's quotable set `{20GP,40GP,40HC,UNKNOWN}`** (+ revert the
+  prompt). The **engine** keeps 45HC (`rateContainerTypeSchema` + the new lanes); the two enums are now
+  deliberately decoupled — extraction mirrors the demo card, not the engine's full set. A 45HC demo
+  request → UNKNOWN → escalation (no crash). Chosen over expanding the escalation taxonomy + DB
+  constraint (heavier; the demo lane cannot quote 45HC regardless).
+- **[P1b] parser amount coercion** — `Number('')→0`; `1800.25` accepted. **FIX:** amounts + sort orders
+  must match `/^\d+$/` (whole non-negative integers, ASSUMPTIONS B3); blank/decimal/sign rejected.
+- **[P1c] base line without a container silently dropped** — `assembleRateCard` ignores a blank base
+  container → a card missing a rate. **FIX:** a `base` line must carry a `container_type`; the other
+  kinds must not. Fail-fast on either.
+- **[P2] importer delete→insert not atomic over REST** — a failure between could leave the reused card
+  line-less. **ACCEPT + mitigate:** the whole workbook is parsed/validated before any DB write; the
+  script is idempotent (re-run) and `npm run db:seed` restores the demo card; documented in-code; the
+  live run is supervised + deferred.
+
+### Verification
+Offline suite **145/145** (+4 parser-hardening tests; +13 Q2 tests overall) · root typecheck 0 ·
+`apps/web` typecheck 0 (untouched). codex-confirmed parity + 45HC pricing. Deferred to the
+end-of-project live batch: the live `rates:import` run, AC-G5 (Graph smoke), V5 (Vercel dashboard).
+
+### ASSUMPTIONS status
+New-lane figures (A′: A10–A32) + the 45HC container note (C3) are INVENTED placeholders with
+verification paths; A1–A9 + the original totals unchanged (parity). None verified.
+
+### Sign-off & merge
+Awaiting Alwyn's sign-off before `--no-ff` merge to main. No self-merge.
+
+---
+
 ## Phase 1E — dashboard redesign (Workbench + strict-split tabs) · 2026-05-30
 
 ### Scope
