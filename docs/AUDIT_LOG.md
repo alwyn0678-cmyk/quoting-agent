@@ -4,6 +4,39 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1D — live MS Graph mail poll (Scope A, read-only) · 2026-05-30
+
+### Scope
+Replace the stub mailbox with a live, read-only MS Graph transport so `alwyn@northscale.studio`'s
+"Quote requests" folder feeds the autonomous poll (client `alwyn0678@gmail.com` sends in). 5 TDD
+task-slices on `feat/graph-live-mail-poll` (`201cf9c`→`881ae93`): folder-scoped `OutlookMailbox` read,
+`GraphFetchTransport` (client-credentials + `fetch`, token cache), `createOutlookMailboxFromEnv` /
+`hasGraphEnv` factory, a one-line poll swap (live when `GRAPH_*` set, else stub), `graph_smoke` script
++ setup doc. Reused the existing `MailboxReader` port + the entire downstream pipeline
+(poll/run/persist/dashboard) — unchanged. ~95 lines new code; existing code touched only by the 1-line swap.
+
+### Gate-3 (self-review)
+Flagged the raw `folderId` URL interpolation (opaque Graph ids can contain `/ + =`). Judged token
+caching (under `concurrencyLimit:1`), the unused `post` (completes the seam), and no-secret-in-errors
+acceptable.
+
+### Gate-4 (codex, read-only on `git diff main...HEAD`)
+1 P1 + 3 P2 + 2 P3. Reconciled in `7799c3b`:
+- **Applied** — P1 encode `folderId` (+ reserved-char test); P2 send `Prefer: outlook.body-content-type="text"` (plain-text bodies, not HTML); P2 validate the token response (no `Bearer undefined` from a malformed 200) + test.
+- **Rebutted** (DECISION_LOG D-24) — encode `userId` (pre-existing, `@`-safe UPN, breaks existing tests, out of scope); raw error bodies (no secret/token leaked; AAD/Graph return error *codes*; diagnostic; single-tenant demo); smoke prints sender/subject (its purpose — AC-G5); poll injection seam (`pollMailbox` already injectable + tested; trigger task is thin glue; YAGNI).
+
+### Verification
+126/126 tests, root typecheck 0, trigger-package typecheck 0. Auth: `Mail.Read` only, client-credentials,
+folder-scoped, no send path. Secrets in `.env` (gitignored) only.
+
+### PENDING — before merge to main
+1. **AC-G5 live smoke (user):** do `docs/setup/graph-mail-poll-setup.md` (Entra app + `Mail.Read` admin
+   consent + Application Access Policy to the single mailbox + Outlook folder/rule) → fill `.env` →
+   `npm run graph:smoke` confirms a test email from `alwyn0678@gmail.com` reads through.
+2. **Sign-off** (Alwyn) → merge `feat/graph-live-mail-poll` to main `--no-ff`.
+
+---
+
 ## Deploy — apps/web dashboard to GitHub + Vercel (IN PROGRESS, resume here) · 2026-05-29
 
 ### Scope
