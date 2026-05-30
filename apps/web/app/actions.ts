@@ -17,4 +17,5 @@ export async function approveAction(formData: FormData): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await approveRequest(supabase, requestId);
   revalidatePath("/");
+  revalidatePath("/quotes");
 }
