@@ -34,7 +34,9 @@ P1 none. 1 P2 + 2 P3, **all applied** (`60a0c6b`), none rebutted:
 pass + the live dashboard check are deferred.
 
 ### Sign-off & merge
-(pending — awaiting Alwyn)
+**Signed off (Alwyn) · 2026-05-30** → merged `feat/dashboard-redesign` to main `--no-ff` + pushed to
+origin (Vercel redeploys the dashboard, so the redesign goes live). `apps/web`-only; the pipeline / DB /
+Graph poll are untouched. The UX-polish pass + the live dashboard check remain deferred.
 
 ---
 
