@@ -28,6 +28,7 @@ export interface RequestView {
   status: string;
   from_email: string | null;
   subject: string | null;
+  body: string | null;
   created_at: string;
   escalation_reason: string | null;
   injection_flag: boolean;
@@ -51,6 +52,7 @@ export interface RawRequestRow {
   status: string;
   from_email: string | null;
   subject: string | null;
+  body?: string | null;
   created_at: string;
   escalation_reason: string | null;
   injection_flag: boolean;
@@ -76,6 +78,7 @@ export function buildRequestView(row: RawRequestRow): RequestView {
     status: row.status,
     from_email: row.from_email,
     subject: row.subject,
+    body: row.body ?? null,
     created_at: row.created_at,
     escalation_reason: row.escalation_reason,
     injection_flag: row.injection_flag,
@@ -99,7 +102,7 @@ export function buildRequestView(row: RawRequestRow): RequestView {
 }
 
 const SELECT =
-  "id, status, from_email, subject, created_at, escalation_reason, injection_flag, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
+  "id, status, from_email, subject, body, created_at, escalation_reason, injection_flag, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
 
 /**
  * The narrow slice of a Supabase client this lib actually uses: `from(table).select(cols).order(...)`
@@ -124,4 +127,9 @@ export async function listRequestsForTenant(client: RequestsReader): Promise<Req
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as unknown as RawRequestRow[]).map(buildRequestView);
+}
+
+/** The requests that produced a quote — the Quotations tab list (escalations are Inbox-only). */
+export function quotationsOnly(views: RequestView[]): RequestView[] {
+  return views.filter((v) => v.quote !== null);
 }

@@ -48,3 +48,6 @@ evals/cache/
 # Trigger.dev / Cloud
 .trigger.json
 .omx/
+
+# Brainstorming visual-companion artifacts (local design mockups)
+.superpowers/

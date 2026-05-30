@@ -4,6 +4,42 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1E — dashboard redesign (Workbench + strict-split tabs) · 2026-05-30
+
+### Scope
+Rebuild the reviewer dashboard (`apps/web`) into a two-pane **Workbench**: a navy "Maritime" `AppShell`
++ strict-split **Inbox** (`/`) and **Quotations** (`/quotes`) tabs, `?sel` server-rendered selection,
+token-based light CSS. 6 TDD task-slices on `feat/dashboard-redesign` (`d245cec`→`d8e94f6`): data layer
+(`body` + `quotationsOnly`), `AppShell`+`StatusBadge`, `RequestList`+`EmailDetail`+Inbox,
+`QuoteDetail`+`/quotes`+revalidate, `globals.css` Maritime tokens, usage-in-shell. New presentational
+server components; the only logic change is the data layer (unit-tested). Visual polish is a deferred
+follow-on (user's stated intent).
+
+### Gate-3 (self-review)
+Low risk: only the data logic (`body`, `quotationsOnly`) is testable + tested; the rest is presentational
+and React-escaped (no XSS surface); RLS scoping unchanged (no manual tenant filter added); `QuoteDetail`
+guards the no-quote case. Clean.
+
+### Gate-4 (codex, read-only on `git diff main...HEAD`)
+P1 none. 1 P2 + 2 P3, **all applied** (`60a0c6b`), none rebutted:
+- **P2** (real regression): moving Approve from the old flat card to `QuoteDetail` dropped the injection
+  warning that sat next to it — restored, + a ⚠ marker on flagged list rows.
+- **P3**: neutralized `EmailDetail`'s injection copy (it was shown for escalations with approve-specific
+  wording); the approve-time warning is now `QuoteDetail`-only.
+- **P3**: normalized `?sel` (App Router params can repeat) in both pages.
+
+### Verification
+`apps/web` typecheck 0 · `next build` 0 (routes `/`, `/quotes`, `/usage`, `/login`) · root suite **128/128**
+(the 2 new data-layer tests + all prior). Visual fidelity verified by eye (mockup approved); a UX-polish
+pass + the live dashboard check are deferred.
+
+### Sign-off & merge
+**Signed off (Alwyn) · 2026-05-30** → merged `feat/dashboard-redesign` to main `--no-ff` + pushed to
+origin (Vercel redeploys the dashboard, so the redesign goes live). `apps/web`-only; the pipeline / DB /
+Graph poll are untouched. The UX-polish pass + the live dashboard check remain deferred.
+
+---
+
 ## Phase 1D — live MS Graph mail poll (Scope A, read-only) · 2026-05-30
 
 ### Scope

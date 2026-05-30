@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRequestView, type RawRequestRow } from "./dashboard.js";
+import { buildRequestView, quotationsOnly, type RawRequestRow, type RequestView } from "./dashboard.js";
 import { StaticCardRateEngine } from "../../../../packages/agents/src/rate-engine.js";
 
 describe("P-1C.3 — dashboard render model", () => {
@@ -133,5 +133,62 @@ describe("P-1C.3 — dashboard render model", () => {
     const view = buildRequestView(row);
     expect(view.quote?.all_in_total).toBe(2770);
     expect(view.draft?.body).toContain("2,770");
+  });
+
+  it("AC-D1: carries the inbound email body into the view", async () => {
+    const row: RawRequestRow = {
+      id: "rb",
+      status: "awaiting_review",
+      from_email: "maria@apex.example",
+      subject: "Quote RTM->NYC",
+      body: "Dear Linkport, please quote 2 x 40HC Rotterdam to New York.",
+      created_at: "2026-05-20T10:00:00Z",
+      escalation_reason: null,
+      injection_flag: false,
+      quotes: [],
+      drafts: [],
+    };
+    expect(buildRequestView(row).body).toBe(
+      "Dear Linkport, please quote 2 x 40HC Rotterdam to New York.",
+    );
+  });
+
+  it("AC-D2: quotationsOnly keeps views with a quote, drops escalations", () => {
+    const base = {
+      created_at: "2026-05-20T10:00:00Z",
+      injection_flag: false,
+      body: "b",
+    };
+    const quoted: RequestView = {
+      id: "q1",
+      status: "awaiting_review",
+      from_email: "a@x.example",
+      subject: "s",
+      escalation_reason: null,
+      quote: {
+        lane: "NLRTM-USNYC",
+        container_type: "40HC",
+        container_qty: 1,
+        base_per_container: 2550,
+        surcharges: [],
+        per_shipment_fees: [],
+        all_in_total: 3520,
+        validity_through: "2026-06-30",
+        rate_card_version: "2026-06-v1",
+      },
+      draft: null,
+      ...base,
+    };
+    const escalated: RequestView = {
+      id: "e1",
+      status: "escalated",
+      from_email: "b@y.example",
+      subject: "s2",
+      escalation_reason: "out_of_scope_mode",
+      quote: null,
+      draft: null,
+      ...base,
+    };
+    expect(quotationsOnly([quoted, escalated]).map((v) => v.id)).toEqual(["q1"]);
   });
 });
