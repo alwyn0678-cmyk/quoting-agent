@@ -42,3 +42,13 @@ export function estimateCostUsd(inputTokens: number, outputTokens: number): numb
     (outputTokens / 1_000_000) * PRICE_OUTPUT_USD_PER_MTOK;
   return Math.round(usd * 1_000_000) / 1_000_000; // round to micro-dollars
 }
+
+/**
+ * Gemini Embedding 2 (Q3 RAG). The model-id string is a VERIFY assumption (ASSUMPTIONS.md G) —
+ * confirm against Google's current API at the live smoke; it is the single place to change it.
+ * 768 dims are MRL-truncated and auto-normalized by the model.
+ */
+export const GEMINI_EMBEDDING_MODEL = "gemini-embedding-2";
+export const EMBEDDING_DIMS = 768;
+/** How many corpus chunks to retrieve for grounding the draft. */
+export const RAG_TOP_K = 6;
