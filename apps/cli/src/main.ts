@@ -1,5 +1,10 @@
 import { readFileSync } from "node:fs";
-import { runAgent, AnthropicLlmClient, type EmailInput } from "../../../packages/agents/src/index.js";
+import {
+  runAgent,
+  AnthropicLlmClient,
+  createKnowledgeRetrieverFromEnv,
+  type EmailInput,
+} from "../../../packages/agents/src/index.js";
 import { formatAgentOutput } from "./format.js";
 
 /**
@@ -25,7 +30,8 @@ async function main(): Promise<void> {
   }
   const email = loadEmail(path);
   const client = new AnthropicLlmClient();
-  const output = await runAgent(email, client);
+  // engine + routing keep their defaults; the knowledge retriever is env-gated (ungrounded if unset).
+  const output = await runAgent(email, client, undefined, undefined, createKnowledgeRetrieverFromEnv());
   console.log(formatAgentOutput(output));
 }
 

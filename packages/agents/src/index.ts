@@ -16,3 +16,6 @@ export { SupabaseTableRateEngine, createSupabaseRateEngine } from "./supabase-ra
 export { LINKPORT_TENANT_ID, DEFAULT_LANE } from "./config.js";
 export { SupabaseQuoteStore, quoteToRow } from "./quote-store.js";
 export type { QuoteStore, QuoteRow } from "./quote-store.js";
+// The scoped-RAG retrieval seam (Q3) — grounds the draft prose; env-gated + stub-safe.
+export { EmptyRetriever, createKnowledgeRetrieverFromEnv } from "./knowledge-retriever.js";
+export type { KnowledgeRetriever } from "./knowledge-retriever.js";

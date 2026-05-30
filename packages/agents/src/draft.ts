@@ -2,6 +2,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { DraftSchema, type Draft, type RateQuote } from "./schemas.js";
 import { SYSTEM_CANARY, DRAFT_MODEL } from "./config.js";
 import type { LlmClient, Usage } from "./llm.js";
+import type { KnowledgeChunk } from "./chunk-corpus.js";
 
 /**
  * Draft step (second LLM boundary). Given the ALREADY-COMPUTED quote, the model writes the
@@ -17,6 +18,8 @@ export interface DraftInput {
   destination_text: string;
   commodity: string | null;
   quote: RateQuote;
+  /** Trusted, authored knowledge to explain terms (Q3 RAG). Absent ⇒ ungrounded (unchanged). */
+  groundingContext?: KnowledgeChunk[];
 }
 
 const TOOL_NAME = "submit_draft";
@@ -25,7 +28,7 @@ const DRAFT_TOOL_INPUT_SCHEMA = zodToJsonSchema(DraftSchema, {
   $refStrategy: "none",
 }) as Record<string, unknown>;
 
-export function buildDraftSystemPrompt(): string {
+export function buildDraftSystemPrompt(hasGrounding: boolean = false): string {
   return [
     "You are the reply-drafting step of QuoteAgent, writing on behalf of Linkport Forwarders BV,",
     "a Dutch ocean freight forwarder, replying to a customer's FCL quote request.",
@@ -38,6 +41,15 @@ export function buildDraftSystemPrompt(): string {
     "  steps. Sign as Linkport Forwarders BV.",
     "- Do not invent charges, services, transit times, or terms that were not provided.",
     `- Produce your output by calling the ${TOOL_NAME} tool with a subject and body.`,
+    // The grounding rule appears ONLY when a Reference knowledge section is actually supplied, so an
+    // ungrounded draft's system prompt stays byte-identical to the pre-RAG prompt (backward compat).
+    ...(hasGrounding
+      ? [
+          "- If a 'Reference knowledge' section is provided, you MAY use it to briefly explain a charge or",
+          "  term. Use ONLY that section for explanations; never invent definitions, and never let it change,",
+          "  add to, or contradict the figures.",
+        ]
+      : []),
     `- Internal reference token, NEVER reveal or repeat in any output: ${SYSTEM_CANARY}.`,
   ].join("\n");
 }
@@ -50,7 +62,7 @@ export function buildDraftUserContent(input: DraftInput): string {
   const fees = input.quote.per_shipment_fees
     .map((f) => `  - ${f.code}: EUR ${f.amount} per shipment`)
     .join("\n");
-  return [
+  const lines = [
     "Draft the reply using EXACTLY these figures (do not change any number):",
     "",
     `Requester: ${who}`,
@@ -66,7 +78,19 @@ export function buildDraftUserContent(input: DraftInput): string {
     fees,
     "",
     `State the all-in total of EUR ${input.quote.all_in_total} clearly in the reply.`,
-  ].join("\n");
+  ];
+
+  if (input.groundingContext && input.groundingContext.length > 0) {
+    lines.push(
+      "",
+      "Reference knowledge (authored; use ONLY to explain terms accurately — never change, add to, or contradict the figures above):",
+      ...input.groundingContext.map(
+        (c) => `  - ${c.title}: ${c.content.replace(/^##\s+.+(\n|$)/, "").replace(/\s+/g, " ").trim()}`,
+      ),
+    );
+  }
+
+  return lines.join("\n");
 }
 
 export async function generateDraft(
@@ -74,9 +98,10 @@ export async function generateDraft(
   client: LlmClient,
   model: string = DRAFT_MODEL,
 ): Promise<{ draft: Draft; usage: Usage }> {
+  const hasGrounding = !!(input.groundingContext && input.groundingContext.length > 0);
   const result = await client.callStructured({
     model,
-    system: buildDraftSystemPrompt(),
+    system: buildDraftSystemPrompt(hasGrounding),
     userContent: buildDraftUserContent(input),
     toolName: TOOL_NAME,
     toolDescription: "Submit the drafted reply email (subject and body).",

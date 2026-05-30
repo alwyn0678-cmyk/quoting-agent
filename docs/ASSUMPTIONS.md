@@ -114,3 +114,19 @@ value). Not a real quote.
 - The canonical plan notes a possible freight-forwarder contact (Airwaves, listed in memory) who
   could sanity-check Section A/B/C **post-launch, for assumption-verification only** — no build
   commitment. Until then, every figure above stays labelled INVENTED.
+
+## G. Knowledge corpus (Q3 RAG — all INVENTED / curated)
+
+The `knowledge/*.md` corpus (surcharge & fee glossary, incoterms summaries, Linkport quoting policy,
+lane/port notes) is authored content for the fictional Linkport — definitions, policy clauses, and
+lane notes are written to read plausibly, NOT sourced from authority. They ground the *reply prose*
+only (never the price). Verify each glossary definition against a carrier/forwarder tariff and a real
+Incoterms 2020 reference; the lane/port operational notes (routing/transit) are especially invented.
+
+| # | Claim | Source | How to verify |
+|---|---|---|---|
+| G1 | Surcharge/fee definitions (BAF, CAF, THC, ISPS, PSS, CONGESTION, DOC, EXPORT_CUSTOMS) | INVENTED | Carrier tariff + forwarder fee schedule |
+| G2 | Incoterm summaries (FOB, CIF, EXW, DAP) | INVENTED summary | Cross-check ICC Incoterms 2020 |
+| G3 | Linkport quoting policy (validity, port-to-port basis, inclusions/exclusions, booking) | INVENTED (fictional tenant) | n/a (fictional) — confirm shape with a forwarder |
+| G4 | Lane/port notes (NLRTM/USNYC/USLAX/DEHAM) | INVENTED | UN/LOCODE registry; a forwarder for routing/transit |
+| G5 | Gemini embedding model id `gemini-embedding-2`, 768-dim, auto-normalized; REST body uses camelCase `outputDimensionality` (Gate-4 fix #2) and encodes the task as an in-prompt instruction (no `taskType` param) | VERIFY | Confirm the model id, the 768-dim behaviour, AND the full request shape (field names, task handling) against Google's current Gemini API at the live smoke; the id is one config constant. The 768-dim length assert fails loudly if the live shape is wrong |

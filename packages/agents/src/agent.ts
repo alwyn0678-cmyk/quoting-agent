@@ -3,7 +3,8 @@ import { decide } from "./gate.js";
 import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
-import { estimateCostUsd, SYSTEM_CANARY, PER_STEP_ROUTING, type ModelRouting } from "./config.js";
+import { estimateCostUsd, SYSTEM_CANARY, PER_STEP_ROUTING, RAG_TOP_K, type ModelRouting } from "./config.js";
+import { type KnowledgeRetriever, EmptyRetriever, buildRetrievalQuery } from "./knowledge-retriever.js";
 import {
   AgentOutputSchema,
   type AgentOutput,
@@ -24,6 +25,7 @@ export async function runAgent(
   client: LlmClient,
   engine: RateEngine = new StaticCardRateEngine(),
   routing: ModelRouting = PER_STEP_ROUTING,
+  retriever: KnowledgeRetriever = new EmptyRetriever(),
 ): Promise<AgentOutput> {
   const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
   const gate = decide(extraction);
@@ -48,6 +50,13 @@ export async function runAgent(
       container_qty: extraction.container_qty,
     });
 
+    // Ground the reply prose in trusted knowledge retrieved from STRUCTURED quote fields (never the
+    // raw email). Retrieval runs AFTER pricing and feeds only the draft — RAG never touches the price.
+    const groundingContext = await retriever.retrieve(
+      buildRetrievalQuery(quote, extraction.incoterm),
+      RAG_TOP_K,
+    );
+
     const drafted = await generateDraft(
       {
         requester_name: extraction.requester_name,
@@ -56,6 +65,7 @@ export async function runAgent(
         destination_text: extraction.destination.raw,
         commodity: extraction.commodity,
         quote,
+        groundingContext,
       },
       client,
       routing.draft,

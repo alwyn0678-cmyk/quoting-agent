@@ -4,6 +4,71 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1G — Q3 scoped RAG (draft-only grounding · Gemini Embedding 2 + pgvector) · 2026-05-30
+
+### Scope
+A retrieval layer that grounds **only the drafted reply prose, never the price** — the deliberate
+"know when NOT to use RAG" learning goal. 11 TDD task-slices on `scoped-rag` (`8f6ec5f`→`415da1e`,
++ Gate fixes): a pure `chunkCorpus` (one chunk per `## heading`); an authored, committed corpus
+(`knowledge/{surcharges,incoterms,policy,lanes}.md`, ALL INVENTED — ASSUMPTIONS G); an `EmbeddingClient`
+port + deterministic `MockEmbeddingClient` + `cosineRank`; a live `GeminiEmbeddingClient` (Gemini
+Embedding 2, 768-dim, REST); a `KnowledgeRetriever` port (`Empty`/`InMemory`/`Supabase`) +
+`buildRetrievalQuery` (structured fields only, never the raw email); a pgvector migration
+(`0010_knowledge_base.sql` + `match_knowledge`); draft grounding (`draft.ts groundingContext`); agent
+wiring (`runAgent` 5th `retriever` param, **retrieve AFTER pricing, BEFORE drafting**, default
+`EmptyRetriever`); CLI wiring (env-gated); a deferred indexer + live eval. The retriever is env-gated
+stub-safe: with no `GEMINI_API_KEY`/Supabase env it is an `EmptyRetriever`, so the agent runs ungrounded
+with no key and no crash.
+
+### Gate-3 (self-review)
+Price integrity is structural: the quote is computed before retrieval, grounding chunks feed only the
+draft prose, and `verifyDraftStatesTotal` (T10) + the canary guard run after — unchanged. Flagged for
+Gate-4 scrutiny: (a) the retrieval query mixes engine-trusted codes/lane/container with `extraction.incoterm`,
+which traces to the untrusted email (assessed: can only steer which *trusted* chunk surfaces, cannot
+inject or move price — later hardened, see P2); (b) the corpus is authored/committed, not user-supplied;
+(c) `create extension vector` may need `with schema extensions` on hosted Supabase (a deferred-live note).
+
+### Gate-4 (codex, read-only on `git diff main...HEAD`; codex-cli 0.125.0; exit 0, 145k tok)
+codex independently confirmed the price-integrity boundary holds and the env-gating is stub-safe.
+3×P1 + 1×P2; **I reconcile: all four valid, all addressed.**
+- **[P1 #1] `0010:19` granted `insert/update/delete` on `knowledge_chunks` to `authenticated`** — a
+  browser user could mutate the "trusted" corpus via PostgREST → prompt-injection text fed to the draft
+  as reference knowledge; also reverses `0003`'s least-privilege revoke. **FIX (root-cause): the corpus
+  is server-side-only** — written by the indexer and read by the agent, both as `service_role` (bypasses
+  RLS, holds DML by default). Removed all `anon`/`authenticated` table grants; `match_knowledge` EXECUTE
+  narrowed to `service_role` only. RLS + the tenant policy stay on as defense-in-depth.
+- **[P1 #2] `gemini-embedding-client.ts:42` sent `output_dimensionality` (snake_case)** — the Gemini
+  REST body is camelCase (`outputDimensionality`); the snake_case form is Python-SDK only, so live
+  embedding would fall back to the default dim. **FIX: `outputDimensionality`.** The 768-dim length
+  assert already fails loudly on a mismatch; the full request shape + model id stay VERIFY (G5).
+- **[P1 #3] `buildDraftSystemPrompt()` changed unconditionally** → the system prompt was no longer
+  byte-identical to `main` for ungrounded runs (violates the empty-grounding backward-compat AC).
+  **FIX: gate the grounding rule behind a `hasGrounding` param**; `generateDraft` passes it. Runtime-
+  proven: `buildDraftSystemPrompt(false) === main` (827 === 827 chars); grounded adds the rule. Two
+  guard tests added (unit + agent wiring on `draftCall.system`).
+- **[P2 #4] `buildRetrievalQuery` passed `incoterm` (`z.string().nullable()`, unconstrained, email-
+  derived) verbatim into the embedding query** — codex confirmed **no price path** (only trusted chunks
+  return; price precomputed), residual risk is retrieval-steering / leaking attacker text to the
+  embedding API. **FIX: allowlist-normalize to the 11 Incoterms 2020 codes**; out-of-allowlist → dropped.
+
+### Verification
+Offline suite **164/164** (162 prior + 2 new guards) · root typecheck 0 · `apps/web` typecheck 0
+(table is not referenced by the web app). Deferred to the end-of-project live batch (all need
+`GEMINI_API_KEY` + Supabase): `db:migrate:rag` (0010), `rag:index` (embed corpus → pgvector),
+`eval:rag` (AC-R6 live pass-band retrieval).
+
+### ASSUMPTIONS status
+Section G (G1–G5): the corpus content (surcharge/fee defs, incoterm summaries, policy, lane notes) is
+INVENTED with verification paths. G5 updated — the REST field casing was corrected to the documented
+camelCase, but the model id `gemini-embedding-2`, 768-dim behaviour, and full request shape remain
+VERIFY at the live smoke. None verified.
+
+### Sign-off & merge
+**Pending sign-off (Alwyn).** On sign-off → merge `scoped-rag` to main `--no-ff` + push + delete branch.
+No self-merge. The live RAG batch (migrate + index + eval) stays deferred.
+
+---
+
 ## Phase 1F — Q2 serious Excel rate sheet (real .xlsx → import → Supabase) · 2026-05-30
 
 ### Scope
