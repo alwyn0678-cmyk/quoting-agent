@@ -1,4 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
 import { cosineRank, type EmbeddingClient } from "./embedding-client.js";
+import { GeminiEmbeddingClient } from "./gemini-embedding-client.js";
+import { LINKPORT_TENANT_ID } from "./config.js";
 import type { KnowledgeChunk } from "./chunk-corpus.js";
 import type { RateQuote } from "./schemas.js";
 
@@ -59,4 +62,46 @@ export class InMemoryKnowledgeRetriever implements KnowledgeRetriever {
     const [qv] = await this.embeddings.embed([query], "query");
     return cosineRank(qv ?? [], embedded, k).map((r) => r.item);
   }
+}
+
+/** The narrow slice of a Supabase client this retriever uses — structural, so no supabase-js type dep. */
+export interface KnowledgeRpc {
+  rpc(fn: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: unknown }>;
+}
+
+/** Persistent retriever: embed the query, then cosine top-k via the match_knowledge SQL function. */
+export class SupabaseKnowledgeRetriever implements KnowledgeRetriever {
+  constructor(
+    private readonly client: KnowledgeRpc,
+    private readonly embeddings: EmbeddingClient,
+    private readonly tenantId: string,
+  ) {}
+
+  async retrieve(query: string, k: number): Promise<KnowledgeChunk[]> {
+    const [qv] = await this.embeddings.embed([query], "query");
+    const { data, error } = await this.client.rpc("match_knowledge", {
+      query_embedding: qv ?? [],
+      p_tenant: this.tenantId,
+      match_count: k,
+    });
+    if (error) throw error;
+    return (data as { source: string; title: string; content: string }[]).map((r) => ({
+      source: r.source,
+      title: r.title,
+      content: r.content,
+    }));
+  }
+}
+
+/**
+ * Env-gated factory (stub-safe, like hasGraphEnv): returns a live Supabase+Gemini retriever only when
+ * BOTH the Gemini key and the Supabase service_role env are present; otherwise an EmptyRetriever, so
+ * the draft is simply ungrounded and nothing requires a key/DB.
+ */
+export function createKnowledgeRetrieverFromEnv(tenantId: string = LINKPORT_TENANT_ID): KnowledgeRetriever {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const gkey = process.env.GEMINI_API_KEY;
+  if (!url || !key || !gkey) return new EmptyRetriever();
+  return new SupabaseKnowledgeRetriever(createClient(url, key), new GeminiEmbeddingClient(gkey), tenantId);
 }

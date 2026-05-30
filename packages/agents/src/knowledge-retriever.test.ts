@@ -3,8 +3,10 @@ import {
   buildRetrievalQuery,
   InMemoryKnowledgeRetriever,
   EmptyRetriever,
+  SupabaseKnowledgeRetriever,
+  type KnowledgeRpc,
 } from "./knowledge-retriever.js";
-import { MockEmbeddingClient } from "./embedding-client.js";
+import { MockEmbeddingClient, type EmbeddingClient, type EmbeddingTask } from "./embedding-client.js";
 import { chunkCorpus } from "./chunk-corpus.js";
 import { priceQuote } from "./rate-engine.js";
 
@@ -41,5 +43,34 @@ describe("Q3-AC-R3 — deterministic retrieval (in-memory + mock)", () => {
 
   it("EmptyRetriever returns nothing", async () => {
     expect(await new EmptyRetriever().retrieve("anything", 5)).toEqual([]);
+  });
+});
+
+describe("Q3 SupabaseKnowledgeRetriever (fake rpc)", () => {
+  it("embeds the query with the 'query' task and calls match_knowledge with the tenant + count", async () => {
+    let seenTask: EmbeddingTask | undefined;
+    const embeddings: EmbeddingClient = {
+      async embed(_texts, task) {
+        seenTask = task;
+        return [[0.1, 0.2, 0.3]];
+      },
+    };
+    let rpcArgs: Record<string, unknown> | undefined;
+    const rpc: KnowledgeRpc = {
+      rpc(_fn, args) {
+        rpcArgs = args;
+        return Promise.resolve({
+          data: [{ source: "surcharges", title: "BAF", content: "## BAF\nBunker..." }],
+          error: null,
+        });
+      },
+    };
+    const r = new SupabaseKnowledgeRetriever(rpc, embeddings, "tenant-1");
+    const hits = await r.retrieve("explain BAF", 6);
+
+    expect(seenTask).toBe("query");
+    expect(rpcArgs).toMatchObject({ p_tenant: "tenant-1", match_count: 6 });
+    expect(rpcArgs?.query_embedding).toEqual([0.1, 0.2, 0.3]);
+    expect(hits).toEqual([{ source: "surcharges", title: "BAF", content: "## BAF\nBunker..." }]);
   });
 });
