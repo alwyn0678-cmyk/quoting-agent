@@ -64,6 +64,12 @@ export function priceQuote(req: PriceRequest, card: RateCard = RATE_CARD): RateQ
 
   const containerType = parsedType.data;
   const base = card.base_per_container[containerType];
+  if (base === undefined) {
+    throw new UnpriceableRequestError(
+      "out_of_scope_container",
+      `container_type '${containerType}' is not priced on lane '${card.supported_lane}'`,
+    );
+  }
   const surchargeSum = card.surcharges.reduce((sum, s) => sum + s.amount_per_container, 0);
   const perShipmentSum = card.per_shipment_fees.reduce((sum, f) => sum + f.amount, 0);
   const all_in_total = req.container_qty * (base + surchargeSum) + perShipmentSum;

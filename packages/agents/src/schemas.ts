@@ -20,11 +20,11 @@ export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "UNKNOWN"]);
 
 /** What the extractor may report — includes UNKNOWN / absent. */
 export const extractionContainerTypeSchema = z
-  .enum(["20GP", "40GP", "40HC", "UNKNOWN"])
+  .enum(["20GP", "40GP", "40HC", "45HC", "UNKNOWN"])
   .nullable();
 
 /** What the rate engine can actually price — the real supported set only. */
-export const rateContainerTypeSchema = z.enum(["20GP", "40GP", "40HC"]);
+export const rateContainerTypeSchema = z.enum(["20GP", "40GP", "40HC", "45HC"]);
 
 const confidence = z.number().min(0).max(1);
 

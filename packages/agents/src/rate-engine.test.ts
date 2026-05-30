@@ -5,6 +5,7 @@ import {
   UnpriceableRequestError,
   type PriceRequest,
 } from "./rate-engine.js";
+import type { RateCard } from "./rate-card.js";
 
 const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
   origin_port_code: "NLRTM",
@@ -118,4 +119,58 @@ describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()",
       });
     });
   }
+});
+
+describe("Q2-AC-Q0 — engine extension: 45HC is a real priceable container", () => {
+  // A card that DOES define a 45HC base (shape of the new NLRTM-USLAX lane).
+  const uslaxCard: RateCard = {
+    version: "2026-06-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-USLAX",
+    base_per_container: { "20GP": 2200, "40GP": 2900, "40HC": 3050, "45HC": 3250 },
+    surcharges: [
+      { code: "BAF", amount_per_container: 360 },
+      { code: "CAF", amount_per_container: 140 },
+      { code: "THC_RTM", amount_per_container: 225 },
+      { code: "THC_LAX", amount_per_container: 310 },
+      { code: "ISPS", amount_per_container: 25 },
+      { code: "PSS", amount_per_container: 200 },
+    ],
+    per_shipment_fees: [
+      { code: "DOC", amount: 65 },
+      { code: "EXPORT_CUSTOMS", amount: 45 },
+    ],
+  };
+
+  it("prices a 45HC on a card that defines a 45HC base", () => {
+    const q = priceQuote(
+      {
+        origin_port_code: "NLRTM",
+        destination_port_code: "USLAX",
+        mode: "FCL",
+        container_type: "45HC",
+        container_qty: 1,
+      },
+      uslaxCard,
+    );
+    expect(q.container_type).toBe("45HC");
+    expect(q.base_per_container).toBe(3250);
+    // 3250 + (360+140+225+310+25+200) + (65+45) = 4620
+    expect(q.all_in_total).toBe(4620);
+  });
+
+  it("refuses a 45HC on a card without a 45HC base (out_of_scope_container)", () => {
+    // default RATE_CARD (NLRTM-USNYC) has no 45HC base
+    const call = () => priceQuote(inScope({ container_type: "45HC" }));
+    expect(call).toThrow(UnpriceableRequestError);
+    try {
+      call();
+    } catch (e) {
+      expect((e as UnpriceableRequestError).reason).toBe("out_of_scope_container");
+    }
+  });
+
+  it("still prices the existing 3 types byte-identically (40HC×1 = 3520)", () => {
+    expect(priceQuote(inScope({ container_type: "40HC", container_qty: 1 })).all_in_total).toBe(3520);
+  });
 });

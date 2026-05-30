@@ -11,7 +11,7 @@ export interface RateCard {
   version: string;
   validity_through: string; // ISO date
   supported_lane: string; // ORIGIN-DEST UN/LOCODEs
-  base_per_container: Record<"20GP" | "40GP" | "40HC", number>; // whole EUR
+  base_per_container: Partial<Record<"20GP" | "40GP" | "40HC" | "45HC", number>>; // whole EUR; a card need not price every type
   surcharges: { code: string; amount_per_container: number }[]; // whole EUR, per container
   per_shipment_fees: { code: string; amount: number }[]; // whole EUR, once per shipment
 }
