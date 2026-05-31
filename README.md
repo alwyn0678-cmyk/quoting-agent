@@ -1,5 +1,12 @@
 # QuoteAgent
 
+![tests](https://img.shields.io/badge/tests-164%20passing-2ea44f?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict%20ESM-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-Sonnet%20%2B%20Haiku-d97757?style=flat-square)
+![Supabase](https://img.shields.io/badge/Supabase-pgvector%20%2B%20RLS-3ecf8e?style=flat-square&logo=supabase&logoColor=white)
+![Next.js](https://img.shields.io/badge/dashboard-Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+[![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
 **An AI agent for a fictional Dutch freight forwarder (Linkport Forwarders BV).** It reads an inbound
 FCL ocean-freight quote request (Rotterdam → New York), extracts the structured request, prices it from
 a rate card, and drafts a reply — escalating to a human whenever it shouldn't answer on its own.
@@ -17,9 +24,27 @@ Everything between and after them — the quote-vs-escalate decision, the price,
 plain TypeScript that runs the same way every time. The agent is interesting not because it calls a
 model, but because of **where it refuses to**.
 
+```mermaid
+flowchart LR
+    A["📧 Inbound email<br/>untrusted free text"]:::untrusted
+    A -->|"extract — LLM"| B["Structured request<br/>constrained schema"]:::data
+    B -->|"gate — code"| G{"priceable<br/>& in scope?"}:::code
+    G -->|"no"| E["🚨 Escalate<br/>to a human"]:::escalate
+    G -->|"yes"| P["💶 Price — code<br/>base + surcharges + fees<br/>deterministic €"]:::code
+    P -->|"retrieve — pgvector"| R["Grounding chunks<br/>explanations only"]:::data
+    R -->|"draft — LLM"| D["Reply prose"]:::llm
+    D -->|"guards — code"| Q{"injection /<br/>price drift /<br/>canary?"}:::code
+    Q -->|"violation"| E
+    Q -->|"clean"| O["✅ Drafted quote<br/>exact, auditable total"]:::data
+
+    classDef untrusted fill:#fdecec,stroke:#e06c6c,color:#7a1f1f;
+    classDef llm fill:#f0e6fb,stroke:#a06cd5,color:#3d1f6e;
+    classDef code fill:#e6eefb,stroke:#5b8def,color:#16306e;
+    classDef data fill:#e6f7ec,stroke:#4caf6e,color:#14532d;
+    classDef escalate fill:#fff4d6,stroke:#e0a800,color:#7a5b00;
 ```
-email → [extract: LLM] → [gate: code] → [price: code] → [retrieve: pgvector] → [draft: LLM] → [guards: code] → draft | escalation
-```
+
+<sub>🟣 **LLM** reads/writes language · 🔵 **deterministic code** makes every decision that must be correct · 🔴 untrusted input · 🟢 verified data. The point is *where it refuses to call the model*.</sub>
 
 ## Quickstart (the Phase 0 CLI slice)
 
