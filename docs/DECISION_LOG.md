@@ -170,8 +170,8 @@ Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, a
 
 ## Carried-over — pre-Phase-0 (brainstorm + grill)
 
-- **D-06 · Supabase account: `carlyshartin@gmail.com` for QuoteAgent ONLY**; Northscale
-  (`info@northscale.studio`) stays the main/default account. · **Accepted** (project `quoteagent`,
+- **D-06 · Dedicated Supabase account for QuoteAgent ONLY**, kept separate from any
+  main/default account. · **Accepted** (project `quoteagent`,
   region `eu-central-1`, provisioned 2026-05-29).
 - **D-05 · Orchestration = Trigger.dev v3** (not n8n). · **Accepted.**
 - **D-04 · Scope v1 = ONE mode + ONE lane: FCL ocean, Rotterdam→New York.** · **Accepted.**

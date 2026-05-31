@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the stub mailbox with a live, read-only MS Graph transport so a real email lands in `alwyn@northscale.studio`'s "Quote requests" folder and flows end-to-end to the dashboard.
+**Goal:** Replace the stub mailbox with a live, read-only MS Graph transport so a real email lands in `desk@linkport.example`'s "Quote requests" folder and flows end-to-end to the dashboard.
 
 **Architecture:** The `MailboxReader` port and the whole downstream pipeline already exist. We add folder-scoping to `OutlookMailbox`, build a real `GraphFetchTransport` (client-credentials + `fetch`), an env factory that swaps it in for the stub when configured, and a non-CI smoke script. No downstream code changes.
 
@@ -40,15 +40,15 @@ Add this `it` block inside the existing `describe("P-1B.5 — Outlook read by cu
 ```ts
   it("scopes the read to a folder when a folderId is given (mailFolders path)", async () => {
     const transport = new FakeTransport({ value: [] });
-    const box = new OutlookMailbox(transport, "alwyn@northscale.studio", "AAMk-quote-folder-id");
+    const box = new OutlookMailbox(transport, "desk@linkport.example", "AAMk-quote-folder-id");
     await box.listSince("2026-05-01T00:00:00Z");
 
     expect(transport.gets[0]).toContain(
-      "/users/alwyn@northscale.studio/mailFolders/AAMk-quote-folder-id/messages",
+      "/users/desk@linkport.example/mailFolders/AAMk-quote-folder-id/messages",
     );
     expect(transport.gets[0]).toContain("$filter=receivedDateTime gt 2026-05-01T00:00:00Z");
     // not the whole-mailbox path (the folder path has /mailFolders/{id}/messages, not /{user}/messages)
-    expect(transport.gets[0]).not.toContain("/users/alwyn@northscale.studio/messages?$filter");
+    expect(transport.gets[0]).not.toContain("/users/desk@linkport.example/messages?$filter");
   });
 ```
 
@@ -316,7 +316,7 @@ describe("env factory", () => {
     process.env.GRAPH_TENANT_ID = "T";
     process.env.GRAPH_CLIENT_ID = "C";
     process.env.GRAPH_CLIENT_SECRET = "S";
-    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    process.env.GRAPH_MAILBOX_USER = "desk@linkport.example";
     process.env.GRAPH_QUOTE_FOLDER = "F";
   }
 
@@ -325,7 +325,7 @@ describe("env factory", () => {
     process.env.GRAPH_TENANT_ID = "T";
     process.env.GRAPH_CLIENT_ID = "C";
     process.env.GRAPH_CLIENT_SECRET = "S";
-    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    process.env.GRAPH_MAILBOX_USER = "desk@linkport.example";
     expect(hasGraphEnv()).toBe(false); // folder still missing
     process.env.GRAPH_QUOTE_FOLDER = "F";
     expect(hasGraphEnv()).toBe(true);
@@ -514,7 +514,7 @@ Create `docs/setup/graph-mail-poll-setup.md`:
 ````markdown
 # Setup — live MS Graph mail poll (read-only, single mailbox)
 
-One-time setup so the agent can read `alwyn@northscale.studio`'s "Quote requests" folder.
+One-time setup so the agent can read `desk@linkport.example`'s "Quote requests" folder.
 Secrets go in `.env` (gitignored) — never commit them.
 
 ## 1. Register the app (Microsoft Entra admin center)
@@ -529,16 +529,16 @@ Secrets go in `.env` (gitignored) — never commit them.
 Application `Mail.Read` is tenant-wide by default. Scope it to just this mailbox:
 
 ```powershell
-Connect-ExchangeOnline -UserPrincipalName admin@northscale.studio
+Connect-ExchangeOnline -UserPrincipalName admin@linkport.example
 
-New-DistributionGroup -Name "QuoteAgent-Scope" -Type Security -Members alwyn@northscale.studio
+New-DistributionGroup -Name "QuoteAgent-Scope" -Type Security -Members desk@linkport.example
 
 New-ApplicationAccessPolicy -AppId <GRAPH_CLIENT_ID> `
-  -PolicyScopeGroupId QuoteAgent-Scope@northscale.studio `
+  -PolicyScopeGroupId quotescope@linkport.example `
   -AccessRight RestrictAccess -Description "QuoteAgent read-only, single mailbox"
 
 # Verify (allow up to ~30 min to propagate):
-Test-ApplicationAccessPolicy -Identity alwyn@northscale.studio -AppId <GRAPH_CLIENT_ID>   # Granted
+Test-ApplicationAccessPolicy -Identity desk@linkport.example -AppId <GRAPH_CLIENT_ID>   # Granted
 ```
 
 ## 3. Outlook folder + rule
@@ -550,7 +550,7 @@ Test-ApplicationAccessPolicy -Identity alwyn@northscale.studio -AppId <GRAPH_CLI
 GRAPH_TENANT_ID=...
 GRAPH_CLIENT_ID=...
 GRAPH_CLIENT_SECRET=...
-GRAPH_MAILBOX_USER=alwyn@northscale.studio
+GRAPH_MAILBOX_USER=desk@linkport.example
 GRAPH_QUOTE_FOLDER=        # get this in the next step
 ```
 - `npm run graph:smoke -- --folders` → copy the **Quote requests** id into `GRAPH_QUOTE_FOLDER`.

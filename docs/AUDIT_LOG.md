@@ -178,7 +178,7 @@ Graph poll are untouched. The UX-polish pass + the live dashboard check remain d
 ## Phase 1D — live MS Graph mail poll (Scope A, read-only) · 2026-05-30
 
 ### Scope
-Replace the stub mailbox with a live, read-only MS Graph transport so `alwyn@northscale.studio`'s
+Replace the stub mailbox with a live, read-only MS Graph transport so `desk@linkport.example`'s
 "Quote requests" folder feeds the autonomous poll (client `alwyn0678@gmail.com` sends in). 5 TDD
 task-slices on `feat/graph-live-mail-poll` (`201cf9c`→`881ae93`): folder-scoped `OutlookMailbox` read,
 `GraphFetchTransport` (client-credentials + `fetch`, token cache), `createOutlookMailboxFromEnv` /
@@ -221,8 +221,7 @@ Push the repo to GitHub + deploy the reviewer dashboard (apps/web) to Vercel (al
   apps/web typecheck 0, root 0, tests 117/117, `next build` clean.
 - **V2** PRIVATE GitHub repo **alwyn0678-cmyk/quoting-agent**, `main` pushed (no secrets — `.env*`
   gitignored; templates scanned clean).
-- **V3** Vercel project **quoteagent-dashboard** (`prj_7qtdv1W7f8mMOugWJlSNWbMqhyeZ`, team
-  alwyn0678-cmyks-projects); `NEXT_PUBLIC_SUPABASE_URL` + `_ANON_KEY` set (production); deployed READY at
+- **V3** Vercel project **quoteagent-dashboard**; `NEXT_PUBLIC_SUPABASE_URL` + `_ANON_KEY` set (production); deployed READY at
   **https://quoteagent-dashboard.vercel.app**.
 - **V4** Supabase Site URL + redirect allowlist set to the Vercel domain (localhost:3002 kept for dev).
 

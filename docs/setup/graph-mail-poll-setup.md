@@ -1,6 +1,6 @@
 # Setup — live MS Graph mail poll (read-only, single mailbox)
 
-One-time setup so the agent can read `alwyn@northscale.studio`'s "Quote requests" folder.
+One-time setup so the agent can read `desk@linkport.example`'s "Quote requests" folder.
 Secrets go in `.env` (gitignored) — never commit them.
 
 ## 1. Register the app (Microsoft Entra admin center)
@@ -15,16 +15,16 @@ Secrets go in `.env` (gitignored) — never commit them.
 Application `Mail.Read` is tenant-wide by default. Scope it to just this mailbox:
 
 ```powershell
-Connect-ExchangeOnline -UserPrincipalName admin@northscale.studio
+Connect-ExchangeOnline -UserPrincipalName admin@linkport.example
 
-New-DistributionGroup -Name "QuoteAgent-Scope" -Type Security -Members alwyn@northscale.studio
+New-DistributionGroup -Name "QuoteAgent-Scope" -Type Security -Members desk@linkport.example
 
 New-ApplicationAccessPolicy -AppId <GRAPH_CLIENT_ID> `
-  -PolicyScopeGroupId QuoteAgent-Scope@northscale.studio `
+  -PolicyScopeGroupId quotescope@linkport.example `
   -AccessRight RestrictAccess -Description "QuoteAgent read-only, single mailbox"
 
 # Verify (allow up to ~30 min to propagate):
-Test-ApplicationAccessPolicy -Identity alwyn@northscale.studio -AppId <GRAPH_CLIENT_ID>   # Granted
+Test-ApplicationAccessPolicy -Identity desk@linkport.example -AppId <GRAPH_CLIENT_ID>   # Granted
 ```
 
 ## 3. Outlook folder + rule
@@ -36,7 +36,7 @@ Test-ApplicationAccessPolicy -Identity alwyn@northscale.studio -AppId <GRAPH_CLI
 GRAPH_TENANT_ID=...
 GRAPH_CLIENT_ID=...
 GRAPH_CLIENT_SECRET=...
-GRAPH_MAILBOX_USER=alwyn@northscale.studio
+GRAPH_MAILBOX_USER=desk@linkport.example
 GRAPH_QUOTE_FOLDER=        # get this in the next step
 ```
 - `npm run graph:smoke -- --folders` → copy the **Quote requests** id into `GRAPH_QUOTE_FOLDER`.

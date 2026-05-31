@@ -10,7 +10,7 @@
 Replace the deterministic stub mailbox with a **live, read-only** MS Graph transport so a
 real quote-request email lands in the agent's mailbox and flows end-to-end to the dashboard:
 
-> `alwyn0678@gmail.com` (client) → emails → `alwyn@northscale.studio` (M365 inbox) → an Outlook
+> `alwyn0678@gmail.com` (client) → emails → `desk@linkport.example` (M365 inbox) → an Outlook
 > rule files it into the **"Quote requests"** folder → the scheduled poll reads that folder via
 > Graph → persists it as a `quote_request` → the existing durable run (extract → gate → price →
 > draft) → atomic persist → dashboard.
@@ -21,7 +21,7 @@ escalation), produced by the live poll reading the real folder — with the agen
 
 ## Decisions (locked)
 
-- Mailbox: `alwyn@northscale.studio`, on Microsoft 365 / Exchange Online (real working inbox).
+- Mailbox: `desk@linkport.example`, on Microsoft 365 / Exchange Online (real working inbox).
 - Poll scope: **one folder only** ("Quote requests"); the agent never reads other mail.
 - Auth: **client-credentials** (app-only), permission **`Mail.Read`** only, **scoped to the single
   mailbox** via an Exchange **Application Access Policy**.
@@ -79,7 +79,7 @@ escalation), produced by the live poll reading the real folder — with the agen
 ## Data flow
 
 ```
-client (alwyn0678@gmail) ──email──▶ alwyn@northscale.studio inbox
+client (alwyn0678@gmail) ──email──▶ desk@linkport.example inbox
                                         │  Outlook rule: from alwyn0678 → move to "Quote requests"
                                         ▼
                               "Quote requests" folder
@@ -98,7 +98,7 @@ client (alwyn0678@gmail) ──email──▶ alwyn@northscale.studio inbox
 - **Read-only by permission.** Only `Mail.Read` is consented; the app cannot send, modify, move, or
   delete mail. `createDraft` (which needs `Mail.ReadWrite`) is not invoked in Scope A.
 - **Single-mailbox blast radius.** Application permissions are tenant-wide by default; an **Exchange
-  Application Access Policy** restricts this app to `alwyn@northscale.studio` only, so it cannot read
+  Application Access Policy** restricts this app to `desk@linkport.example` only, so it cannot read
   any other mailbox in the tenant.
 - **Folder-scoped.** Even within that mailbox, the poll reads only the "Quote requests" folder.
 - **Secrets** (`GRAPH_CLIENT_SECRET` et al.) live in `.env` (gitignored) locally and as Trigger.dev
@@ -123,7 +123,7 @@ documented, non-CI smoke check** (we never assert on live network in CI).
 GRAPH_TENANT_ID=…           # Entra tenant (directory) id
 GRAPH_CLIENT_ID=…           # app (client) id
 GRAPH_CLIENT_SECRET=…       # app client secret           (secret)
-GRAPH_MAILBOX_USER=alwyn@northscale.studio
+GRAPH_MAILBOX_USER=desk@linkport.example
 GRAPH_QUOTE_FOLDER=…        # the "Quote requests" mailFolder *id* (a custom folder has no
                             # well-known name) — resolve it once via `graph_smoke.ts --folders`
 ```
@@ -133,7 +133,7 @@ GRAPH_QUOTE_FOLDER=…        # the "Quote requests" mailFolder *id* (a custom f
 1. **Entra app registration** → client id / secret / tenant id.
 2. **API permission** `Mail.Read` (Application) → **Grant admin consent**.
 3. **Application Access Policy** (Exchange Online PowerShell) → scope the app to
-   `alwyn@northscale.studio` only.
+   `desk@linkport.example` only.
 4. **Outlook**: create the **"Quote requests"** folder + a **rule** (from `alwyn0678@gmail.com` →
    move to that folder).
 5. Put the first four values in `.env`; run `graph_smoke.ts --folders` to get the folder id for
@@ -150,7 +150,7 @@ GRAPH_QUOTE_FOLDER=…        # the "Quote requests" mailFolder *id* (a custom f
 
 ## Assumptions & caveats (technical — verify at smoke test; no freight-domain claims here)
 
-- `alwyn@northscale.studio` is on the same M365/Exchange Online tenant the user confirmed and is
+- `desk@linkport.example` is on the same M365/Exchange Online tenant the user confirmed and is
   reachable via Graph `/users/{address}/…`.
 - The Graph message JSON shape matches `toInbound`'s expectations (`from.emailAddress.address`,
   `body.content`, `receivedDateTime`). HTML-bodied mail yields HTML in `body.content`; the agent's

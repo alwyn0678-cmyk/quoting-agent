@@ -98,7 +98,7 @@ describe("env factory", () => {
     process.env.GRAPH_TENANT_ID = "T";
     process.env.GRAPH_CLIENT_ID = "C";
     process.env.GRAPH_CLIENT_SECRET = "S";
-    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    process.env.GRAPH_MAILBOX_USER = "desk@linkport.example";
     process.env.GRAPH_QUOTE_FOLDER = "F";
   }
 
@@ -107,7 +107,7 @@ describe("env factory", () => {
     process.env.GRAPH_TENANT_ID = "T";
     process.env.GRAPH_CLIENT_ID = "C";
     process.env.GRAPH_CLIENT_SECRET = "S";
-    process.env.GRAPH_MAILBOX_USER = "alwyn@northscale.studio";
+    process.env.GRAPH_MAILBOX_USER = "desk@linkport.example";
     expect(hasGraphEnv()).toBe(false); // folder still missing
     process.env.GRAPH_QUOTE_FOLDER = "F";
     expect(hasGraphEnv()).toBe(true);
