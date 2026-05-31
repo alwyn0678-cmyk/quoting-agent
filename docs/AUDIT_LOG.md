@@ -53,19 +53,33 @@ codex independently confirmed the price-integrity boundary holds and the env-gat
 
 ### Verification
 Offline suite **164/164** (162 prior + 2 new guards) · root typecheck 0 · `apps/web` typecheck 0
-(table is not referenced by the web app). Deferred to the end-of-project live batch (all need
-`GEMINI_API_KEY` + Supabase): `db:migrate:rag` (0010), `rag:index` (embed corpus → pgvector),
-`eval:rag` (AC-R6 live pass-band retrieval).
+(table is not referenced by the web app).
+
+### Live batch — ran 2026-05-31 (all green)
+Executed end-to-end against the real Supabase project + live Gemini API:
+- `db:migrate:rag` → **HTTP 201** via the Supabase Management API; `create extension if not exists vector`
+  applied cleanly (same path that created `pgcrypto` in 0001 — the Gate-3 `with schema extensions`
+  caveat was moot). `knowledge_chunks` + `match_knowledge` + RLS live.
+- `rag:index` → **24 chunks** from 4 files embedded at **768-dim** and upserted. This is the **live proof
+  of Gate-4 fix #2**: Gemini returned 768-dim vectors and the length assert did not throw, confirming the
+  camelCase `outputDimensionality` is correct (snake_case would have fallen back to the default dim).
+- `eval:rag` (AC-R6) → **3/3** in top-3 (BAF/FOB/Validity).
+- **Bonus — production pgvector path:** a throwaway smoke confirmed `createKnowledgeRetrieverFromEnv()`
+  returns `SupabaseKnowledgeRetriever` (not the empty stub) and `match_knowledge` ranks **3/3**, identical
+  to the in-memory eval. The indexer wrote and the retriever read **both as `service_role`** — fix #1's
+  server-side-only path works.
 
 ### ASSUMPTIONS status
-Section G (G1–G5): the corpus content (surcharge/fee defs, incoterm summaries, policy, lane notes) is
-INVENTED with verification paths. G5 updated — the REST field casing was corrected to the documented
-camelCase, but the model id `gemini-embedding-2`, 768-dim behaviour, and full request shape remain
-VERIFY at the live smoke. None verified.
+Section G corpus *content* (G1–G4: surcharge/fee defs, incoterm summaries, policy, lane notes) stays
+INVENTED with verification paths. **G5 is now LIVE-CONFIRMED (2026-05-31)** — model id
+`gemini-embedding-2`, 768-dim output, and the camelCase REST request shape all verified against the real
+API (the indexer + eval ran green). The G1–G4 *definitions* remain unverified domain claims.
 
 ### Sign-off & merge
-**Pending sign-off (Alwyn).** On sign-off → merge `scoped-rag` to main `--no-ff` + push + delete branch.
-No self-merge. The live RAG batch (migrate + index + eval) stays deferred.
+**Signed off (Alwyn) · 2026-05-30** → merged `scoped-rag` to main `--no-ff` (merge `8f024f6`) + pushed;
+branch deleted. The live RAG batch (migrate + index + eval + pgvector smoke) **ran green on 2026-05-31**
+(above). Still deferred to a later supervised run (need user setup): Q2 `rates:import`, AC-G5 Graph
+smoke, V5 Vercel dashboard verify.
 
 ---
 
