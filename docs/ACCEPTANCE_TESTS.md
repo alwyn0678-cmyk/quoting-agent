@@ -140,6 +140,51 @@ exits non-zero below that. **Assert:** pass count ≥ 6/8. This is the canonical
 
 ---
 
+## RAG acceptance criteria (Q3 — scoped, draft-prose-only grounding)
+
+These cover the retrieval layer. R1–R5 are **deterministic** (mock embeddings, exact assertions); R6 is
+the **live pass band** (real Gemini). The through-line: retrieval grounds the *prose* and can never move
+the *price*. See `docs/AGENT_DESIGN.md` for the design rationale.
+
+### R1 — Corpus coverage: every priced fee has a glossary entry
+**Given** the authored corpus (`knowledge/*.md`) and the rate-card fee codes, **then** every
+surcharge/fee code the engine can emit has a matching `## CODE` glossary chunk, and each corpus file
+chunks to ≥ 1 chunk. **Assert (exact):** no fee code is unexplained; no empty file.
+*Test: `packages/agents/src/corpus-coverage.test.ts`.*
+
+### R2 — Query hygiene: structured fields only, no raw email
+**Given** a computed quote + an incoterm, **when** `buildRetrievalQuery` runs, **then** the query
+contains every surcharge/fee code, the lane, the container, and the **allowlist-normalized** incoterm —
+and **no raw-email text**. **Assert:** all codes + lane + `FOB` present; a junk incoterm string is
+dropped entirely (never reaches the embedding API). *Test: `knowledge-retriever.test.ts` (AC-R2).*
+
+### R3 — Deterministic retrieval (in-memory + mock embeddings)
+**Given** the corpus embedded by `MockEmbeddingClient`, **when** a BAF query is retrieved, **then** the
+BAF chunk ranks first; the `EmptyRetriever` returns `[]`. **Assert (exact):** top-1 title = `BAF`;
+empty retriever yields no chunks. *Test: `knowledge-retriever.test.ts` (AC-R3).*
+
+### R4 — Draft grounding block: present only when grounded, byte-identical when not
+**Given** a draft input, **then** the reference-knowledge block appears **iff** grounding is supplied,
+and an ungrounded draft's system prompt is **byte-identical** to the pre-RAG prompt (runtime-proven
+827≡827). **Assert:** grounded user content contains "Reference knowledge" + the chunk; ungrounded omits
+it and the system prompt is unchanged. *Test: `draft.test.ts` (AC-R4) + system-prompt guard.*
+
+### R5 — Agent grounds the draft without touching the price
+**Given** the full pipeline with an in-memory retriever, **when** a quote-path email runs, **then** the
+draft call carries the retrieved knowledge **and** `quote.all_in_total` is unchanged. **Assert (exact):**
+draft `system` + `userContent` contain the reference knowledge; `all_in_total === 3520` (RAG never
+altered the price); the `EmptyRetriever` path carries no grounding. *Test: `agent-grounding.test.ts`
+(AC-R5).*
+
+### R6 — Live retrieval pass band (real Gemini + pgvector)
+**Given** the live corpus embedded by `GeminiEmbeddingClient`, **when** structured queries are
+retrieved, **then** the relevant chunk appears in the **top-3**. **Pass band:** BAF/FOB/Validity each in
+top-3 (3/3). Confirmed live 2026-05-31 via both the in-memory eval and the production
+`SupabaseKnowledgeRetriever` (`match_knowledge`), both 3/3. *Eval: `npm run eval:rag`
+(`evals/rag-retrieval.ts`); requires `GEMINI_API_KEY`.*
+
+---
+
 ## Per-fixture expected behaviour (catalog of the golden set)
 
 The authoritative inputs + expected outputs live in `evals/fixtures/0N.json`. Summary:
