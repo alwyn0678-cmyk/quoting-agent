@@ -163,6 +163,7 @@ describe("P-1C.3 — dashboard render model", () => {
   it("AC-D2: quotationsOnly keeps views with a quote, drops escalations", () => {
     const base = {
       created_at: "2026-05-20T10:00:00Z",
+      archived_at: null,
       injection_flag: false,
       body: "b",
     };

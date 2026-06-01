@@ -68,6 +68,19 @@ export function QuoteDetail({ r }: { r: RequestView }) {
         </div>
       ) : null}
 
+      {r.status === "sending" ? (
+        <div className="sentinfo sim">
+          <span className="ic" aria-hidden>
+            ⏳
+          </span>
+          <div>
+            Approved — reply <b>queued for send</b>
+            {r.from_email ? ` to ${r.from_email}` : ""}. The send worker dispatches it via Microsoft
+            Graph and marks it sent.
+          </div>
+        </div>
+      ) : null}
+
       {r.status === "sent" ? (
         <>
           {r.draft?.sent_at ? (

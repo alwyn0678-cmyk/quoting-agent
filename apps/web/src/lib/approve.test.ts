@@ -25,19 +25,13 @@ function fakeClient() {
 }
 
 describe("reviewer mutation wrappers (HITL RPCs)", () => {
-  it("approveRequest calls approve_request with p_sent (default false) and never sends itself", async () => {
-    // The real Graph send happens in the server action (graph-send.ts), NOT in this wrapper — so the
-    // wrapper still calls the RPC only (D-27: the approve PATH sends; approveRequest does not).
+  it("approveRequest CLAIMS via approve_request (awaiting_review→sending) and never sends itself", async () => {
+    // The dashboard never sends — approve_request only claims the row to 'sending'; the trusted
+    // send-outbox worker does the Graph send + finalize (D-27 outbox). So the wrapper calls the RPC only.
     const f = fakeClient();
     await approveRequest(f.client, "req-123");
-    expect(f.calls).toEqual([{ fn: "approve_request", args: { p_request_id: "req-123", p_sent: false } }]);
+    expect(f.calls).toEqual([{ fn: "approve_request", args: { p_request_id: "req-123" } }]);
     expect(f.sendCount()).toBe(0);
-  });
-
-  it("approveRequest passes p_sent=true when a real send was performed (records drafts.sent_at)", async () => {
-    const f = fakeClient();
-    await approveRequest(f.client, "req-9", true);
-    expect(f.calls).toEqual([{ fn: "approve_request", args: { p_request_id: "req-9", p_sent: true } }]);
   });
 
   it("archive / unarchive / requeue each call their tenant-scoped RPC with the request id", async () => {

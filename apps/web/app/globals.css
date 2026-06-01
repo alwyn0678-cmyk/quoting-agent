@@ -162,6 +162,8 @@ a { color: var(--teal-600); text-decoration: none; }
 .chip.sent  { background: var(--sent-bg);  color: var(--sent);  border-color: var(--sent-bd); }
 .chip.recv  { background: var(--recv-bg);  color: var(--recv);  border-color: var(--recv-bd); }
 .chip.proc  { background: var(--recv-bg);  color: var(--recv);  border-color: var(--recv-bd); }
+.chip.send  { background: var(--teal-050); color: var(--teal-600); border-color: var(--teal-100); }
+.chip.send::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--teal-500); margin-right: 5px; vertical-align: middle; animation: pulse 1.4s ease-in-out infinite; }
 .chip.arch  { background: var(--arch-bg);  color: var(--arch);  border-color: var(--arch-bd); }
 .chip.err   { background: var(--danger-bg);color: var(--danger);border-color: #f0c2bd; }
 
