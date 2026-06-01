@@ -3,6 +3,34 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Phase 1H — real send on Approve + archive + re-run + maritime UI (2026-06-01)
+
+- **D-27 · Approve performs a REAL Microsoft Graph send via an OUTBOX — REVERSING D-14's "simulated
+  send only" (at Alwyn's explicit request).** · A human Approve atomically CLAIMS the request
+  `awaiting_review → 'sending'` (`approve_request` RPC, authenticated, tenant-scoped). A TRUSTED worker
+  (`scripts/send_outbox.ts`, service_role + Graph **Mail.Send**) atomically leases unclaimed 'sending'
+  rows (`claim_for_send`, `FOR UPDATE SKIP LOCKED` + `send_claimed_at`), sends the reply, and finalizes
+  `'sending' → 'sent'` stamping the REAL `drafts.sent_at` (`finalize_send`, **service_role-ONLY**). ·
+  *The browser dashboard holds NO Graph creds and CANNOT call `finalize_send`, so the real-send record
+  is **non-forgeable**; the lease makes the send **exactly-once**; a crash/ambiguous Graph failure
+  leaves the row claimed-'sending' for manual reconcile (**at-most-once on crash** — the safe direction
+  for a non-idempotent external send). 'sent' stays reachable ONLY through `finalize_send` via the
+  `enforce_sent_via_approve` one-shot gate (0006), which needs a 'sending' row only a human Approve can
+  create — so HITL is preserved (AC-6 holds). AC-7 ("no send call in the approve path") is
+  **intentionally superseded**: the send is now an explicit, human-gated, trusted-worker step. The
+  outbox keeps the trusted/untrusted boundary intact — the reviewer surface stays secret-free; the
+  send + its audit record live in the service_role worker. codex Gate-4 R1→R2→R3 **converged**
+  (non-forgeable, exactly-once, tenant-safe).* · **Accepted; the live Mail.Send grant + send batch are
+  supervised + deferred (need admin consent).**
+
+- **D-28 · Archive (soft-archive terminal requests) + Re-run (escalated|error → received) as
+  tenant-scoped SECURITY DEFINER RPCs; Re-run re-processes via the autonomous poll, not a new path.** ·
+  `archive_request` / `unarchive_request` / `requeue_request` (authenticated, `auth_tenant_id()`-scoped,
+  same thin-RPC pattern as approve). Re-run resets to 'received' + clears the prior outcome/quote/draft
+  so the agent re-runs fresh (the poll re-enqueues stranded 'received', W5). Archive is a soft
+  `archived_at` flag with an Archive view + Unarchive. · *Reviewer-requested workflow controls; reuse
+  the existing autonomous run rather than running the agent in the thin web app.* · **Accepted.**
+
 ## Phase 1G — scoped RAG (Q3) (2026-05-30)
 
 - **D-26 · RAG grounds ONLY the drafted reply prose, never the price; over an authored, committed,

@@ -4,14 +4,17 @@
 > (D-10). This doc enumerates the autonomous-action whitelist, the hard refuse-list, the
 > human-in-the-loop gates, and the kill switch — each tied to the **mechanism that enforces it**
 > and the **test that proves it**, in the same one-claim-one-test discipline as the slice. The
-> design property that makes all of this tractable: **no path sends anything to a customer**
-> (D-14), so a misbehaving agent's blast radius is bounded to reversible database writes.
+> design property that makes all of this tractable: the **autonomous pipeline sends nothing to a
+> customer** — a real send happens ONLY after a human Approve, carried out by a separate trusted
+> worker (**D-27**, which reverses D-14's earlier simulated-only stance). So a misbehaving *unattended*
+> agent's blast radius is still bounded to reversible database writes.
 
 ## Autonomy posture
 
 The system runs an ingest→draft pipeline unattended, but every outward-facing or irreversible
-action is either **absent by construction** (real send) or **gated on a human** (the move to
-`sent`). Autonomy is granted only for actions that are internal and reversible.
+action is **gated on a human** — a real send happens only after a human Approve and is carried out
+by a separate trusted, service_role send-outbox worker (D-27), never by the autonomous pipeline.
+Autonomy is granted only for actions that are internal and reversible.
 
 ## Action whitelist — may run autonomously (no human in the loop)
 
@@ -32,7 +35,7 @@ Everything W1–W6 lands a row or a saved draft. None notifies a customer.
 
 | # | The agent must never… | Why it can't / mechanism | Proving test |
 |---|---|---|---|
-| R1 | **Send a real email** | No `send` call exists in any code path; Graph send scope is **never requested** (D-14) | **AC-7** (mocked Graph fails the test if `send` is invoked) |
+| R1 | **Send a real email autonomously or from the dashboard** | The autonomous pipeline + the browser dashboard hold no send path; a real send is performed ONLY by the trusted `send_outbox` worker (service_role + Graph Mail.Send) on a row a **human Approve** claimed to 'sending' (D-27 outbox) | **AC-6** + web-approve eval (authenticated **cannot** call `finalize_send`; only service_role sends) |
 | R2 | Reach `sent` / notify a customer **without explicit human approval** | `sent` is reachable **only** from the Approve action | **AC-6** |
 | R3 | Quote a number the rate engine didn't compute (e.g. an injected €1) | Pricing is deterministic code; the guard re-derives the engine total and fails closed on mismatch | **T12** |
 | R4 | Follow instructions embedded in an email body | Untrusted-data framing + escaped/fenced input; the **drafting model never sees the raw body**; guard corroborates | **T12** (+ CONTEXT data-scope) |
@@ -41,8 +44,9 @@ Everything W1–W6 lands a row or a saved draft. None notifies a customer.
 | R7 | **Write** to the forwarder's Excel rate engine | Enforced like R1: the v1 Graph/Excel wrapper **exposes no write method** (only the Excel write *scope* is never requested/wired) — the eventual write capability in ARCHITECTURE is deferred behind the Week-6 gate | **P-EXCEL-RO** (no Excel-write method reachable) + Week-6 gate review |
 | R8 | Auto-approve, auto-retry into a send, or escalate-then-send | No code path constructs a send; retries upsert DB rows only | **AC-6 / AC-8** |
 
-R1/R2/R8 are the same invariant from three angles: **only a human, via Approve, moves a request to
-`sent`** — and even then it is a *simulated* send.
+R1/R2/R8 are the same invariant from three angles: **a customer email happens only after a human,
+via Approve, claims a request for send** — and even then the send is carried out by a separate
+trusted service_role worker, not the agent (D-27). The autonomous pipeline never sends.
 
 **R6 is the one rule with no single mechanism — say so plainly.** The browser/reviewer path is
 protected by RLS (`auth_tenant_id()`), proven by AC-5. But the **autonomous pipeline (W1–W6) runs
@@ -58,7 +62,7 @@ one is not enough to catch a leak.
 
 | Gate | What the human sees | What the action does | Proving test |
 |---|---|---|---|
-| **G1 — Approve before (simulated) send** | extraction + the **itemised deterministic breakdown** + the editable draft | sets status `sent`, records `simulated_sent_at` + intended recipient, shows a **"SIMULATED SEND"** badge; **zero** Graph send calls | **AC-6 + AC-7** |
+| **G1 — Approve → claim for real send (outbox, D-27)** | extraction + the **itemised deterministic breakdown** + the editable draft | claims `awaiting_review → 'sending'`; the trusted `send_outbox` worker then sends via Graph and finalizes `→ 'sent'`, recording the **real** `drafts.sent_at`. The dashboard itself makes **zero** Graph calls | **AC-6** + web-approve eval |
 | **G2 — Escalation handling** | the escalation reason; **no draft, no send action** | a human handles it out-of-band; v1 does **not** auto-reply asking for a missing field | **AC-8** |
 | **G3 — Flagged injection review** | a normal quote + draft, shown with an **`injection_flag` badge** | the human reviews before G1 (quote-and-flag policy; the injection changed nothing) | fixture-07 / **AC-8** parity |
 
@@ -68,19 +72,22 @@ it records that a send *would* have happened.
 
 ## Kill switch — graduated stop levers
 
-Because nothing auto-sends, stopping the agent means stopping **processing**, not stopping
-**sending** — there is no in-flight customer email to claw back.
+Because nothing **auto**-sends (a send needs a human Approve), stopping the *agent* means stopping
+**processing**. To stop **sending**, don't run the send-outbox worker (K4) — claimed rows just wait.
 
 | Lever | Effect | Reversibility |
 |---|---|---|
 | **K1 — pause the scheduled poll** (Trigger.dev) | no new ingest; existing requests untouched | resume re-arms the poll |
 | **K2 — disable the agent-run task** (`agent_enabled` flag) | in-flight runs drain; new requests sit at `received` and are re-enqueued when re-enabled (W5) | nothing lost; queue replays |
 | **K3 — revoke the `service_role` key / pause the Supabase project** | hard stop on all writes (nuclear) | rotate key / unpause to restore |
+| **K4 — don't run the send-outbox worker** (D-27) | claimed `sending` rows wait; **no customer email is dispatched** | run/resume the worker to send |
 
-**Bounded blast radius (state it plainly):** the worst case for a runaway agent is rows piling up
-in `awaiting_review` / `escalated` and token spend — all reversible, none customer-visible. The
-honest answer to "what if it hallucinates a quote at 3am" is **it physically cannot send one**;
-the kill switch exists to stop noise and cost, not to prevent a leaked email.
+**Bounded blast radius (state it plainly):** the worst case for a runaway **autonomous** agent is
+rows piling up in `awaiting_review` / `escalated` and token spend — all reversible, none
+customer-visible, because **the autonomous pipeline still cannot send** (D-27: a send needs a human
+Approve + the trusted worker). The honest answer to "what if it hallucinates a quote at 3am" is **it
+cannot send one on its own** — a human must Approve it first, and only then does the trusted worker
+email it.
 
 ## Failure modes → fail-closed (every failure resolves to a safe state)
 

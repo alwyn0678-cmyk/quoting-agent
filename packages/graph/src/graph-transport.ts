@@ -76,6 +76,22 @@ export class GraphFetchTransport implements GraphTransport {
     if (!res.ok) throw new Error(`Graph POST ${path} failed: ${res.status} ${await res.text()}`);
     return res.json();
   }
+
+  /**
+   * Send mail as `userId` via Graph /sendMail. Returns 202 Accepted with NO body, so — unlike post() —
+   * nothing is parsed. D-27: a deliberate SEND capability on the LIVE transport, used only by the
+   * trusted send-outbox worker AFTER a human Approve (reverses R1/D-14's "no send"). Never reached by
+   * the autonomous run or the browser dashboard.
+   */
+  async sendMail(userId: string, sendMailBody: unknown): Promise<void> {
+    const token = await this.accessToken();
+    const res = await this.fetchImpl(`${GRAPH}/users/${encodeURIComponent(userId)}/sendMail`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(sendMailBody),
+    });
+    if (!res.ok) throw new Error(`Graph sendMail ${userId} failed: ${res.status} ${await res.text()}`);
+  }
 }
 
 const GRAPH_ENV_KEYS = [

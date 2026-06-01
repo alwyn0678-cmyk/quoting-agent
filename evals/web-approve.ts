@@ -2,14 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { approveRequest } from "../apps/web/src/lib/approve.js";
 
 /**
- * Live approve → simulated-send (npm run eval:web-approve): the BROWSER path. Two real password
+ * Live approve → real-send OUTBOX (npm run eval:web-approve): the BROWSER path. Two real password
  * users in two tenants, each with an awaiting_review request + draft. Signed in via an anon client +
- * session, the SAME approveRequest() the dashboard uses is exercised against live RLS + the
- * approve_request() RPC:
- *   - A approves its OWN request → status 'sent' + drafts.simulated_sent_at stamped (AC-6); the only
- *     call made is the RPC, never a send (AC-7 — there is no send method anywhere).
- *   - A attempts to approve B's request → REFUSED by the RPC's tenant check, and B is unchanged
- *     (P-APPROVE-AUTH).
+ * session, the SAME approveRequest() the dashboard uses is exercised against live RLS + the RPCs (D-27):
+ *   - A approves its OWN request → CLAIMS it to 'sending' (no real send yet, no drafts.sent_at); the
+ *     only call made is the RPC, never a send (the dashboard holds no Graph creds).
+ *   - finalize_send is service_role-ONLY: A (authenticated) CANNOT call it, so the real-send record is
+ *     non-forgeable; the trusted worker (admin / service_role) finalizes → 'sent' + real drafts.sent_at.
+ *   - A attempts to approve B's request → REFUSED by the RPC's tenant check, B unchanged (P-APPROVE-AUTH).
  * Seeds + cleans up its own users/tenants (idempotent). Requires SUPABASE_URL + SUPABASE_ANON_KEY +
  * SUPABASE_SERVICE_ROLE_KEY.
  */
@@ -73,13 +73,28 @@ async function main(): Promise<void> {
 
   const a = await sessionFor(EMAIL_A);
 
-  // 1) A approves its OWN request → sent + simulated_sent_at (AC-6); approveRequest only calls the RPC (AC-7).
+  // 1) A approves its OWN request → CLAIMS it to 'sending' (D-27 outbox; no real send yet, no sent_at).
   await approveRequest(a, reqA);
-  const { data: rA } = await a.from("quote_requests").select("status").eq("id", reqA).single();
-  const { data: dA } = await a.from("drafts").select("simulated_sent_at").eq("request_id", reqA).single();
-  const ownOk = rA?.status === "sent" && dA?.simulated_sent_at != null;
+  const { data: rA1 } = await a.from("quote_requests").select("status").eq("id", reqA).single();
+  const { data: dA1 } = await a.from("drafts").select("sent_at").eq("request_id", reqA).single();
+  const claimedOk = rA1?.status === "sending" && dA1?.sent_at == null;
   console.log(
-    `A approves own request: status=${rA?.status}, simulated_sent_at=${dA?.simulated_sent_at ? "set" : "null"} -> ${ownOk ? "PASS" : "FAIL"}`,
+    `A approves own request: status=${rA1?.status}, sent_at=${dA1?.sent_at ? "set" : "null"} -> ${claimedOk ? "PASS (claimed for send)" : "FAIL"}`,
+  );
+
+  // 1b) finalize_send is service_role-ONLY → an authenticated reviewer cannot forge a real send.
+  const { error: forgeErr } = await a.rpc("finalize_send", { p_request_id: reqA, p_tenant_id: TA, p_ok: true });
+  const forgeBlocked = Boolean(forgeErr);
+  console.log(`A (authenticated) cannot call finalize_send: blocked=${forgeBlocked} -> ${forgeBlocked ? "PASS" : "FAIL"}`);
+
+  // 1c) the trusted worker (service_role) finalizes → 'sent' + real drafts.sent_at.
+  const { error: finErr } = await admin.rpc("finalize_send", { p_request_id: reqA, p_tenant_id: TA, p_ok: true });
+  if (finErr) throw finErr;
+  const { data: rA2 } = await admin.from("quote_requests").select("status").eq("id", reqA).single();
+  const { data: dA2 } = await admin.from("drafts").select("sent_at").eq("request_id", reqA).single();
+  const sentOk = rA2?.status === "sent" && dA2?.sent_at != null;
+  console.log(
+    `finalize_send (service_role): status=${rA2?.status}, sent_at=${dA2?.sent_at ? "set" : "null"} -> ${sentOk ? "PASS" : "FAIL"}`,
   );
 
   // 2) A attempts to approve B's request → must be REFUSED, and B must stay unchanged (P-APPROVE-AUTH).
@@ -90,15 +105,15 @@ async function main(): Promise<void> {
     crossRejected = true;
   }
   const { data: rB } = await admin.from("quote_requests").select("status").eq("id", reqB).single();
-  const { data: dB } = await admin.from("drafts").select("simulated_sent_at").eq("request_id", reqB).single();
-  const crossOk = crossRejected && rB?.status === "awaiting_review" && dB?.simulated_sent_at == null;
+  const { data: dB } = await admin.from("drafts").select("sent_at").eq("request_id", reqB).single();
+  const crossOk = crossRejected && rB?.status === "awaiting_review" && dB?.sent_at == null;
   console.log(
-    `A approves B's request: rejected=${crossRejected}, B.status=${rB?.status}, B.simulated_sent_at=${dB?.simulated_sent_at ? "set" : "null"} -> ${crossOk ? "PASS" : "FAIL"}`,
+    `A approves B's request: rejected=${crossRejected}, B.status=${rB?.status}, B.sent_at=${dB?.sent_at ? "set" : "null"} -> ${crossOk ? "PASS" : "FAIL"}`,
   );
 
   await cleanup();
-  const pass = ownOk && crossOk;
-  console.log(`\nAC-6 + AC-7 + P-APPROVE-AUTH (browser approve path): ${pass ? "PASS" : "FAIL"}`);
+  const pass = claimedOk && forgeBlocked && sentOk && crossOk;
+  console.log(`\nAC-6 + P-APPROVE-AUTH (D-27 outbox, browser approve path): ${pass ? "PASS" : "FAIL"}`);
   process.exit(pass ? 0 : 1);
 }
 

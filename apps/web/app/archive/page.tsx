@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-import { listRequestsForTenant, quotationsOnly, activeOnly, navCounts } from "../../src/lib/dashboard";
+import { listRequestsForTenant, archivedOnly, navCounts } from "../../src/lib/dashboard";
 import { AppShell } from "../components/AppShell";
 import { RequestList, type RowItem } from "../components/RequestList";
-import { QuoteDetail } from "../components/QuoteDetail";
+import { ArchiveDetail } from "../components/ArchiveDetail";
 
 export const dynamic = "force-dynamic";
 
 const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
 
-export default async function QuotesPage({
+export default async function ArchivePage({
   searchParams,
 }: {
   searchParams: Promise<{ sel?: string | string[] }>;
@@ -23,31 +23,33 @@ export default async function QuotesPage({
   if (!user) redirect("/login");
 
   const all = await listRequestsForTenant(supabase);
-  const quotes = quotationsOnly(activeOnly(all));
-  const selected = quotes.find((r) => r.id === selectedId) ?? null;
-  const rows: RowItem[] = quotes.map((r) => ({
+  const archived = archivedOnly(all);
+  const selected = archived.find((r) => r.id === selectedId) ?? null;
+  const rows: RowItem[] = archived.map((r) => ({
     id: r.id,
     title: r.from_email ?? "(unknown sender)",
-    subtitle: r.quote ? `${r.quote.lane} · ${r.quote.container_qty}×${r.quote.container_type}` : "",
+    subtitle: r.quote
+      ? `${r.quote.lane} · ${r.quote.container_qty}×${r.quote.container_type}`
+      : r.subject ?? "(no subject)",
     status: r.status,
     amount: r.quote ? eur(r.quote.all_in_total) : undefined,
     flag: r.injection_flag,
+    archived: true,
   }));
-  const awaiting = quotes.filter((r) => r.status === "awaiting_review").length;
 
   return (
     <AppShell
-      active="quotes"
+      active="archive"
       userEmail={user.email ?? ""}
-      title="Quotations"
-      subtitle={`${quotes.length} quote${quotes.length === 1 ? "" : "s"} · ${awaiting} awaiting review`}
+      title="Archive"
+      subtitle={`${archived.length} archived request${archived.length === 1 ? "" : "s"}`}
       counts={navCounts(all)}
     >
-      <RequestList rows={rows} selectedId={selectedId} hrefBase="/quotes" />
+      <RequestList rows={rows} selectedId={selectedId} hrefBase="/archive" />
       {selected ? (
-        <QuoteDetail r={selected} />
+        <ArchiveDetail r={selected} />
       ) : (
-        <div className="detail empty">Select a quotation to review.</div>
+        <div className="detail empty">Select an archived request.</div>
       )}
     </AppShell>
   );

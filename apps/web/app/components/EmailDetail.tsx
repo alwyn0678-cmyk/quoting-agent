@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { RequestView } from "../../src/lib/dashboard";
 import { StatusBadge } from "./StatusBadge";
+import { archiveAction, requeueAction } from "../actions";
 
 const REASON_LABELS: Record<string, string> = {
   missing_required_field: "Missing a required field",
@@ -14,6 +15,8 @@ const REASON_LABELS: Record<string, string> = {
 const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
 
 export function EmailDetail({ r }: { r: RequestView }) {
+  const terminal = r.status === "escalated" || r.status === "error";
+
   return (
     <div className="detail">
       <div className="dhdr">
@@ -23,7 +26,7 @@ export function EmailDetail({ r }: { r: RequestView }) {
         <StatusBadge status={r.status} />
       </div>
       <h2 className="dsubj">{r.subject ?? "(no subject)"}</h2>
-      <div className="emailbox">{r.body ?? "(no message body)"}</div>
+      <div className="emailbox card">{r.body ?? "(no message body)"}</div>
 
       {r.injection_flag ? (
         <div className="flagnote">
@@ -46,9 +49,37 @@ export function EmailDetail({ r }: { r: RequestView }) {
               : ""}
             .
           </strong>{" "}
-          Needs a human; no reply can be sent from here.
+          Needs a human; no reply can be sent automatically.
         </div>
       )}
+
+      {terminal ? (
+        <div className="actions">
+          <form action={requeueAction}>
+            <input type="hidden" name="requestId" value={r.id} />
+            <button type="submit" className="btn primary">
+              ↻ Re-run with agent
+            </button>
+          </form>
+          <form action={archiveAction}>
+            <input type="hidden" name="requestId" value={r.id} />
+            <button type="submit" className="btn ghost">
+              Archive
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      {r.status === "sent" ? (
+        <div className="actions">
+          <form action={archiveAction}>
+            <input type="hidden" name="requestId" value={r.id} />
+            <button type="submit" className="btn ghost">
+              Archive
+            </button>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

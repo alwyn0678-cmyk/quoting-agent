@@ -52,24 +52,24 @@ declare
   v_status text;
   v_ts     timestamptz;
 begin
-  -- AC-6 negative: authenticated has no UPDATE grant → 'sent' cannot be set outside approve_request()
+  -- AC-6 negative: authenticated has no UPDATE grant → status cannot be moved outside the RPCs
   begin
     update public.quote_requests set status = 'sent' where id = '0c000000-0000-4000-8000-0000000000a1';
     raise exception 'AC-6 FAIL: authenticated UPDATED quote_requests.status directly (approve bypassed)';
   exception when insufficient_privilege then null;  -- expected: permission denied
   end;
 
-  -- AC-6 positive: the sanctioned path approves A's own awaiting_review request
+  -- D-27 outbox: approve CLAIMS A's own request for send — awaiting_review → 'sending' (NOT 'sent';
+  -- the trusted worker finalizes). approve must NOT stamp a real send.
   perform public.approve_request('0c000000-0000-4000-8000-0000000000a1');
 
   select status into v_status from public.quote_requests where id = '0c000000-0000-4000-8000-0000000000a1';
-  if v_status is distinct from 'sent' then
-    raise exception 'AC-6 FAIL: after approve, reqA.status = % (expected sent)', v_status;
+  if v_status is distinct from 'sending' then
+    raise exception 'AC-6 FAIL: after approve, reqA.status = % (expected sending)', v_status;
   end if;
-
-  select simulated_sent_at into v_ts from public.drafts where request_id = '0c000000-0000-4000-8000-0000000000a1';
-  if v_ts is null then
-    raise exception 'AC-6 FAIL: after approve, draftA.simulated_sent_at is null (no simulated-send stamp)';
+  select sent_at into v_ts from public.drafts where request_id = '0c000000-0000-4000-8000-0000000000a1';
+  if v_ts is not null then
+    raise exception 'AC-6 FAIL: approve stamped drafts.sent_at (must be set only by finalize_send)';
   end if;
 
   -- P-APPROVE-AUTH: A cannot approve tenant B's request
@@ -78,8 +78,32 @@ begin
     raise exception 'P-APPROVE-AUTH FAIL: tenant A approved a tenant B request';
   exception when check_violation then null;  -- expected: refused by the RPC's tenant/state check
   end;
+
+  -- finalize_send is service_role-only: an authenticated reviewer CANNOT forge a real send.
+  begin
+    perform public.finalize_send('0c000000-0000-4000-8000-0000000000a1','0a000000-0000-4000-8000-0000000000a1', true);
+    raise exception 'AC-6 FAIL: authenticated could call finalize_send (real-send record is forgeable)';
+  exception when insufficient_privilege then null;  -- expected: EXECUTE granted to service_role only
+  end;
 end $$;
 reset role;
+
+-- ── trusted finalize (service_role-only) completes the send for A: 'sending' → 'sent' + real sent_at ──
+do $$
+declare
+  v_status text;
+  v_ts     timestamptz;
+begin
+  perform public.finalize_send('0c000000-0000-4000-8000-0000000000a1','0a000000-0000-4000-8000-0000000000a1', true);
+  select status into v_status from public.quote_requests where id = '0c000000-0000-4000-8000-0000000000a1';
+  if v_status is distinct from 'sent' then
+    raise exception 'AC-6 FAIL: after finalize_send, reqA.status = % (expected sent)', v_status;
+  end if;
+  select sent_at into v_ts from public.drafts where request_id = '0c000000-0000-4000-8000-0000000000a1';
+  if v_ts is null then
+    raise exception 'AC-6 FAIL: finalize_send did not stamp the real drafts.sent_at';
+  end if;
+end $$;
 
 -- Verify tenant B is UNCHANGED (read as the migration role, which bypasses RLS).
 do $$
@@ -91,12 +115,12 @@ begin
   if v_status is distinct from 'awaiting_review' then
     raise exception 'P-APPROVE-AUTH FAIL: tenant B request changed to % (expected awaiting_review)', v_status;
   end if;
-  select simulated_sent_at into v_ts from public.drafts where request_id = '0c000000-0000-4000-8000-0000000000b1';
+  select sent_at into v_ts from public.drafts where request_id = '0c000000-0000-4000-8000-0000000000b1';
   if v_ts is not null then
-    raise exception 'P-APPROVE-AUTH FAIL: tenant B draft was stamped simulated_sent_at';
+    raise exception 'P-APPROVE-AUTH FAIL: tenant B draft was stamped sent_at';
   end if;
 end $$;
 
 rollback;
 
-select 'AC-6 + P-APPROVE-AUTH PASS — sent unreachable except via approve_request (privileged direct UPDATE blocked by trigger; authenticated direct UPDATE denied by grant); approve sets sent+simulated_sent_at for own tenant; cross-tenant approve refused and B unchanged' as result;
+select 'AC-6 + P-APPROVE-AUTH PASS (D-27 outbox) — status unreachable outside the RPCs (privileged direct UPDATE blocked by trigger; authenticated direct UPDATE denied); approve CLAIMS own request to sending (no sent_at); authenticated CANNOT call finalize_send; service_role finalize_send -> sent + real drafts.sent_at; cross-tenant approve refused and B unchanged' as result;

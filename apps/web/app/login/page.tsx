@@ -26,10 +26,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login">
-      <h1>QuoteAgent reviewer</h1>
-      <p>Sign in with a magic link to review your tenant&apos;s quote requests.</p>
-      <form onSubmit={onSubmit}>
+    <div className="loginwrap">
+      <div className="login">
+        <div className="lbrand">
+          <div className="anchor" aria-hidden>
+            ⚓
+          </div>
+          <b>
+            Linkport<span>Forwarders · Quote desk</span>
+          </b>
+        </div>
+        <h1>Reviewer sign-in</h1>
+        <p>Sign in with a magic link to review your tenant&apos;s quote requests.</p>
+        <form onSubmit={onSubmit}>
         <input
           type="email"
           required
@@ -42,9 +51,10 @@ export default function LoginPage() {
           {status === "sending" ? "Sending…" : "Send magic link"}
         </button>
       </form>
-      {message && (
-        <div className={`notice ${status === "error" ? "err" : "ok"}`}>{message}</div>
-      )}
+        {message && (
+          <div className={`notice ${status === "error" ? "err" : "ok"}`}>{message}</div>
+        )}
+      </div>
     </div>
   );
 }

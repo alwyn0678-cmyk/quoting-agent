@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { listUsageForTenant } from "../../src/lib/usage";
+import { listRequestsForTenant, navCounts } from "../../src/lib/dashboard";
 import { AppShell } from "../components/AppShell";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function UsagePage() {
 
   // RLS scopes audit_log to the caller's tenant (AC-5 model) — no manual filter.
   const usage = await listUsageForTenant(supabase);
+  const counts = navCounts(await listRequestsForTenant(supabase));
 
   return (
     <AppShell
@@ -24,6 +26,7 @@ export default async function UsagePage() {
       userEmail={user.email ?? ""}
       title="Usage & cost"
       subtitle="Token + estimated cost per agent run (audit log)"
+      counts={counts}
     >
       <div className="usagewrap">
         <div className="totals">

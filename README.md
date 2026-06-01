@@ -1,6 +1,6 @@
 # QuoteAgent
 
-![tests](https://img.shields.io/badge/tests-164%20passing-2ea44f?style=flat-square)
+![tests](https://img.shields.io/badge/tests-174%20passing-2ea44f?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict%20ESM-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Sonnet%20%2B%20Haiku-d97757?style=flat-square)
 ![Supabase](https://img.shields.io/badge/Supabase-pgvector%20%2B%20RLS-3ecf8e?style=flat-square&logo=supabase&logoColor=white)
