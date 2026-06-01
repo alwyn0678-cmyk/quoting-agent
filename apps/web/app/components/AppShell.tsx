@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LiveRefresh } from "./LiveRefresh";
 
 export type Tab = "inbox" | "quotes" | "archive" | "usage";
 const NAV: { tab: Tab; href: string; label: string }[] = [
@@ -26,6 +27,7 @@ export function AppShell({
 }) {
   return (
     <div className="shell">
+      <LiveRefresh />
       <aside className="sidebar">
         <div className="brand">
           <div className="anchor" aria-hidden>

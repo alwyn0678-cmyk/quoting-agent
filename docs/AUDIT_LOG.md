@@ -4,6 +4,40 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Dashboard live-refresh + continuous worker — "instant" inbound/outbound · 2026-06-01
+
+### Scope
+Alwyn: make the dashboard receive and send **automatic/instant**, and "does the dashboard also
+auto-refresh instantly?" — it did NOT. Pages are `force-dynamic` (fresh per load) and revalidate after
+the reviewer's OWN actions (`revalidatePath`), but nothing live-updated when a background worker changed
+data, so new mail / the `sent` flip only appeared on a manual refresh. Two gaps: (a) nothing was running
+the poll/send workers on a cadence in-session; (b) the open page never updated itself.
+
+### What was built / done
+- **Continuous worker (session-local).** A background loop runs `poll:once` + `send:once` every ~20s,
+  so inbound mail is ingested and approved replies are sent without a manual step — the always-on worker
+  the outbox (D-27) always intended. NOTE: this runs **on this machine/session** — a dev bridge, not a
+  deployment.
+- **`<LiveRefresh/>` (D-29).** A client component in `AppShell` subscribes to Supabase Realtime
+  `postgres_changes` on `quote_requests` + `drafts` (RLS-scoped via the session JWT) and soft-refreshes
+  the server components on any change; a 10s interval is the never-stale fallback. Migration `0012` adds
+  the two tables to the `supabase_realtime` publication (idempotent).
+
+### Verification
+Offline **174/174** + `apps/web` `next build` clean (TypeScript ok, 7 routes). Migration `0012` applied
+live (**HTTP 201**) + verified (`drafts` + `quote_requests` both present in `supabase_realtime`).
+Deployed to Vercel (`dpl …bsqto830j`, READY, alwyn0678 account), aliased to
+**quoteagent-dashboard.vercel.app**; live `/`→307→`/login`, `/login`→200.
+
+### Honest scope note
+Realtime gives sub-second updates when the socket connects; the 10s poll guarantees freshness
+regardless (no new browser load/creds — Realtime is RLS-scoped, no new access). The continuous
+poll+send worker is a **local dev process**; the production-grade always-on version (a Graph
+change-notification **webhook** for instant inbound + a **Trigger.dev send task fired on Approve** for
+instant outbound) is scoped but **NOT built** — a real Phase-1 feature, flagged not hidden.
+
+---
+
 ## Live send round-trip — first real Approve→send proven end-to-end · 2026-06-01
 
 ### Scope

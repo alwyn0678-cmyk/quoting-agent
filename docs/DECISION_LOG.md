@@ -3,6 +3,20 @@
 Load-bearing product + architecture decisions, newest first. Each: **decision · rationale · status**.
 Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, and Stage 1 choices.
 
+## Live ops — dashboard live-refresh (2026-06-01)
+
+- **D-29 · The dashboard updates itself live via Supabase Realtime, with a 10s poll fallback — no
+  manual browser refresh.** · A client `<LiveRefresh/>` mounted in the AppShell subscribes to
+  `postgres_changes` on `quote_requests` + `drafts` (added to the `supabase_realtime` publication,
+  migration `0012`) using the signed-in user's JWT, and calls `router.refresh()` (a soft re-render of
+  the server components) on any change; a `setInterval` every 10s is a safety net if the socket drops. ·
+  *Realtime is RLS-scoped — it only ever delivers rows the reviewer could already SELECT (tenant
+  isolation intact, no new access, no creds in the browser). The poll fallback guarantees the view is
+  never stale even when Realtime can't connect — "instant when possible, never stale." Pairs with the
+  continuous poll+send worker so inbound mail and the `sent`-status flip surface on-screen on their own.
+  The production-grade always-on path (Graph change-notification webhook + a Trigger.dev send task fired
+  on Approve) is scoped but NOT yet built.* · **Accepted.**
+
 ## Phase 1H — real send on Approve + archive + re-run + maritime UI (2026-06-01)
 
 - **D-27 · Approve performs a REAL Microsoft Graph send via an OUTBOX — REVERSING D-14's "simulated
