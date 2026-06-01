@@ -4,6 +4,72 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1H — real send on Approve (outbox) + archive + re-run + maritime UI · 2026-06-01
+
+### Scope
+At Alwyn's request: (1) make **Approve actually send the reply** (reverses D-14's simulated-only —
+**D-27**); (2) **archive** sent/terminal requests + **re-run** escalations (**D-28**); (3) a **massive
+"refined maritime" UI uplift** of the dashboard. AC-G5 live mail (the Graph poll) had already been
+wired earlier this session (`scripts/poll_once.ts`); this phase adds the SEND half + the workflow
+controls + the redesign.
+
+### What was built (branch `feat/dashboard-uplift-and-live-send`)
+- **Outbox real-send (D-27).** Migration `0011`: status `'sending'`, `drafts.sent_at`,
+  `quote_requests.archived_at` + `send_claimed_at`. `approve_request(uuid)` [authenticated] atomically
+  claims `awaiting_review→'sending'`; `claim_for_send` [service_role] leases unclaimed rows
+  (`FOR UPDATE SKIP LOCKED`); `finalize_send(uuid,uuid,bool)` [service_role ONLY] does `'sending'→'sent'`
+  + stamps the real `sent_at`. Send capability lives in `packages/graph` (`OutlookSender`/`sendMail`)
+  + the trusted worker `scripts/send_outbox.ts` (`npm run send:once`); the **dashboard holds no Graph
+  creds and never sends**.
+- **Archive + re-run (D-28).** `archive_request`/`unarchive_request`/`requeue_request`
+  [authenticated, tenant-scoped]; an Archive view + Re-run (escalated|error → received → agent re-runs).
+- **UI.** `globals.css` design system (navy/teal/brass, depth, motion), all components + pages
+  rebuilt, branded login, new `/archive` route, `sending` status, real-vs-simulated send messaging.
+- **Tests.** New `graph-send` (packages/graph) + approve/archive/requeue wrapper + dashboard
+  archived/sent_at units; `supabase/tests/ac6_approve.sql` + `evals/web-approve.ts` updated to the
+  outbox flow (approve→sending; authenticated CANNOT call `finalize_send`; service_role finalize→sent).
+
+### Gate-3 (self-critique)
+- **D-27 reverses the project's headline safety thesis** ("no path sends — D-14"). Mitigated by the
+  outbox: the *autonomous* pipeline still never sends, the browser stays secret-free, and the send +
+  its audit record live in a trusted service_role worker. AUTONOMY.md updated (R1/G1/blast-radius/K4).
+- **AC-7 ("no send call in the approve path") is intentionally superseded** — recorded, not silently
+  dropped. AC-6 (sent only via a human Approve) still holds (the `enforce_sent_via_approve` gate).
+- Approve now depends on the worker running: a `'sending'` row is queued until `send:once` runs (and
+  stuck-claimed on crash by design — at-most-once, the safe direction for a non-idempotent send).
+
+### Gate-4 (codex, codex-cli 0.125.0, `codex exec -s read-only -c model_reasoning_effort=high`, 3 rounds)
+- **R1 (4 findings, all valid):** [P1] forgeable `p_sent` (reviewer could fake a real send); [P1]
+  send-before-flip → double-send; [P2] silent simulated fallthrough on read error; [P2] recipient
+  spoofing via the display-name `<...>`. → **reworked to the outbox** (non-forgeable finalize, claim,
+  worker; recipient = LAST `<addr>`).
+- **R2 (confirmed R1 fixed; 4 new, all valid):** [P1] no atomic claim → concurrent double-send; [P1]
+  crash-after-Graph-send → re-send; [P2] worker ignored `finalize_send` errors; [P3] `ac6_approve.sql`
+  + `web-approve.ts` still asserted the old flow. → added `claim_for_send` lease (`FOR UPDATE SKIP
+  LOCKED`, never auto-reclaimed), full RPC-error checks, no-requeue on ambiguous failure, updated tests.
+- **R3: CONVERGED — zero findings.** codex confirmed non-forgeable, exactly-once under concurrency,
+  at-most-once on crash, and tenant-safe archive/unarchive/requeue. *(Operational note: `codex exec`
+  hangs reading stdin without a TTY — run with `< /dev/null`; round 1 had looked "stuck" for this.)*
+
+### Verification
+Offline **174/174** + root & `apps/web` typecheck clean + `next build` passes (incl. `/archive`);
+login screenshot reviewed. Migration `0011` **applied live (HTTP 201)** and verified (dashboard SELECT
++ `claim_for_send` RPC). Alwyn reviewed the running dashboard locally (`:3002`) and signed off.
+
+### ASSUMPTIONS status
+No new domain figures — this phase is plumbing + UI; A/A′/C/G unchanged.
+
+### Still deferred (supervised, your authorization)
+- **Mail.Send grant + a live `send:once` run** (the real email) — needs Azure admin consent; until then
+  Approve queues to `'sending'`.
+- **Vercel redeploy** of the new dashboard (the public URL still serves the prior UI).
+
+### Sign-off & merge
+**Signed off (Alwyn) · 2026-06-01** ("perfect, please push to final and github repo") → merged
+`feat/dashboard-uplift-and-live-send` to `main` `--no-ff` + pushed to origin.
+
+---
+
 ## Live batch — end-of-project supervised run (golden eval · CLI · Q2 import · Q3 RAG) · 2026-06-01
 
 ### Scope
