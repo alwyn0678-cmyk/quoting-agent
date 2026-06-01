@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server";
-import { listRequestsForTenant } from "../src/lib/dashboard";
+import { listRequestsForTenant, activeOnly, navCounts } from "../src/lib/dashboard";
 import { AppShell } from "./components/AppShell";
 import { RequestList, type RowItem } from "./components/RequestList";
 import { EmailDetail } from "./components/EmailDetail";
@@ -20,7 +20,8 @@ export default async function InboxPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const requests = await listRequestsForTenant(supabase);
+  const all = await listRequestsForTenant(supabase);
+  const requests = activeOnly(all);
   const selected = requests.find((r) => r.id === selectedId) ?? null;
   const rows: RowItem[] = requests.map((r) => ({
     id: r.id,
@@ -36,7 +37,8 @@ export default async function InboxPage({
       active="inbox"
       userEmail={user.email ?? ""}
       title="Inbox"
-      subtitle={`${requests.length} request${requests.length === 1 ? "" : "s"} · ${awaiting} awaiting review`}
+      subtitle={`${requests.length} active request${requests.length === 1 ? "" : "s"} · ${awaiting} awaiting review`}
+      counts={navCounts(all)}
     >
       <RequestList rows={rows} selectedId={selectedId} hrefBase="/" />
       {selected ? (

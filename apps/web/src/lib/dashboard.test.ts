@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { buildRequestView, quotationsOnly, type RawRequestRow, type RequestView } from "./dashboard.js";
+import {
+  buildRequestView,
+  quotationsOnly,
+  activeOnly,
+  archivedOnly,
+  type RawRequestRow,
+  type RequestView,
+} from "./dashboard.js";
 import { StaticCardRateEngine } from "../../../../packages/agents/src/rate-engine.js";
 
 describe("P-1C.3 — dashboard render model", () => {
@@ -190,5 +197,46 @@ describe("P-1C.3 — dashboard render model", () => {
       ...base,
     };
     expect(quotationsOnly([quoted, escalated]).map((v) => v.id)).toEqual(["q1"]);
+  });
+});
+
+describe("D-27 / archive — real send timestamp + archived filtering", () => {
+  const baseRow = (over: Partial<RawRequestRow>): RawRequestRow => ({
+    id: "r",
+    status: "sent",
+    from_email: "a@x.example",
+    subject: "s",
+    created_at: "2026-06-01T10:00:00Z",
+    escalation_reason: null,
+    injection_flag: false,
+    quotes: [],
+    drafts: [],
+    ...over,
+  });
+
+  it("surfaces a REAL send (drafts.sent_at) distinctly from the legacy simulated_sent_at", () => {
+    const v = buildRequestView(
+      baseRow({
+        drafts: [{ subject: "Re", body: "All-in EUR 3,520.", simulated_sent_at: "2026-06-01T16:00:00Z", sent_at: "2026-06-01T16:00:01Z" }],
+      }),
+    );
+    expect(v.draft?.sent_at).toBe("2026-06-01T16:00:01Z");
+    expect(v.draft?.simulated_sent_at).toBe("2026-06-01T16:00:00Z");
+  });
+
+  it("defaults archived_at and draft.sent_at to null when absent (back-compat with pre-0011 rows)", () => {
+    const v = buildRequestView(
+      baseRow({ drafts: [{ subject: "Re", body: "b", simulated_sent_at: "2026-06-01T16:00:00Z" }] }),
+    );
+    expect(v.archived_at).toBeNull();
+    expect(v.draft?.sent_at).toBeNull();
+  });
+
+  it("activeOnly / archivedOnly partition by archived_at", () => {
+    const active = buildRequestView(baseRow({ id: "a", archived_at: null }));
+    const archived = buildRequestView(baseRow({ id: "b", archived_at: "2026-06-01T17:00:00Z" }));
+    const all = [active, archived];
+    expect(activeOnly(all).map((v) => v.id)).toEqual(["a"]);
+    expect(archivedOnly(all).map((v) => v.id)).toEqual(["b"]);
   });
 });

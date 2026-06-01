@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "start": "node --env-file-if-exists=.env --import tsx apps/cli/src/main.ts",
     "ingest": "node --env-file-if-exists=.env --import tsx scripts/ingest_email.ts",
+    "poll:once": "node --env-file-if-exists=.env --import tsx scripts/poll_once.ts",
     "graph:smoke": "node --env-file-if-exists=.env --import tsx scripts/graph_smoke.ts",
     "rates:gen": "node --env-file-if-exists=.env --import tsx scripts/gen_rate_sheet.ts",
     "rates:import": "node --env-file-if-exists=.env --import tsx scripts/import_rate_sheet.ts",

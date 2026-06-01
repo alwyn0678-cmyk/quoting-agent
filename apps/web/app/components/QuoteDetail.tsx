@@ -1,7 +1,8 @@
 import type { RequestView } from "../../src/lib/dashboard";
-import { approveAction } from "../actions";
+import { approveAction, archiveAction } from "../actions";
 
 const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
+const utc = (iso: string) => `${new Date(iso).toLocaleString("en-GB", { timeZone: "UTC" })} UTC`;
 
 export function QuoteDetail({ r }: { r: RequestView }) {
   const q = r.quote;
@@ -39,10 +40,13 @@ export function QuoteDetail({ r }: { r: RequestView }) {
       </div>
 
       {r.draft ? (
-        <div className="draft">
-          <div className="ds">{r.draft.subject}</div>
-          <div className="db">{r.draft.body}</div>
-        </div>
+        <>
+          <div className="sectlabel">Drafted reply</div>
+          <div className="draft">
+            <div className="ds">{r.draft.subject}</div>
+            <div className="db">{r.draft.body}</div>
+          </div>
+        </>
       ) : null}
 
       {r.injection_flag ? (
@@ -54,22 +58,51 @@ export function QuoteDetail({ r }: { r: RequestView }) {
       ) : null}
 
       {r.status === "awaiting_review" ? (
-        <form action={approveAction} className="approve">
-          <input type="hidden" name="requestId" value={r.id} />
-          <button type="submit" className="btn">
-            Approve &amp; simulate send
-          </button>
-        </form>
+        <div className="actions">
+          <form action={approveAction}>
+            <input type="hidden" name="requestId" value={r.id} />
+            <button type="submit" className="btn primary">
+              ✓ Approve &amp; send reply
+            </button>
+          </form>
+        </div>
       ) : null}
 
       {r.status === "sent" ? (
-        <div className="sentinfo">
-          ✓ Simulated send
-          {r.draft?.simulated_sent_at
-            ? ` · ${new Date(r.draft.simulated_sent_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC`
-            : ""}{" "}
-          — no email was actually sent (Graph send is not wired; R1).
-        </div>
+        <>
+          {r.draft?.sent_at ? (
+            <div className="sentinfo real">
+              <span className="ic" aria-hidden>
+                📤
+              </span>
+              <div>
+                Reply <b>sent</b> to <b>{r.from_email ?? "the requester"}</b>
+                {` · ${utc(r.draft.sent_at)}`} — a real email was dispatched from the Linkport mailbox
+                via Microsoft Graph.
+              </div>
+            </div>
+          ) : (
+            <div className="sentinfo sim">
+              <span className="ic" aria-hidden>
+                ✓
+              </span>
+              <div>
+                Approved
+                {r.draft?.simulated_sent_at ? ` · ${utc(r.draft.simulated_sent_at)}` : ""} — recorded
+                as a <b>simulated</b> send (live Graph send is not configured for this dashboard, so no
+                email was dispatched).
+              </div>
+            </div>
+          )}
+          <div className="actions">
+            <form action={archiveAction}>
+              <input type="hidden" name="requestId" value={r.id} />
+              <button type="submit" className="btn ghost">
+                Archive
+              </button>
+            </form>
+          </div>
+        </>
       ) : null}
     </div>
   );

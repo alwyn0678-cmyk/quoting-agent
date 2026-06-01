@@ -8,6 +8,14 @@ export interface RowItem {
   status: string;
   amount?: string;
   flag?: boolean;
+  archived?: boolean;
+}
+
+/** First alphanumeric of the sender name/address — a compact avatar glyph. */
+function initial(s: string): string {
+  const name = s.replace(/<[^>]*>/, "").trim() || s;
+  const m = name.match(/[A-Za-z0-9]/);
+  return (m ? m[0] : "?").toUpperCase();
 }
 
 export function RequestList({
@@ -34,7 +42,12 @@ export function RequestList({
           href={`${hrefBase}?sel=${r.id}`}
           className={`row ${r.id === selectedId ? "sel" : ""}`}
         >
-          <div className="nm">{r.title}</div>
+          <div className="top-ln">
+            <span className="ava" aria-hidden>
+              {initial(r.title)}
+            </span>
+            <span className="nm">{r.title}</span>
+          </div>
           <div className="sub">{r.subtitle}</div>
           <div className="meta">
             {r.amount ? <span className="amt">{r.amount}</span> : <span />}
@@ -44,6 +57,7 @@ export function RequestList({
                   ⚠
                 </span>
               ) : null}
+              {r.archived ? <span className="chip arch">Archived</span> : null}
               <StatusBadge status={r.status} />
             </span>
           </div>

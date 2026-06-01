@@ -30,6 +30,7 @@ export interface RequestView {
   subject: string | null;
   body: string | null;
   created_at: string;
+  archived_at: string | null;
   escalation_reason: string | null;
   injection_flag: boolean;
   quote: {
@@ -43,10 +44,12 @@ export interface RequestView {
     validity_through: string;
     rate_card_version: string;
   } | null;
-  draft: { subject: string; body: string; simulated_sent_at: string | null } | null;
+  // sent_at = a REAL Graph send happened (D-27); simulated_sent_at = the legacy simulated stamp.
+  draft: { subject: string; body: string; simulated_sent_at: string | null; sent_at: string | null } | null;
 }
 
 /** A joined row as returned by the embedded select below (PostgREST embeds 1:1 relations as arrays). */
+type RawDraft = { subject: string; body: string; simulated_sent_at: string | null; sent_at?: string | null };
 export interface RawRequestRow {
   id: string;
   status: string;
@@ -54,13 +57,11 @@ export interface RawRequestRow {
   subject: string | null;
   body?: string | null;
   created_at: string;
+  archived_at?: string | null;
   escalation_reason: string | null;
   injection_flag: boolean;
   quotes: { breakdown_snapshot: QuoteSnapshot }[] | { breakdown_snapshot: QuoteSnapshot } | null;
-  drafts:
-    | { subject: string; body: string; simulated_sent_at: string | null }[]
-    | { subject: string; body: string; simulated_sent_at: string | null }
-    | null;
+  drafts: RawDraft[] | RawDraft | null;
 }
 
 function first<T>(x: T[] | T | null | undefined): T | null {
@@ -80,6 +81,7 @@ export function buildRequestView(row: RawRequestRow): RequestView {
     subject: row.subject,
     body: row.body ?? null,
     created_at: row.created_at,
+    archived_at: row.archived_at ?? null,
     escalation_reason: row.escalation_reason,
     injection_flag: row.injection_flag,
     quote: snap
@@ -96,13 +98,18 @@ export function buildRequestView(row: RawRequestRow): RequestView {
         }
       : null,
     draft: draft
-      ? { subject: draft.subject, body: draft.body, simulated_sent_at: draft.simulated_sent_at ?? null }
+      ? {
+          subject: draft.subject,
+          body: draft.body,
+          simulated_sent_at: draft.simulated_sent_at ?? null,
+          sent_at: draft.sent_at ?? null,
+        }
       : null,
   };
 }
 
 const SELECT =
-  "id, status, from_email, subject, body, created_at, escalation_reason, injection_flag, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at)";
+  "id, status, from_email, subject, body, created_at, archived_at, escalation_reason, injection_flag, quotes(breakdown_snapshot), drafts(subject, body, simulated_sent_at, sent_at)";
 
 /**
  * The narrow slice of a Supabase client this lib actually uses: `from(table).select(cols).order(...)`
@@ -132,4 +139,30 @@ export async function listRequestsForTenant(client: RequestsReader): Promise<Req
 /** The requests that produced a quote — the Quotations tab list (escalations are Inbox-only). */
 export function quotationsOnly(views: RequestView[]): RequestView[] {
   return views.filter((v) => v.quote !== null);
+}
+
+/** Active = not soft-archived. The Inbox/Quotations tabs show only active requests. */
+export function activeOnly(views: RequestView[]): RequestView[] {
+  return views.filter((v) => v.archived_at === null);
+}
+
+/** Archived = soft-archived — the Archive tab. */
+export function archivedOnly(views: RequestView[]): RequestView[] {
+  return views.filter((v) => v.archived_at !== null);
+}
+
+export interface NavCounts {
+  inbox: number;
+  quotes: number;
+  archive: number;
+}
+
+/** Sidebar pip counts: open (non-sent) active requests, quotes awaiting approval, archived total. */
+export function navCounts(all: RequestView[]): NavCounts {
+  const active = activeOnly(all);
+  return {
+    inbox: active.filter((v) => v.status !== "sent").length,
+    quotes: quotationsOnly(active).filter((v) => v.status === "awaiting_review").length,
+    archive: archivedOnly(all).length,
+  };
 }

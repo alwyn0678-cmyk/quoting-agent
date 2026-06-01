@@ -4,6 +4,71 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Live batch — end-of-project supervised run (golden eval · CLI · Q2 import · Q3 RAG) · 2026-06-01
+
+### Scope
+The deferred "end-of-project live batch" run against real services. Env wired this session: the
+Anthropic + Gemini keys were supplied by Alwyn; the Supabase creds (`SUPABASE_URL`, `anon`,
+`service_role`, `PROJECT_REF`) were fetched from the live `quoteagent` project
+(`rbgkfbvkpoekhcfotnhd`, eu-central-1) via the Management API using a personal access token, and
+written to the gitignored `.env` (+ the public pair to `apps/web/.env.local`). No secrets committed.
+
+### What ran (all green)
+- **Golden-set eval** (`npm run eval`, real Sonnet 4.6 extract / Haiku 4.5 draft): **8/8 — GATE PASS**,
+  injection fixture (07) must-pass included. First live re-validation of the core since the model
+  routing (D-07) landed; matches the Phase-0 8/8.
+- **CLI demo** (`npm start`): fixture 01 → 2×40HC NLRTM-USNYC **EUR 6,930**, grounded draft, usage line
+  (`in=3222 out=695 est_cost_usd≈0.10`). Fixture 07 (prompt injection) → quoted the **real** EUR 3,520
+  **and** `[flag] prompt-injection detected`; the injected instruction was not obeyed (T12 live).
+- **Q2 `rates:import`** (was deferred): **3 cards upserted** to live Supabase — NLRTM-USNYC (9 lines,
+  reused the seed card id `2222…`), NLRTM-USLAX (12), DEHAM-USNYC (11). Verified post-import: 3 active
+  lanes present; the demo card still holds exactly 9 lines (parity undisturbed, per the offline
+  round-trip proof). D-25's "pending live `rates:import` run" is now **done**.
+- **Q3 RAG retrieval eval** (`npm run eval:rag`, live Gemini + pgvector): **3/3** (BAF / FOB / Validity)
+  against the 24 indexed `knowledge_chunks` confirmed present in the live project.
+
+### Verification
+Offline suite remains 164/164 + typecheck clean (unchanged this session). The live results above were
+run end-to-end; the Supabase state was re-queried via PostgREST to confirm the import landed and the
+demo card was not corrupted.
+
+### ASSUMPTIONS status
+Unchanged — all domain figures (A/A′/C/G) remain INVENTED placeholders with verification paths; this
+batch exercised the plumbing, not the figures. G5 stays LIVE-CONFIRMED (re-proven: live Gemini
+embeddings ranked 3/3).
+
+### AC-G5 — live Graph mail poll: RESOLVED (autonomous loop proven end-to-end)
+The Azure app registration was created from the CLI — the `az` session on this machine was already
+logged in as `alwyn@northscale.studio` (tenant `d8b4b036-d00b-44ed-8bfa-44c7072daa90`). App
+`QuoteAgent Mail Poll` (it already existed, reused) `appId 847d146e-e949-4541-8ddb-5b3defeb5466`;
+Microsoft Graph **`Mail.Read` (Application)** added + **admin-consented** (appRoleAssignment verified);
+a fresh client secret minted straight to gitignored `.env`. `GRAPH_TENANT_ID` + `GRAPH_MAILBOX_USER`
+(`alwyn@northscale.studio`) + `GRAPH_QUOTE_FOLDER` (Inbox id) filled.
+- `npm run graph:smoke` → the project's OWN `GraphFetchTransport` read the live mailbox (26 msgs).
+- **Autonomous loop, end-to-end** via new `scripts/poll_once.ts` + `npm run poll:once` — the in-process
+  twin of the deployed Trigger.dev `poll-mailbox` task (same `pollMailbox` + `runAndPersist`). Polled
+  **2 new msgs** from the live Inbox (cursor 2026-05-28→2026-06-01T15:59:31Z) → inserted both (deduped
+  by `graph_message_id`, AC-1) → ran the durable agent per request → the **FCL email quoted €3,520**
+  (`awaiting_review`; snapshot + draft + usage persisted) and an **Azure DevOps notification correctly
+  escalated** (`missing_required_field`). Verified in Supabase: quote `all_in_total=3520` with full
+  `breakdown_snapshot`, `drafts` row, and `audit_log` usage on **both** paths. This is the agent
+  reading Outlook on its **own** code path — no human in the transport.
+
+### Security follow-up (OPEN) — tenant-wide Mail.Read not yet scoped
+The app holds **tenant-wide** `Mail.Read` (it can read every mailbox in northscale.studio), NOT yet
+restricted to the single mailbox. The hardening is an Exchange **ApplicationAccessPolicy**
+(`New-ApplicationAccessPolicy` limiting appId `847d146e` to `alwyn@northscale.studio`), which needs
+Exchange Online PowerShell — the `ExchangeOnlineManagement` module is not installed here and the
+sign-in is interactive, so the exact commands were handed to Alwyn to run. Until then the app is
+broader than Scope A intends. R1 still holds — only `Mail.Read` was requested/consented, never
+`Mail.Send`/`Mail.ReadWrite`.
+
+### Still deferred
+- **V5 — dashboard magic-link verify:** the deploy + Supabase are live; only an interactive browser
+  sign-in (Alwyn's inbox) remains.
+
+---
+
 ## Phase 1G — Q3 scoped RAG (draft-only grounding · Gemini Embedding 2 + pgvector) · 2026-05-30
 
 ### Scope
