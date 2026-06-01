@@ -21,8 +21,13 @@ alter table public.quote_requests
   add constraint quote_requests_status_check
   check (status in ('received','processing','awaiting_review','sending','escalated','sent','error'));
 
-alter table public.drafts          add column if not exists sent_at     timestamptz;
-alter table public.quote_requests  add column if not exists archived_at timestamptz;
+alter table public.drafts          add column if not exists sent_at         timestamptz;
+alter table public.quote_requests  add column if not exists archived_at     timestamptz;
+-- Send lease: a worker that has CLAIMED a 'sending' row stamps this so no second worker re-sends it
+-- (exactly-once under concurrency, codex Gate-4 R2 P1). It is NEVER auto-reclaimed: a crash after the
+-- Graph send leaves the row claimed-'sending' for manual reconciliation rather than risking a re-send
+-- (at-most-once on crash — the safe direction for an external, non-idempotent send).
+alter table public.quote_requests  add column if not exists send_claimed_at timestamptz;
 
 -- HITL claim: a human moves an approvable request awaiting_review -> 'sending'. Exactly-once (one
 -- concurrent approve wins; the rest match nothing -> no double-send). Refuses cross-tenant / wrong-
@@ -71,8 +76,10 @@ begin
     returning id into v_id;
     perform set_config('quoteagent.allow_sent', 'off', true);
   else
+    -- Definite pre-send failure (e.g. unparseable recipient): return to awaiting_review for human
+    -- retry and clear the lease. The worker only calls this for failures that provably did NOT send.
     update public.quote_requests
-       set status = 'awaiting_review'
+       set status = 'awaiting_review', send_claimed_at = null
      where id = p_request_id and tenant_id = p_tenant_id and status = 'sending'
     returning id into v_id;
   end if;
@@ -80,6 +87,36 @@ begin
 end; $$;
 revoke all on function public.finalize_send(uuid, uuid, boolean) from public;
 grant execute on function public.finalize_send(uuid, uuid, boolean) to service_role;
+
+-- Atomic claim for the send-outbox worker (service_role ONLY). Moves a batch of UNCLAIMED 'sending'
+-- rows under a lease (send_claimed_at) and returns them joined to their draft, so exactly one worker
+-- ever sends a given row (FOR UPDATE SKIP LOCKED + the send_claimed_at IS NULL guard). Tenant-scoped.
+create or replace function public.claim_for_send(p_tenant_id uuid, p_limit int default 50)
+returns table(request_id uuid, from_email text, subject text, body text)
+language plpgsql security definer set search_path = public as $$
+begin
+  return query
+  with picked as (
+    select q.id
+      from public.quote_requests q
+     where q.tenant_id = p_tenant_id and q.status = 'sending' and q.send_claimed_at is null
+     order by q.created_at
+     for update skip locked
+     limit p_limit
+  ),
+  claimed as (
+    update public.quote_requests q
+       set send_claimed_at = now()
+      from picked
+     where q.id = picked.id
+    returning q.id, q.from_email
+  )
+  select c.id, c.from_email, d.subject, d.body
+    from claimed c
+    join public.drafts d on d.request_id = c.id and d.tenant_id = p_tenant_id;
+end; $$;
+revoke all on function public.claim_for_send(uuid, int) from public;
+grant execute on function public.claim_for_send(uuid, int) to service_role;
 
 -- Soft-archive a terminal request (sent / escalated / error). Tenant-scoped; refuses otherwise.
 create or replace function public.archive_request(p_request_id uuid)
