@@ -4,6 +4,58 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Live send round-trip — first real Approve→send proven end-to-end · 2026-06-01
+
+### Scope
+Alwyn's request: send a real inbound quote (`alwyn0678@gmail.com` → `alwyn@northscale.studio`), let
+the agent process it, **approve it in the LIVE dashboard, and have the real reply land back in
+alwyn0678's inbox** — plus confirm push + redeploy Vercel. This exercises the SEND half of D-27
+against live services for the first time (Phase 1H proved it in tests + migration only).
+
+### What ran (all green)
+- **Inbound:** real email *"Quote FCL 2 x 20ft"* (Rotterdam→New York, 2×20ft) sent
+  `alwyn0678@gmail.com` → `alwyn@northscale.studio` (18:17Z).
+- **`poll:once`** (live Graph read): ingested the new msg (prior one deduped) → durable agent ran →
+  decision `quote` → **2×20GP, all-in EUR 5,430** (`2026-06-v1`, valid 2026-06-30) → grounded draft →
+  `awaiting_review`. Pricing re-derived: (1800+320+225+290+25)×2 + 65 + 45 = 5430 ✓.
+- **Approve (HITL)** on the LIVE dashboard (Alwyn, signed in as `alwyn0678@gmail.com`): atomically
+  claimed `awaiting_review→'sending'`; the browser sent nothing (D-27 holds).
+- **`send:once`** (trusted service_role + Graph): `claim_for_send` lease → `OutlookSender.sendMail`
+  (as `alwyn@northscale.studio`) → `finalize_send(ok)` → `'sent'` + real `drafts.sent_at=18:26:17Z`.
+- **Received:** the reply *"FCL Quote: Rotterdam (RTM) → New York (NYC) | 2×20GP"* arrived UNREAD in
+  alwyn0678's inbox (confirmed via Gmail). End-to-end round-trip closed.
+
+### Mail.Send grant (Azure IAM — user-authorized)
+The first `send:once` 403'd (`ErrorAccessDenied`). `az` diagnosis: the Graph app `847d146e` had
+**Mail.Read listed twice and NO Mail.Send** — the earlier note that "Mail.Read + Mail.Send are
+consented" was **WRONG** (a duplicated Mail.Read, never Send). Corrected: set the app's permissions
+to exactly [Mail.Read, Mail.Send] and **admin-consented Mail.Send** (appRoleAssignment `b633e1c5…`
+on the client SP). The safety classifier first blocked this as an unrequested IAM escalation; Alwyn
+then **explicitly authorized** it ("You run it — I authorize"). The crash-safe outbox had left the
+failed row claimed-`'sending'` (not requeued — at-most-once); after the grant I cleared
+`send_claimed_at` and re-ran → sent cleanly (1 sent, 0 stuck).
+
+### Vercel redeploy
+The local Vercel CLI was logged into the WRONG account (`alwynvanvuuren6`); `quoteagent-dashboard`
+lives under **`alwyn0678-cmyk`**. Re-authed the CLI to alwyn0678 (device-code login), linked
+`apps/web`→`prj_7qtdv1W…`, deployed latest `main` → `dpl_CcG9gWrXM3Wsj6sijDd3kBkpcTpd` (READY),
+aliased to **quoteagent-dashboard.vercel.app**. Verified public: `GET /`→307→`/login`, `/login`→200
+(Linkport sign-in) — the post-1H maritime UI is live, no SSO wall. `main`↔`origin/main` already in sync.
+
+### Security follow-up (OPEN — now BROADER, more urgent)
+The app now holds **tenant-wide Mail.Read AND Mail.Send** — it could read or send as ANY mailbox in
+northscale.studio. The prior "only Mail.Read, never Mail.Send" posture is **intentionally superseded**
+(with Alwyn's explicit authorization). The Exchange **ApplicationAccessPolicy** scoping appId
+`847d146e` to ONLY `alwyn@northscale.studio` (now covering BOTH Read and Send) is the top hardening
+item — still needs Exchange Online PowerShell (`ExchangeOnlineManagement` not installed here, sign-in
+interactive), so handed to Alwyn. Client secret remains in the gitignored `.env` only.
+
+### ASSUMPTIONS status
+Unchanged — figures still INVENTED. The EUR 5,430 is a deterministic computation off the (invented)
+seed rate card, not a verified market rate.
+
+---
+
 ## Phase 1H — real send on Approve (outbox) + archive + re-run + maritime UI · 2026-06-01
 
 ### Scope
@@ -128,6 +180,10 @@ Exchange Online PowerShell — the `ExchangeOnlineManagement` module is not inst
 sign-in is interactive, so the exact commands were handed to Alwyn to run. Until then the app is
 broader than Scope A intends. R1 still holds — only `Mail.Read` was requested/consented, never
 `Mail.Send`/`Mail.ReadWrite`.
+
+**Update (2026-06-01, later same day):** this "never Mail.Send" no longer holds — **Mail.Send was
+granted + admin-consented with Alwyn's explicit authorization** to complete the first live
+Approve→send round-trip (see the top entry). The scoping item now covers Read **and** Send.
 
 ### Still deferred
 - **V5 — dashboard magic-link verify:** the deploy + Supabase are live; only an interactive browser
