@@ -4,6 +4,96 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Multi-modal rate sheet — BARGE (NLRTM → DEDUI) · 2026-06-02
+
+### Scope
+Alwyn: "upgrade the rate sheet — truck, rail, barge, airfreight." Brainstormed down to ONE mode
+first (BARGE), with `mode` as a first-class rate-card key (D-30). The deterministic engine prices a
+barge quote through the SAME pure `priceQuote()` as FCL; air/truck are reserved as a typed seam
+(`MODE_BASIS`: per_chargeable_kg / per_ldm) and refused until built. Built TDD on
+`feat/barge-rate-mode` (8 plan tasks); offline-only — no live DB write in the build.
+
+### What was built
+- `mode` on `RateCard` + `RATE_CARD`; `MODE_BASIS` (FCL/BARGE/RAIL = per_container, implemented;
+  AIR/TRUCK reserved) + `isPriceableMode()`. `priceQuote()` dispatches on basis; barge prices
+  per-container exactly like FCL (1×40HC = €755, 2×20GP = €1195, incl. the Low-Water Surcharge).
+- New `RateEngine.cardFor(req)` port method; the gate validates against the engine-resolved card
+  (replaces the hardcoded `=== "FCL"` + single fixed-lane check). Dropping the fixed `DEFAULT_LANE`
+  also lit up the dormant USLAX + DEHAM FCL lanes already in the sheet.
+- Rate sheet carries a Mode meta row; barge NLRTM-DEDUI card added; migration `0013` adds
+  `rate_cards.mode` (default 'FCL'). Every barge figure is INVENTED → `ASSUMPTIONS.md` A″; D-30.
+
+### Gate 3 — self-review (pre-codex)
+Found one orphan the refactor left: `scripts/ingest_email.ts` still passed the removed 2nd
+`DEFAULT_LANE` arg (scripts/ is outside the typecheck `include`, so the stale 2-arg call slipped
+through; JS silently drops it at runtime). The other 3 call sites were cleaned in the branch; this
+one was missed. Finished the job: dropped the arg + import there and removed the now-orphaned
+`DEFAULT_LANE` constant + export. No behaviour change. (commit c3537e9)
+
+### Gate 4 — codex second-opinion (codex-cli 0.125.0, `codex exec`, read-only) → **DO-NOT-SHIP**
+Four blocking findings. **I reconcile: all four valid.**
+
+- **[B1] Excel adapter could quote-then-throw** — `ExcelRateCardSource.fetchActiveCard` ignores
+  mode/lane and always returns the workbook card, so `cardFor()` was non-null for ANY request →
+  the gate could say "quote" then `priceQuote()` throws. The Static/Supabase adapters return null
+  on mismatch; Excel did not. **AGREE.**
+- **[B2] `decide()` trusted any non-null card** — it defaulted to `RATE_CARD` and never checked
+  `card.mode`, `card.supported_lane`, or that the requested container is actually priced on the
+  card. A BARGE extraction + default FCL card, or a card missing the requested base, could return
+  "quote" that `priceQuote()` rejects. **AGREE.**
+- **[B3] Gate→price TOCTOU + double read** — the agent gated on `cardFor()` then priced via
+  `price()`, which re-resolved the card. A mutable source (e.g. mid `rates:import` delete/insert)
+  could change the card between gate and price. **AGREE.**
+- **[B4] AC-B4 was schema-only** — it asserted `modeSchema` accepts BARGE + a hand-built object
+  parses; it never ran `extractRequest()` or checked the prompt guidance. **AGREE.**
+
+### Resolution — all four fixed + regression-tested (commit f66c58c)
+- **[B1]** `ExcelOnlineRateEngine.cardFor()` now returns null unless the assembled card matches the
+  request mode+lane (mirrors StaticCard); `price()` still routes an un-threaded call through
+  `priceQuote()` so a wrong mode keeps the precise typed reason (LCL parity preserved).
+- **[B2]** The gate re-validates the resolved card: `card.mode === x.mode`, `card.supported_lane
+  === lane`, and `card.base_per_container[container] !== undefined`. It no longer trusts a
+  non-matching/default card. Added `out_of_scope_container` to the reason taxonomy (schemas.ts) +
+  migration `0014` extends the `quote_requests_reason_enum` DB CHECK — mirrors `priceQuote()`'s
+  `UnpriceableRequestError("out_of_scope_container")`. The gate is now a provable superset of
+  `priceQuote()`'s checks for the threaded card, so "quote ⇒ priceable" holds from `decide()` alone.
+- **[B3]** `RateEngine.price(req, card?)` accepts the pre-resolved card; the agent threads the
+  gate-validated card into pricing on the quote path — no second resolution, no TOCTOU, and the
+  live double-read is gone.
+- **[B4]** AC-B4 now runs a barge email through the real `extractRequest()` (mock client) and
+  asserts the system prompt carries the BARGE + Duisburg→DEDUI guidance. The live model's actual
+  recognition stays an eval-set concern (nondeterministic; not a unit test — CLAUDE.md).
+- Nits: corrected the stale Trigger.dev comment ("tenant + lane"); `rates:import` log shows mode;
+  dashboard escalation labels reworded (no longer "FCL only") + label for the new reason (7579287).
+
+### codex re-review (read-only) → **SHIP**
+All four prior blockers RESOLVED by inspection; no new correctness/security issue in scope. (codex
+could not run vitest under its read-only sandbox; the suite was run here — see below.)
+
+### Verification
+Offline **202/202** (+8 regression tests over the branch's original 194), typecheck clean,
+`apps/web` `next build` clean (7 routes). All offline — no live DB write performed.
+
+### Honest scope note (live DB — deferred, and safe to defer)
+The new `SupabaseRateCardSource` queries `rate_cards.mode` (`.eq("mode", …)`), which exists only
+after migration `0013`. This is SAFE to ship ahead of the DB because: the **Vercel dashboard never
+prices** (apps/web touches the rate engine only in a test, via StaticCard — no DB), and **no worker
+is running**. So `git push` + Vercel deploy ship the code without breaking live pricing. BARGE does
+not actually price in production until the **separate supervised step**: apply `0013` + `0014` to
+live Supabase, then `npm run rates:import`. Until then a barge request degrades gracefully (no card
+resolved → `out_of_scope_lane`), and `out_of_scope_container` cannot fire (every live card prices
+the full extractable container set {20GP,40GP,40HC}).
+
+### ASSUMPTIONS status
+All barge figures remain INVENTED, logged in `ASSUMPTIONS.md` A″ (A33–A38); none verified.
+
+### Sign-off
+Gate-4 clean after reconciliation (codex SHIP; offline 202/202; web build clean). Merged to `main`,
+pushed, dashboard redeployed to Vercel. Live DB migration + barge import remain the supervised
+follow-up.
+
+---
+
 ## Dashboard live-refresh + continuous worker — "instant" inbound/outbound · 2026-06-01
 
 ### Scope

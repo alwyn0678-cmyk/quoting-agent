@@ -13,6 +13,11 @@ Seeded with carried-over decisions from the canonical plan, Phase 0 learnings, a
   engine-resolved card (new `RateEngine.cardFor`), removing the hardcoded FCL/single-lane check —
   which also unlocks the A′ lanes (USLAX/DEHAM) live. · *Extends D-04 (one mode/one lane); honours
   D-25 (Excel = source of truth). Air/truck pricing deferred — seam only (YAGNI).* · **Accepted.**
+  · *Gate-4 hardening (2026-06-02): the gate now RE-validates the resolved card (mode + lane + base
+  coverage) rather than trusting any non-null card, and the agent prices the SAME card the gate
+  validated via `price(req, card?)` (no re-resolution → no TOCTOU). New escalation reason
+  `out_of_scope_container` (schemas.ts + migration 0014) mirrors `priceQuote`. So "quote ⇒
+  priceable" is provable from `decide()` alone, on every adapter. See AUDIT_LOG 2026-06-02.*
 
 ## Live ops — dashboard live-refresh (2026-06-01)
 
