@@ -233,3 +233,29 @@ describe("cardFor — resolve the card for a request's mode+lane", () => {
     expect(await eng.cardFor(inScope({ destination_port_code: "DEDUI" }))).toBeNull(); // wrong lane
   });
 });
+
+describe("Gate-4 hardening — price(req, card) honours the PROVIDED card (no re-resolution)", () => {
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "40HC": 420 },
+    surcharges: [
+      { code: "LWS", amount_per_container: 95 },
+      { code: "THC_RTM_BARGE", amount_per_container: 95 },
+      { code: "THC_DUI", amount_per_container: 110 },
+    ],
+    per_shipment_fees: [{ code: "DOC", amount: 35 }],
+  };
+
+  it("prices the passed card, not the engine's own — closing the gate→price TOCTOU window", async () => {
+    const eng = new StaticCardRateEngine(); // its own card is FCL NLRTM-USNYC
+    const q = await eng.price(
+      { origin_port_code: "NLRTM", destination_port_code: "DEDUI", mode: "BARGE", container_type: "40HC", container_qty: 1 },
+      bargeCard,
+    );
+    expect(q.all_in_total).toBe(755); // 420 + 95 + 95 + 110 + 35 — proves the BARGE card was used
+    expect(q.lane).toBe("NLRTM-DEDUI");
+  });
+});

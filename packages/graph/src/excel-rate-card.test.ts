@@ -58,6 +58,15 @@ describe("1B.6 — ExcelOnline adapter (hermetic, fake workbook)", () => {
     });
   });
 
+  it("Gate-4 hardening: cardFor returns null unless the workbook card matches the request mode+lane", async () => {
+    // The workbook transport returns its single card regardless of the filter args; cardFor must
+    // still honour the port contract (null on mismatch) so the gate cannot say "quote" then have
+    // priceQuote throw. The card is FCL NLRTM-USNYC.
+    expect(await excel.cardFor(inScope({}))).not.toBeNull();
+    expect(await excel.cardFor(inScope({ mode: "BARGE" }))).toBeNull(); // mode mismatch
+    expect(await excel.cardFor(inScope({ destination_port_code: "DEDUI" }))).toBeNull(); // lane mismatch
+  });
+
   it("P-EXCEL-RO: no write method on the adapter, source, or transport", () => {
     const proto = (o: unknown) => o as unknown as Record<string, unknown>;
     for (const name of ["write", "writeCell", "setCell", "update", "save"]) {

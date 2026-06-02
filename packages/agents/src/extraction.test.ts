@@ -78,26 +78,50 @@ describe("extraction wiring (mocked client)", () => {
 });
 
 describe("AC-B4 — barge mode is extractable", () => {
+  const bargeExtraction: ExtractionResult = {
+    origin: { raw: "Rotterdam", port_code: "NLRTM" },
+    destination: { raw: "Duisburg", port_code: "DEDUI" },
+    mode: "BARGE",
+    container_type: "40HC",
+    container_qty: 1,
+    incoterm: null,
+    commodity: null,
+    ready_date: null,
+    weight_kg: null,
+    requester_name: null,
+    requester_company: null,
+    field_confidence: {},
+    overall_confidence: 0.9,
+    injection_detected: false,
+  };
+
   it("modeSchema accepts BARGE", () => {
     expect(modeSchema.parse("BARGE")).toBe("BARGE");
   });
-  it("a barge extraction parses into ExtractionResult", () => {
-    const parsed = ExtractionResultSchema.parse({
-      origin: { raw: "Rotterdam", port_code: "NLRTM" },
-      destination: { raw: "Duisburg", port_code: "DEDUI" },
-      mode: "BARGE",
-      container_type: "40HC",
-      container_qty: 1,
-      incoterm: null,
-      commodity: null,
-      ready_date: null,
-      weight_kg: null,
-      requester_name: null,
-      requester_company: null,
-      field_confidence: {},
-      overall_confidence: 0.9,
-      injection_detected: false,
-    });
-    expect(parsed.mode).toBe("BARGE");
+
+  it("the system prompt instructs the model on BARGE + the inland terminal (Duisburg = DEDUI)", () => {
+    // We can pin the WIRING (prompt guidance + schema round-trip) deterministically; whether the live
+    // model actually maps a real barge email is nondeterministic and is covered by the live eval set,
+    // not a unit test (CLAUDE.md: never assert exact LLM output in tests).
+    const sys = buildExtractionSystemPrompt();
+    expect(sys).toContain("BARGE");
+    expect(sys).toContain("DEDUI");
+  });
+
+  it("extractRequest runs a barge email through the real path and yields a BARGE ExtractionResult", async () => {
+    const bargeEmail: EmailInput = {
+      from: "ops@rhinebarge.example",
+      subject: "Barge quote Rotterdam to Duisburg",
+      body: "Please quote a barge for 1 x 40HC, Rotterdam to Duisburg on the Rhine.",
+    };
+    const mock = new MockLlmClient({ data: bargeExtraction, usage });
+    const out = await extractRequest(bargeEmail, mock);
+    expect(out.extraction.mode).toBe("BARGE");
+    expect(out.extraction.destination.port_code).toBe("DEDUI");
+    expect(mock.lastCall?.toolName).toBe("submit_extraction"); // real extraction wiring exercised
+  });
+
+  it("a barge extraction satisfies the ExtractionResult schema", () => {
+    expect(ExtractionResultSchema.parse(bargeExtraction).mode).toBe("BARGE");
   });
 });

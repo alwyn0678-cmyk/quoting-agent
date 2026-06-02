@@ -24,13 +24,15 @@ export class SupabaseTableRateEngine implements RateEngine {
     return found ? assembleRateCard(found.card, found.lines) : null;
   }
 
-  async price(req: PriceRequest): Promise<RateQuote> {
-    const card = await this.cardFor(req);
-    if (!card) {
+  async price(req: PriceRequest, card?: RateCard | null): Promise<RateQuote> {
+    // Price the pre-resolved card when given (no second read — same card the gate validated);
+    // otherwise resolve it now.
+    const resolved = card ?? (await this.cardFor(req));
+    if (!resolved) {
       const lane = `${req.origin_port_code ?? "?"}-${req.destination_port_code ?? "?"}`;
       throw new UnpriceableRequestError("out_of_scope_lane", `no active card for mode ${req.mode}, lane ${lane}`);
     }
-    return priceQuote(req, card);
+    return priceQuote(req, resolved);
   }
 }
 

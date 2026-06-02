@@ -53,8 +53,10 @@ export async function runAgent(
   let draftUsage: Usage = { input_tokens: 0, output_tokens: 0 };
 
   if (gate.decision === "quote") {
-    // Deterministic pricing via the injected engine (the gate guarantees this is priceable).
-    quote = await engine.price(priceReq);
+    // Deterministic pricing via the injected engine. Price against the SAME card the gate validated
+    // (gate.decision === "quote" ⇒ card !== null) — not a re-resolved one — so pricing cannot pick a
+    // different card if the source mutates between gate and price. The gate already proved priceable.
+    quote = await engine.price(priceReq, card);
 
     // Ground the reply prose in trusted knowledge retrieved from STRUCTURED quote fields (never the
     // raw email). Retrieval runs AFTER pricing and feeds only the draft — RAG never touches the price.

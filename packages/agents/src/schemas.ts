@@ -80,6 +80,7 @@ export const escalationReasonSchema = z.enum([
   "missing_required_field",
   "out_of_scope_lane",
   "out_of_scope_mode",
+  "out_of_scope_container",
   "ambiguous_request",
   "low_confidence",
   "guard_violation",

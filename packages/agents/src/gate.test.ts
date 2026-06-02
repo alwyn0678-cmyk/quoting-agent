@@ -123,3 +123,50 @@ describe("AC-B7 — gate generalised to mode + resolved card", () => {
     expect(decide(ex, null)).toEqual({ decision: "escalate", reason: "out_of_scope_lane" });
   });
 });
+
+describe("Gate-4 hardening — the gate never trusts a non-matching card (quote ⇒ priceable)", () => {
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "40HC": 420 }, // prices 40HC only — NOT 20GP/40GP
+    surcharges: [{ code: "LWS", amount_per_container: 95 }],
+    per_shipment_fees: [{ code: "DOC", amount: 35 }],
+  };
+
+  it("a BARGE request against the default FCL RATE_CARD (no card passed) -> out_of_scope_mode", () => {
+    // Regression: decide()'s RATE_CARD default must not yield "quote" for a mode it cannot price.
+    const ex = x({
+      mode: "BARGE",
+      origin: { raw: "Rotterdam", port_code: "NLRTM" },
+      destination: { raw: "Duisburg", port_code: "DEDUI" },
+      container_type: "40HC",
+      container_qty: 1,
+    });
+    expect(decide(ex)).toEqual({ decision: "escalate", reason: "out_of_scope_mode" });
+  });
+
+  it("a non-null card for the WRONG lane -> out_of_scope_lane (not blind trust)", () => {
+    const ex = x({
+      mode: "BARGE",
+      origin: { raw: "Rotterdam", port_code: "NLRTM" },
+      destination: { raw: "New York", port_code: "USNYC" }, // card.supported_lane is NLRTM-DEDUI
+      container_type: "40HC",
+      container_qty: 1,
+    });
+    expect(decide(ex, bargeCard)).toEqual({ decision: "escalate", reason: "out_of_scope_lane" });
+  });
+
+  it("a matching card that does not PRICE the requested container -> out_of_scope_container", () => {
+    // bargeCard prices 40HC only; a 20GP request would make priceQuote throw -> the gate escalates.
+    const ex = x({
+      mode: "BARGE",
+      origin: { raw: "Rotterdam", port_code: "NLRTM" },
+      destination: { raw: "Duisburg", port_code: "DEDUI" },
+      container_type: "20GP",
+      container_qty: 1,
+    });
+    expect(decide(ex, bargeCard)).toEqual({ decision: "escalate", reason: "out_of_scope_container" });
+  });
+});

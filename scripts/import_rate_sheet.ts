@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     );
     if (insErr) throw insErr;
 
-    console.log(`imported ${card.lane} ${card.version}: ${lines.length} lines (card ${id})`);
+    console.log(`imported ${card.mode} ${card.lane} ${card.version}: ${lines.length} lines (card ${id})`);
   }
   console.log(`done: ${cards.length} cards upserted`);
 }

@@ -22,11 +22,18 @@ export interface PriceRequest {
  * StaticCard adapter behind this port in 1A.2. Declaring the port has no caller changes (1A.1).
  */
 export interface RateEngine {
-  price(req: PriceRequest): Promise<RateQuote>;
+  /**
+   * Price a request. Pass `card` to price against an ALREADY-resolved card (the one the gate
+   * validated) so pricing cannot re-resolve a different card between gate and price — closing the
+   * TOCTOU window when the source is mutable (e.g. mid rate-sheet import). When omitted, the engine
+   * resolves the card itself (used by tests + any caller that did not pre-resolve).
+   */
+  price(req: PriceRequest, card?: RateCard | null): Promise<RateQuote>;
   /**
    * Resolve the active card for this request's (mode, lane); null if none. Lets the gate and the
    * engine validate against the SAME card (so the gate's "quote ⇒ priceable" guarantee holds across
-   * modes/lanes, not just the FCL demo card).
+   * modes/lanes, not just the FCL demo card). MUST return null unless the resolved card actually
+   * matches the request's mode and lane — the gate treats a non-null result as "priceable here".
    */
   cardFor(req: PriceRequest): Promise<RateCard | null>;
 }
@@ -109,8 +116,8 @@ export function priceQuote(req: PriceRequest, card: RateCard = RATE_CARD): RateQ
 export class StaticCardRateEngine implements RateEngine {
   constructor(private readonly card: RateCard = RATE_CARD) {}
 
-  async price(req: PriceRequest): Promise<RateQuote> {
-    return priceQuote(req, this.card);
+  async price(req: PriceRequest, card?: RateCard | null): Promise<RateQuote> {
+    return priceQuote(req, card ?? this.card);
   }
 
   async cardFor(req: PriceRequest): Promise<RateCard | null> {

@@ -45,12 +45,21 @@ export class ExcelOnlineRateEngine implements RateEngine {
 
   async cardFor(req: PriceRequest): Promise<RateCard | null> {
     const found = await this.source.fetchActiveCard(this.tenantId, req.mode, this.lane);
-    return found ? assembleRateCard(found.card, found.lines) : null;
+    if (!found) return null;
+    const card = assembleRateCard(found.card, found.lines);
+    // Honour the port contract: a non-null result MUST match the request's mode + lane, so the gate
+    // can trust it. The workbook transport returns its single card regardless of the filter args, so
+    // we validate the ASSEMBLED card here (the other adapters get this from the source/static check).
+    const lane = `${req.origin_port_code ?? "?"}-${req.destination_port_code ?? "?"}`;
+    return card.mode === req.mode && card.supported_lane === lane ? card : null;
   }
 
-  async price(req: PriceRequest): Promise<RateQuote> {
-    const card = await this.cardFor(req);
-    if (!card) throw new Error(`no Excel rate card for tenant ${this.tenantId}, ${req.mode} lane ${this.lane}`);
-    return priceQuote(req, card);
+  async price(req: PriceRequest, card?: RateCard | null): Promise<RateQuote> {
+    if (card) return priceQuote(req, card);
+    // No pre-resolved card: read the workbook and let priceQuote classify any mismatch (so a wrong
+    // mode/lane still yields the precise typed UnpriceableRequestError, not a generic throw).
+    const found = await this.source.fetchActiveCard(this.tenantId, req.mode, this.lane);
+    if (!found) throw new Error(`no Excel rate card for tenant ${this.tenantId}, ${req.mode} lane ${this.lane}`);
+    return priceQuote(req, assembleRateCard(found.card, found.lines));
   }
 }

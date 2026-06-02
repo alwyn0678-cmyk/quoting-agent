@@ -6,7 +6,7 @@ import { AnthropicLlmClient, createSupabaseRateEngine } from "../../../agents/sr
 /**
  * Durable agent-run for ONE request (Phase 1C live, L2). Wraps the idempotent runAndPersist (1C.2)
  * with the PRODUCTION deps: the real Anthropic LLM client, the live Supabase rate-card engine
- * (createSupabaseRateEngine reads the active card for tenant + lane), and the service_role
+ * (createSupabaseRateEngine resolves the active card by the request's tenant + mode + lane), and the service_role
  * SupabaseRunStore. The agent's per-step model routing defaults to PER_STEP_ROUTING (Sonnet extract /
  * Haiku draft).
  *

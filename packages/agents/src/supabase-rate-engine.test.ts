@@ -114,4 +114,18 @@ describe("AC-B5/B6 — resolve + price by (mode, lane)", () => {
     expect(await eng.cardFor(bargeReq)).not.toBeNull();
     expect(await eng.cardFor({ ...bargeReq, mode: "FCL" })).toBeNull();
   });
+
+  it("Gate-4 hardening: price(req, card) does NOT re-read the source (no gate→price TOCTOU)", async () => {
+    // A source that has since gone empty: if price() re-resolved, it would throw. Threading the
+    // already-resolved card proves pricing uses the gate-validated card, not a fresh (changed) read.
+    let reads = 0;
+    const vanishingSource: RateCardSource = {
+      async fetchActiveCard() { reads++; return null; },
+    };
+    const eng = new SupabaseTableRateEngine(vanishingSource, "linkport");
+    const card = assembleRateCard(bargeRows.card, bargeRows.lines);
+    const q = await eng.price(bargeReq, card);
+    expect(reads).toBe(0);
+    expect(q.all_in_total).toBe(755);
+  });
 });
