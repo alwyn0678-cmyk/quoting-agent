@@ -17,7 +17,7 @@ const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
 });
 
 // A fake read-only workbook holding the Linkport card. Lines are scrambled; sort_order is truth.
-const cardMeta: RateCardRow = { version: "2026-06-v1", validity_through: "2026-06-30", lane: "NLRTM-USNYC" };
+const cardMeta: RateCardRow = { mode: "FCL", version: "2026-06-v1", validity_through: "2026-06-30", lane: "NLRTM-USNYC" };
 const lines: RateCardLineRow[] = [
   { kind: "surcharge_per_container", code: "ISPS", container_type: null, amount: 25, sort_order: 3 },
   { kind: "base", code: "BASE_40HC", container_type: "40HC", amount: 2550, sort_order: 2 },

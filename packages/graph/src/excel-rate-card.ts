@@ -5,6 +5,7 @@ import {
   type RateCardLineRow,
   type RateCardRow,
 } from "../../agents/src/rate-card-source.js";
+import type { RateCard } from "../../agents/src/rate-card.js";
 import type { RateQuote } from "../../agents/src/schemas.js";
 
 /**
@@ -29,7 +30,7 @@ export interface ExcelWorkbookTransport {
 export class ExcelRateCardSource implements RateCardSource {
   constructor(private readonly workbook: ExcelWorkbookTransport) {}
 
-  async fetchActiveCard(_tenantId: string, _lane: string) {
+  async fetchActiveCard(_tenantId: string, _mode: string, _lane: string) {
     const [card, lines] = await Promise.all([this.workbook.readCardMeta(), this.workbook.readLines()]);
     return { card, lines };
   }
@@ -42,9 +43,14 @@ export class ExcelOnlineRateEngine implements RateEngine {
     private readonly lane: string,
   ) {}
 
+  async cardFor(req: PriceRequest): Promise<RateCard | null> {
+    const found = await this.source.fetchActiveCard(this.tenantId, req.mode, this.lane);
+    return found ? assembleRateCard(found.card, found.lines) : null;
+  }
+
   async price(req: PriceRequest): Promise<RateQuote> {
-    const found = await this.source.fetchActiveCard(this.tenantId, this.lane);
-    if (!found) throw new Error(`no Excel rate card for tenant ${this.tenantId}, lane ${this.lane}`);
-    return priceQuote(req, assembleRateCard(found.card, found.lines));
+    const card = await this.cardFor(req);
+    if (!card) throw new Error(`no Excel rate card for tenant ${this.tenantId}, ${req.mode} lane ${this.lane}`);
+    return priceQuote(req, card);
   }
 }

@@ -9,6 +9,7 @@ import type { RateCard } from "./rate-card.js";
 
 /** Raw rows as stored by the 1B.1 schema (or read from any equivalent source, e.g. an Excel sheet). */
 export interface RateCardRow {
+  mode: string;
   version: string;
   validity_through: string; // 'YYYY-MM-DD'
   lane: string;
@@ -24,6 +25,7 @@ export interface RateCardLineRow {
 export interface RateCardSource {
   fetchActiveCard(
     tenantId: string,
+    mode: string,
     lane: string,
   ): Promise<{ card: RateCardRow; lines: RateCardLineRow[] } | null>;
 }
@@ -42,6 +44,7 @@ export function assembleRateCard(card: RateCardRow, lines: RateCardLineRow[]): R
     lines.filter((l) => l.kind === kind).sort((a, b) => a.sort_order - b.sort_order);
 
   return {
+    mode: card.mode,
     version: card.version,
     validity_through: card.validity_through,
     supported_lane: card.lane,

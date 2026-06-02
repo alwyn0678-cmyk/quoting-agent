@@ -10,7 +10,6 @@ import {
   AnthropicLlmClient,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
-  DEFAULT_LANE,
 } from "../packages/agents/src/index.js";
 
 /**
@@ -38,7 +37,7 @@ async function main(): Promise<void> {
   );
 
   const client = new AnthropicLlmClient();
-  const engine = createSupabaseRateEngine(tenantId, DEFAULT_LANE);
+  const engine = createSupabaseRateEngine(tenantId);
   const store = new SupabaseRunStore(supabase);
   for (const requestId of result.toRun) {
     const summary = await runAndPersist(tenantId, requestId, { client, engine }, store);

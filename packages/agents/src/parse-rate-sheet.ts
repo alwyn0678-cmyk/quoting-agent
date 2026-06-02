@@ -38,7 +38,7 @@ export function parseRateSheet(sheets: RawSheet[]): ParsedCard[] {
         headerIdx = i;
         break;
       }
-      if (a === "Lane" || a === "Version" || a === "Valid through") {
+      if (a === "Lane" || a === "Version" || a === "Valid through" || a === "Mode") {
         meta[a] = cellStr((sheet.rows[i] ?? [])[1]);
       }
     }
@@ -93,7 +93,7 @@ export function parseRateSheet(sheets: RawSheet[]): ParsedCard[] {
     }
     if (lines.length === 0) throw new Error(`sheet '${sheet.name}': no line rows`);
 
-    out.push({ card: { version, validity_through: validity, lane }, lines });
+    out.push({ card: { mode: meta["Mode"] || "FCL", version, validity_through: validity, lane }, lines });
   }
 
   return out;

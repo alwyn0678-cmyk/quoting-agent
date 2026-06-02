@@ -7,7 +7,6 @@ import {
   StaticCardRateEngine,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
-  DEFAULT_LANE,
   type PriceRequest,
 } from "../packages/agents/src/index.js";
 import { scoreFixture, summarize, type Fixture, type FixtureScore } from "./score.js";
@@ -30,7 +29,7 @@ const goldenRequests: PriceRequest[] = [
 ];
 
 async function main(): Promise<void> {
-  const supa = createSupabaseRateEngine(LINKPORT_TENANT_ID, DEFAULT_LANE);
+  const supa = createSupabaseRateEngine(LINKPORT_TENANT_ID);
   const stat = new StaticCardRateEngine();
 
   // ── AC-3: adapter parity vs StaticCard (deterministic; live DB read) ──

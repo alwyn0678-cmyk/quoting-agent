@@ -27,6 +27,7 @@ describe("Q2-AC-Q1 — parseRateSheet maps neutral cells to ParsedCard[]", () =>
     ]);
     expect(parsed).toHaveLength(1);
     expect(parsed[0]?.card).toEqual({
+      mode: "FCL",
       lane: "NLRTM-USNYC",
       version: "2026-06-v1",
       validity_through: "2026-06-30",

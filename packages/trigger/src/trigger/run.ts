@@ -1,7 +1,7 @@
 import { task } from "@trigger.dev/sdk";
 import { runAndPersist } from "../../../ingest/src/run.js";
 import { SupabaseRunStore, createServiceClient } from "../../../ingest/src/supabase-store.js";
-import { AnthropicLlmClient, createSupabaseRateEngine, DEFAULT_LANE } from "../../../agents/src/index.js";
+import { AnthropicLlmClient, createSupabaseRateEngine } from "../../../agents/src/index.js";
 
 /**
  * Durable agent-run for ONE request (Phase 1C live, L2). Wraps the idempotent runAndPersist (1C.2)
@@ -25,7 +25,7 @@ export const runRequestTask = task({
     const store = new SupabaseRunStore(createServiceClient());
     const deps = {
       client: new AnthropicLlmClient(),
-      engine: createSupabaseRateEngine(tenantId, DEFAULT_LANE),
+      engine: createSupabaseRateEngine(tenantId),
     };
     return await runAndPersist(tenantId, requestId, deps, store);
   },
