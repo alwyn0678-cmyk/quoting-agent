@@ -224,3 +224,12 @@ describe("AC-B1/B2/B3 — barge (per_container) via the same engine", () => {
     try { call(); } catch (e) { expect((e as UnpriceableRequestError).reason).toBe("out_of_scope_lane"); }
   });
 });
+
+describe("cardFor — resolve the card for a request's mode+lane", () => {
+  it("StaticCard returns its card on a matching mode+lane, null otherwise", async () => {
+    const eng = new StaticCardRateEngine(); // FCL NLRTM-USNYC
+    expect(await eng.cardFor(inScope())).not.toBeNull();
+    expect(await eng.cardFor(inScope({ mode: "BARGE" }))).toBeNull(); // wrong mode
+    expect(await eng.cardFor(inScope({ destination_port_code: "DEDUI" }))).toBeNull(); // wrong lane
+  });
+});

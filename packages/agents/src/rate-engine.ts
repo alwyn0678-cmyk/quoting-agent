@@ -23,6 +23,12 @@ export interface PriceRequest {
  */
 export interface RateEngine {
   price(req: PriceRequest): Promise<RateQuote>;
+  /**
+   * Resolve the active card for this request's (mode, lane); null if none. Lets the gate and the
+   * engine validate against the SAME card (so the gate's "quote ⇒ priceable" guarantee holds across
+   * modes/lanes, not just the FCL demo card).
+   */
+  cardFor(req: PriceRequest): Promise<RateCard | null>;
 }
 
 /** Thrown when a request cannot be priced. The engine refuses rather than fabricate (T5). */
@@ -105,5 +111,10 @@ export class StaticCardRateEngine implements RateEngine {
 
   async price(req: PriceRequest): Promise<RateQuote> {
     return priceQuote(req, this.card);
+  }
+
+  async cardFor(req: PriceRequest): Promise<RateCard | null> {
+    const lane = `${req.origin_port_code ?? "?"}-${req.destination_port_code ?? "?"}`;
+    return this.card.mode === req.mode && this.card.supported_lane === lane ? this.card : null;
   }
 }
