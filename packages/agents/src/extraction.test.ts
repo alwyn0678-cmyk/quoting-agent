@@ -8,6 +8,7 @@ import {
 import { MockLlmClient } from "./mock-llm.js";
 import { SYSTEM_CANARY } from "./config.js";
 import type { ExtractionResult } from "./schemas.js";
+import { modeSchema, ExtractionResultSchema } from "./schemas.js";
 
 const email: EmailInput = {
   from: "Maria Jansen <procurement@apexcoffee.example>",
@@ -73,5 +74,30 @@ describe("extraction wiring (mocked client)", () => {
     const uc = buildExtractionUserContent(evil);
     expect(uc).toContain("&lt;/email&gt;"); // the body's injected tag is escaped
     expect(uc.split("</email>").length).toBe(2); // only our single real closing delimiter remains
+  });
+});
+
+describe("AC-B4 — barge mode is extractable", () => {
+  it("modeSchema accepts BARGE", () => {
+    expect(modeSchema.parse("BARGE")).toBe("BARGE");
+  });
+  it("a barge extraction parses into ExtractionResult", () => {
+    const parsed = ExtractionResultSchema.parse({
+      origin: { raw: "Rotterdam", port_code: "NLRTM" },
+      destination: { raw: "Duisburg", port_code: "DEDUI" },
+      mode: "BARGE",
+      container_type: "40HC",
+      container_qty: 1,
+      incoterm: null,
+      commodity: null,
+      ready_date: null,
+      weight_kg: null,
+      requester_name: null,
+      requester_company: null,
+      field_confidence: {},
+      overall_confidence: 0.9,
+      injection_detected: false,
+    });
+    expect(parsed.mode).toBe("BARGE");
   });
 });

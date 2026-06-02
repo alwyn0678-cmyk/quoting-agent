@@ -16,7 +16,7 @@ const locationSchema = z.object({
   port_code: portCodeSchema.nullable(),
 });
 
-export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "UNKNOWN"]);
+export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "BARGE", "UNKNOWN"]);
 
 /**
  * What the extractor may report — includes UNKNOWN / absent. Deliberately the DEMO LANE's quotable
