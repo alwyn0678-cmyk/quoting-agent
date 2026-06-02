@@ -5,7 +5,6 @@ import {
   AnthropicLlmClient,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
-  DEFAULT_LANE,
   type EmailInput,
 } from "../packages/agents/src/index.js";
 
@@ -49,7 +48,7 @@ async function main(): Promise<void> {
   const summary = await runAndPersist(
     tenantId,
     requestId,
-    { client: new AnthropicLlmClient(), engine: createSupabaseRateEngine(tenantId, DEFAULT_LANE) },
+    { client: new AnthropicLlmClient(), engine: createSupabaseRateEngine(tenantId) },
     new SupabaseRunStore(supabase),
   );
 

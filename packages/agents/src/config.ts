@@ -17,9 +17,9 @@ export interface ModelRouting {
 export const PER_STEP_ROUTING: ModelRouting = { extraction: EXTRACTION_MODEL, draft: DRAFT_MODEL };
 export const SINGLE_MODEL_ROUTING: ModelRouting = { extraction: FALLBACK_MODEL, draft: FALLBACK_MODEL };
 
-/** The seeded demo tenant + lane (1B.2) the SupabaseTable adapter reads. */
+/** The seeded demo tenant (1B.2) the SupabaseTable adapter reads. The card's lane is resolved
+ * per-request now (D-30), so there is no fixed default lane. */
 export const LINKPORT_TENANT_ID = "11111111-1111-4111-8111-111111111111";
-export const DEFAULT_LANE = "NLRTM-USNYC";
 
 /**
  * Sentinel placed in system prompts. It must NEVER appear in agent output — if it does, the
