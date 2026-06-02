@@ -1,4 +1,4 @@
-import { RATE_CARD, type RateCard } from "./rate-card.js";
+import { RATE_CARD, isPriceableMode, type RateCard } from "./rate-card.js";
 import type { ExtractionResult, EscalationReason } from "./schemas.js";
 
 /**
@@ -25,20 +25,19 @@ export interface GateDecision {
   reason: EscalationReason | null;
 }
 
-export function decide(x: ExtractionResult, card: RateCard = RATE_CARD): GateDecision {
+export function decide(x: ExtractionResult, card: RateCard | null = RATE_CARD): GateDecision {
   const escalate = (reason: EscalationReason): GateDecision => ({ decision: "escalate", reason });
 
   // 1. Identity fields needed to locate a lane at all.
   if (x.origin.port_code === null || x.destination.port_code === null) {
     return escalate("missing_required_field");
   }
-  // 2. Mode (FCL-only slice).
+  // 2. Mode: UNKNOWN = missing; a mode with no implemented pricing basis = out of scope.
   if (x.mode === "UNKNOWN") return escalate("missing_required_field");
-  if (x.mode !== "FCL") return escalate("out_of_scope_mode");
+  if (!isPriceableMode(x.mode)) return escalate("out_of_scope_mode");
 
-  // 3. Lane must be in the rate card.
-  const lane = `${x.origin.port_code}-${x.destination.port_code}`;
-  if (lane !== card.supported_lane) return escalate("out_of_scope_lane");
+  // 3. The (mode, lane) card must exist — resolved by the engine via cardFor and passed in.
+  if (card === null) return escalate("out_of_scope_lane");
 
   // 4. Container type must be present and priceable.
   if (x.container_type === null || x.container_type === "UNKNOWN") {

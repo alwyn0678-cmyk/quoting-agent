@@ -28,7 +28,19 @@ export async function runAgent(
   retriever: KnowledgeRetriever = new EmptyRetriever(),
 ): Promise<AgentOutput> {
   const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
-  const gate = decide(extraction);
+
+  // Build the price request once, resolve the active card for its (mode, lane), and gate against
+  // THAT card — so the gate's "quote ⇒ priceable" guarantee holds for every mode/lane, not just the
+  // FCL demo card. cardFor(...) returns null when no card matches → the gate escalates.
+  const priceReq = {
+    origin_port_code: extraction.origin.port_code,
+    destination_port_code: extraction.destination.port_code,
+    mode: extraction.mode,
+    container_type: extraction.container_type,
+    container_qty: extraction.container_qty,
+  };
+  const card = await engine.cardFor(priceReq);
+  const gate = decide(extraction, card);
 
   // Track which LLM steps actually ran, so usage.model reports the truth (drafting fires only on
   // the quote path; on a gate-escalation only extraction runs).
@@ -42,13 +54,7 @@ export async function runAgent(
 
   if (gate.decision === "quote") {
     // Deterministic pricing via the injected engine (the gate guarantees this is priceable).
-    quote = await engine.price({
-      origin_port_code: extraction.origin.port_code,
-      destination_port_code: extraction.destination.port_code,
-      mode: extraction.mode,
-      container_type: extraction.container_type,
-      container_qty: extraction.container_qty,
-    });
+    quote = await engine.price(priceReq);
 
     // Ground the reply prose in trusted knowledge retrieved from STRUCTURED quote fields (never the
     // raw email). Retrieval runs AFTER pricing and feeds only the draft — RAG never touches the price.
