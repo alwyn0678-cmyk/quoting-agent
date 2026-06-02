@@ -103,3 +103,29 @@ describe("Q2-AC-Q4 — parseRateSheet fails fast on a malformed sheet", () => {
     ).toThrow(/must not carry a container_type/i);
   });
 });
+
+describe("AC-B (sheet) — Mode meta", () => {
+  it("reads the Mode meta into card.mode", () => {
+    const bargeSheet: RawSheet = {
+      name: "BARGE NLRTM-DEDUI",
+      rows: [
+        ["Mode", "BARGE"],
+        ["Lane", "NLRTM-DEDUI"],
+        ["Version", "2026-06-v1"],
+        ["Valid through", "2026-06-30"],
+        ["Kind", "Code", "Container", "Amount (EUR)", "Sort"],
+        ["base", "BASE_40HC", "40HC", 420, 0],
+        ["surcharge_per_container", "LWS", "", 95, 0],
+        ["per_shipment_fee", "DOC", "", 35, 0],
+      ],
+    };
+    const [parsed] = parseRateSheet([bargeSheet]);
+    expect(parsed?.card.mode).toBe("BARGE");
+    expect(parsed?.card.lane).toBe("NLRTM-DEDUI");
+  });
+
+  it("defaults mode to FCL when the Mode meta is absent (back-compat)", () => {
+    const parsed = parseRateSheet([sheet("L1", "NLRTM-USNYC", [["base", "BASE_40HC", "40HC", 2550, 0]])]);
+    expect(parsed[0]?.card.mode).toBe("FCL");
+  });
+});

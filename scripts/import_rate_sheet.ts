@@ -24,6 +24,7 @@ async function main(): Promise<void> {
       .from("rate_cards")
       .select("id")
       .eq("tenant_id", TENANT_ID)
+      .eq("mode", card.mode)
       .eq("lane", card.lane)
       .eq("version", card.version)
       .maybeSingle();
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
     const { error: upErr } = await db.from("rate_cards").upsert({
       id,
       tenant_id: TENANT_ID,
+      mode: card.mode,
       lane: card.lane,
       version: card.version,
       validity_through: card.validity_through,
