@@ -1,4 +1,4 @@
-import { RATE_CARD, type RateCard } from "./rate-card.js";
+import { RATE_CARD, isPriceableMode, type RateCard } from "./rate-card.js";
 import { RateQuoteSchema, rateContainerTypeSchema, type RateQuote } from "./schemas.js";
 
 /**
@@ -41,8 +41,14 @@ export class UnpriceableRequestError extends Error {
 }
 
 export function priceQuote(req: PriceRequest, card: RateCard = RATE_CARD): RateQuote {
-  if (req.mode !== "FCL") {
-    throw new UnpriceableRequestError("out_of_scope_mode", `mode '${req.mode}' is not priceable (FCL only)`);
+  if (!isPriceableMode(req.mode)) {
+    throw new UnpriceableRequestError("out_of_scope_mode", `mode '${req.mode}' is not priceable`);
+  }
+  if (card.mode !== req.mode) {
+    throw new UnpriceableRequestError(
+      "out_of_scope_mode",
+      `card mode '${card.mode}' does not match request mode '${req.mode}'`,
+    );
   }
 
   const lane = `${req.origin_port_code ?? "?"}-${req.destination_port_code ?? "?"}`;
