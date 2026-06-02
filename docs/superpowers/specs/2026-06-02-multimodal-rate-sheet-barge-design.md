@@ -45,6 +45,13 @@ Mode becomes a first‑class key on the rate card; pricing dispatches on a `pric
 - `createSupabaseRateEngine(tenantId)` drops the `lane` arg; update call sites `scripts/poll_once.ts` and `packages/trigger/src/trigger/run.ts` (remove `DEFAULT_LANE`).
 - **Intended consequence:** the USLAX/DEHAM cards already imported (A′) begin pricing live, since the engine is no longer pinned to one lane. This is a natural result of the required change, not extra scope; called out so it is intentional.
 
+### 6a. Gate + agent wiring (discovered during planning — the real gating point)
+
+`agent.ts` currently calls `decide(extraction)` with the **default static `RATE_CARD`**, and `gate.ts` hardcodes `mode !== "FCL" → out_of_scope_mode` and checks the lane against that one card. So today only FCL NLRTM‑USNYC passes the gate live, regardless of what cards exist. To make barge quotable end‑to‑end:
+- **`RateEngine` port** gains `cardFor(req): Promise<RateCard | null>` — resolve the active card for the request's (mode, lane); `null` if none. `StaticCardRateEngine` returns its card iff `card.mode === req.mode && card.supported_lane === lane`; `SupabaseTableRateEngine` fetches by (tenant, req.mode, lane). `price()` reuses `cardFor()` (DRY).
+- **`gate.ts`** `decide(x, card: RateCard | null)`: identity → `mode === UNKNOWN` (missing) → `MODE_BASIS[mode]` undefined (`out_of_scope_mode`) → `card === null` (`out_of_scope_lane`) → container present → qty present → confidence. Replaces the hardcoded FCL + `supported_lane` string check; gate now validates against the **resolved** card, so gate and engine agree by construction.
+- **`agent.ts`** resolves `card = await engine.cardFor(req)` once, passes it to `decide(extraction, card)`, and on a `quote` decision calls `engine.price(req)`.
+
 ## 7. Extraction (`schemas.ts` + extraction prompt)
 
 - Add `"BARGE"` to `modeSchema`. (AIR/RAIL/LCL already present but unpriceable.)
@@ -73,12 +80,13 @@ Mode becomes a first‑class key on the rate card; pricing dispatches on a `pric
 4. **AC‑B4 — extraction.** A barge request email → `mode=BARGE`, `origin=NLRTM`, `destination=DEDUI` (temp‑0, assert on normalised schema, not exact strings). *Test:* `extraction` (LLM, pass‑band).
 5. **AC‑B5 — Supabase round‑trip.** A `(BARGE, NLRTM‑DEDUI)` card in `rate_cards`/`rate_card_lines` assembles and prices **identically** to the static expectation, with `mode` carried end‑to‑end. *Test:* `supabase-rate-engine` / `rate-sheet-roundtrip` (offline, mocked source).
 6. **AC‑B6 — resolution by request.** A barge request and an FCL request, against the same source, resolve to **different** cards by (mode, lane). *Test:* `supabase-rate-engine` unit (mocked source).
+7. **AC‑B7 — gate generalised.** An in‑scope barge extraction (BARGE, NLRTM‑DEDUI, 40HC, qty, confident) against a resolved barge card → `decide` returns `quote`. An `AIR` extraction → `escalate / out_of_scope_mode`; a barge extraction whose lane has no card (`cardFor → null`) → `escalate / out_of_scope_lane`. *Test:* `gate` unit.
 
 All offline/deterministic; the one LLM step (AC‑B4) is tested at temperature 0 with a schema/pass‑band assertion, never exact‑string equality (CLAUDE.md).
 
 ## 10. Files touched
 
-`supabase/migrations/0013_rate_card_mode.sql` (new) · `packages/agents/src/rate-engine.ts` · `rate-card.ts` · `rate-card-source.ts` · `supabase-rate-engine.ts` · `schemas.ts` (enum) · extraction prompt · `scripts/gen_rate_sheet.ts` · `parse-rate-sheet.ts` · `scripts/import_rate_sheet.ts` · `scripts/poll_once.ts` · `packages/trigger/src/trigger/run.ts` · `docs/ASSUMPTIONS.md` · `docs/DECISION_LOG.md` · tests alongside the above. **No UI change.**
+`supabase/migrations/0013_rate_card_mode.sql` (new) · `packages/agents/src/rate-engine.ts` (MODE_BASIS, dispatch, `cardFor` on the port) · `rate-card.ts` (mode) · `rate-card-source.ts` (mode in row + assemble) · `supabase-rate-engine.ts` (fetch by mode, `cardFor`) · `gate.ts` (generalised decide) · `agent.ts` (resolve card → gate → price) · `schemas.ts` (BARGE enum) · extraction prompt · `scripts/gen_rate_sheet.ts` · `parse-rate-sheet.ts` (Mode meta) · `scripts/import_rate_sheet.ts` (write mode) · `scripts/poll_once.ts` · `packages/trigger/src/trigger/run.ts` (drop DEFAULT_LANE) · `docs/ASSUMPTIONS.md` · `docs/DECISION_LOG.md` · tests alongside the above. **No UI change.**
 
 ## 11. Risks
 
