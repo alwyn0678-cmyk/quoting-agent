@@ -72,6 +72,24 @@ Rate-card version `2026-06-v1`, `validity_through = 2026-06-30`, currency EUR.
 Derived check (given the invented inputs): NLRTM→USLAX 45HC×1 = €4,620 (used as the AC-Q3 expected
 value). Not a real quote.
 
+## A″. Barge mode (NLRTM → DEDUI, all INVENTED)
+
+Lane Rotterdam (NLRTM) → Duisburg (DEDUI), inland Rhine **barge**, EUR, per container. Card
+`2026-06-v1`. This is the first non-FCL mode; the figures are placeholders to exercise the
+multi-modal engine, not real barge rates.
+
+| # | Item | Value | Status | How to verify |
+|---|------|-------|--------|---------------|
+| A33 | Base 20GP | €280 / container | INVENTED | Rhine barge operator tariff (e.g. Contargo / Danser) / forwarder |
+| A34 | Base 40GP / 40HC | €420 / container | INVENTED | as A33; verify 40' ≥ 20' |
+| A35 | LWS (Low-Water Surcharge) | €95 / container | INVENTED | Confirm LWS exists, is VARIABLE with Rhine water level (we model a flat line), and rough magnitude |
+| A36 | THC origin (Rotterdam barge terminal) | €95 / container | INVENTED | Rotterdam inland barge terminal tariff |
+| A37 | THC destination (Duisburg) | €110 / container | INVENTED | Duisburg (duisport) terminal tariff |
+| A38 | DOC (documentation) | €35 / shipment | INVENTED | forwarder |
+
+Derived check (given the invented inputs): NLRTM→DEDUI barge 40HC×1 = €755; 20GP×2 = €1,195
+(used as the AC-B1 expected values). Not a real quote.
+
 ## B. Pricing structure (STRUCTURAL — modelling choices that may not match practice)
 
 | # | Claim | Source | How to verify |

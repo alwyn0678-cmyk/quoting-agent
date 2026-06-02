@@ -124,6 +124,7 @@ describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()",
 describe("Q2-AC-Q0 — engine extension: 45HC is a real priceable container", () => {
   // A card that DOES define a 45HC base (shape of the new NLRTM-USLAX lane).
   const uslaxCard: RateCard = {
+    mode: "FCL",
     version: "2026-06-v1",
     validity_through: "2026-06-30",
     supported_lane: "NLRTM-USLAX",
@@ -172,5 +173,89 @@ describe("Q2-AC-Q0 — engine extension: 45HC is a real priceable container", ()
 
   it("still prices the existing 3 types byte-identically (40HC×1 = 3520)", () => {
     expect(priceQuote(inScope({ container_type: "40HC", container_qty: 1 })).all_in_total).toBe(3520);
+  });
+});
+
+describe("AC-B1/B2/B3 — barge (per_container) via the same engine", () => {
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "20GP": 280, "40GP": 420, "40HC": 420 },
+    surcharges: [
+      { code: "LWS", amount_per_container: 95 },
+      { code: "THC_RTM_BARGE", amount_per_container: 95 },
+      { code: "THC_DUI", amount_per_container: 110 },
+    ],
+    per_shipment_fees: [{ code: "DOC", amount: 35 }],
+  };
+  const bargeReq = (over: Partial<PriceRequest> = {}): PriceRequest => ({
+    origin_port_code: "NLRTM",
+    destination_port_code: "DEDUI",
+    mode: "BARGE",
+    container_type: "40HC",
+    container_qty: 1,
+    ...over,
+  });
+
+  it("AC-B1: 1×40HC barge = 755 EUR (incl. LWS)", () => {
+    const q = priceQuote(bargeReq(), bargeCard);
+    expect(q.all_in_total).toBe(755);
+    expect(q.lane).toBe("NLRTM-DEDUI");
+    expect(q.surcharges.find((s) => s.code === "LWS")?.amount_per_container).toBe(95);
+  });
+  it("AC-B1: 2×20GP barge = 1195 EUR", () => {
+    expect(priceQuote(bargeReq({ container_type: "20GP", container_qty: 2 }), bargeCard).all_in_total).toBe(1195);
+  });
+  it("AC-B2: AIR (basis not implemented) → out_of_scope_mode", () => {
+    const call = () => priceQuote(bargeReq({ mode: "AIR" }), bargeCard);
+    expect(call).toThrow(UnpriceableRequestError);
+    try { call(); } catch (e) { expect((e as UnpriceableRequestError).reason).toBe("out_of_scope_mode"); }
+  });
+  it("AC-B3: FCL request against a BARGE card → out_of_scope_mode", () => {
+    const call = () => priceQuote(bargeReq({ mode: "FCL" }), bargeCard);
+    expect(call).toThrow(UnpriceableRequestError);
+    try { call(); } catch (e) { expect((e as UnpriceableRequestError).reason).toBe("out_of_scope_mode"); }
+  });
+  it("AC-B3: barge on a non-barge lane → out_of_scope_lane", () => {
+    const call = () => priceQuote(bargeReq({ destination_port_code: "USNYC" }), bargeCard);
+    expect(call).toThrow(UnpriceableRequestError);
+    try { call(); } catch (e) { expect((e as UnpriceableRequestError).reason).toBe("out_of_scope_lane"); }
+  });
+});
+
+describe("cardFor — resolve the card for a request's mode+lane", () => {
+  it("StaticCard returns its card on a matching mode+lane, null otherwise", async () => {
+    const eng = new StaticCardRateEngine(); // FCL NLRTM-USNYC
+    expect(await eng.cardFor(inScope({}))).not.toBeNull();
+    expect(await eng.cardFor(inScope({ mode: "BARGE" }))).toBeNull(); // wrong mode
+    expect(await eng.cardFor(inScope({ destination_port_code: "DEDUI" }))).toBeNull(); // wrong lane
+  });
+});
+
+describe("Gate-4 hardening — price(req, card) honours the PROVIDED card (no re-resolution)", () => {
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "40HC": 420 },
+    surcharges: [
+      { code: "LWS", amount_per_container: 95 },
+      { code: "THC_RTM_BARGE", amount_per_container: 95 },
+      { code: "THC_DUI", amount_per_container: 110 },
+    ],
+    per_shipment_fees: [{ code: "DOC", amount: 35 }],
+  };
+
+  it("prices the passed card, not the engine's own — closing the gate→price TOCTOU window", async () => {
+    const eng = new StaticCardRateEngine(); // its own card is FCL NLRTM-USNYC
+    const q = await eng.price(
+      { origin_port_code: "NLRTM", destination_port_code: "DEDUI", mode: "BARGE", container_type: "40HC", container_qty: 1 },
+      bargeCard,
+    );
+    expect(q.all_in_total).toBe(755); // 420 + 95 + 95 + 110 + 35 — proves the BARGE card was used
+    expect(q.lane).toBe("NLRTM-DEDUI");
   });
 });

@@ -6,7 +6,8 @@ import { archiveAction, requeueAction } from "../actions";
 const REASON_LABELS: Record<string, string> = {
   missing_required_field: "Missing a required field",
   out_of_scope_lane: "Lane not in the rate card",
-  out_of_scope_mode: "Mode not supported (FCL only)",
+  out_of_scope_mode: "Transport mode not priced yet",
+  out_of_scope_container: "Container type not priced on this lane",
   ambiguous_request: "Ambiguous request",
   low_confidence: "Low extraction confidence",
   guard_violation: "Safety guard tripped — failed closed",

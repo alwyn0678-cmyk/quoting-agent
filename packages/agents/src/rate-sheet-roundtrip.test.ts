@@ -16,8 +16,23 @@ describe("Q2 round-trip — the committed workbook parses + prices correctly", (
 
   const find = (lane: string) => cards.find((c) => c.card.lane === lane);
 
-  it("contains all three lanes", () => {
-    expect(cards.map((c) => c.card.lane).sort()).toEqual(["DEHAM-USNYC", "NLRTM-USLAX", "NLRTM-USNYC"]);
+  it("contains all four cards (3 FCL lanes + the barge lane)", () => {
+    expect(cards.map((c) => c.card.lane).sort()).toEqual([
+      "DEHAM-USNYC",
+      "NLRTM-DEDUI",
+      "NLRTM-USLAX",
+      "NLRTM-USNYC",
+    ]);
+  });
+
+  it("the barge card is mode BARGE and prices 1×40HC at 755 EUR", () => {
+    const barge = find("NLRTM-DEDUI");
+    expect(barge?.card.mode).toBe("BARGE");
+    const q = priceQuote(
+      { origin_port_code: "NLRTM", destination_port_code: "DEDUI", mode: "BARGE", container_type: "40HC", container_qty: 1 },
+      assembleRateCard(barge!.card, barge!.lines),
+    );
+    expect(q.all_in_total).toBe(755);
   });
 
   it("AC-Q2 parity: NLRTM-USNYC assembles to the StaticCard exactly", () => {

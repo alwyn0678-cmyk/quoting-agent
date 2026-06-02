@@ -16,7 +16,7 @@ const locationSchema = z.object({
   port_code: portCodeSchema.nullable(),
 });
 
-export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "UNKNOWN"]);
+export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "BARGE", "UNKNOWN"]);
 
 /**
  * What the extractor may report — includes UNKNOWN / absent. Deliberately the DEMO LANE's quotable
@@ -80,6 +80,7 @@ export const escalationReasonSchema = z.enum([
   "missing_required_field",
   "out_of_scope_lane",
   "out_of_scope_mode",
+  "out_of_scope_container",
   "ambiguous_request",
   "low_confidence",
   "guard_violation",

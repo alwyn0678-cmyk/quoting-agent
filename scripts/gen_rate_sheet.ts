@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 type Line = [string, string, string, number, number];
 interface LaneSpec {
   lane: string;
+  mode: string;
   version: string;
   validity: string;
   lines: Line[];
@@ -14,6 +15,7 @@ interface LaneSpec {
 const LANES: LaneSpec[] = [
   {
     lane: "NLRTM-USNYC", // PARITY: must equal the seed / StaticCard exactly (A1-A9)
+    mode: "FCL",
     version: "2026-06-v1",
     validity: "2026-06-30",
     lines: [
@@ -30,6 +32,7 @@ const LANES: LaneSpec[] = [
   },
   {
     lane: "NLRTM-USLAX", // NEW richer lane (Rotterdam -> Los Angeles); adds 45HC, CAF, PSS
+    mode: "FCL",
     version: "2026-06-v1",
     validity: "2026-06-30",
     lines: [
@@ -49,6 +52,7 @@ const LANES: LaneSpec[] = [
   },
   {
     lane: "DEHAM-USNYC", // NEW richer lane (Hamburg -> New York); adds 45HC, CONGESTION
+    mode: "FCL",
     version: "2026-06-v1",
     validity: "2026-06-30",
     lines: [
@@ -65,6 +69,21 @@ const LANES: LaneSpec[] = [
       ["per_shipment_fee", "EXPORT_CUSTOMS", "", 45, 1],
     ],
   },
+  {
+    lane: "NLRTM-DEDUI", // BARGE — Rotterdam -> Duisburg (Rhine). All figures INVENTED (ASSUMPTIONS D)
+    mode: "BARGE",
+    version: "2026-06-v1",
+    validity: "2026-06-30",
+    lines: [
+      ["base", "BASE_20GP", "20GP", 280, 0],
+      ["base", "BASE_40GP", "40GP", 420, 1],
+      ["base", "BASE_40HC", "40HC", 420, 2],
+      ["surcharge_per_container", "LWS", "", 95, 0], // Low-Water Surcharge (Rhine)
+      ["surcharge_per_container", "THC_RTM_BARGE", "", 95, 1],
+      ["surcharge_per_container", "THC_DUI", "", 110, 2],
+      ["per_shipment_fee", "DOC", "", 35, 0],
+    ],
+  },
 ];
 
 async function main(): Promise<void> {
@@ -72,7 +91,8 @@ async function main(): Promise<void> {
   wb.creator = "QuoteAgent rates:gen";
 
   for (const L of LANES) {
-    const ws = wb.addWorksheet(L.lane);
+    const ws = wb.addWorksheet(`${L.mode} ${L.lane}`);
+    ws.addRow(["Mode", L.mode]);
     ws.addRow(["Lane", L.lane]);
     ws.addRow(["Version", L.version]);
     ws.addRow(["Valid through", L.validity]);

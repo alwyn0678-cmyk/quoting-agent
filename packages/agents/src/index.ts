@@ -13,7 +13,7 @@ export { EXTRACTION_MODEL, DRAFT_MODEL, FALLBACK_MODEL } from "./config.js";
 export { StaticCardRateEngine } from "./rate-engine.js";
 export type { RateEngine, PriceRequest } from "./rate-engine.js";
 export { SupabaseTableRateEngine, createSupabaseRateEngine } from "./supabase-rate-engine.js";
-export { LINKPORT_TENANT_ID, DEFAULT_LANE } from "./config.js";
+export { LINKPORT_TENANT_ID } from "./config.js";
 export { SupabaseQuoteStore, quoteToRow } from "./quote-store.js";
 export type { QuoteStore, QuoteRow } from "./quote-store.js";
 // The scoped-RAG retrieval seam (Q3) — grounds the draft prose; env-gated + stub-safe.

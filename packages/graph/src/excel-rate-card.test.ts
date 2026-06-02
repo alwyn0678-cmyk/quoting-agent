@@ -17,7 +17,7 @@ const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
 });
 
 // A fake read-only workbook holding the Linkport card. Lines are scrambled; sort_order is truth.
-const cardMeta: RateCardRow = { version: "2026-06-v1", validity_through: "2026-06-30", lane: "NLRTM-USNYC" };
+const cardMeta: RateCardRow = { mode: "FCL", version: "2026-06-v1", validity_through: "2026-06-30", lane: "NLRTM-USNYC" };
 const lines: RateCardLineRow[] = [
   { kind: "surcharge_per_container", code: "ISPS", container_type: null, amount: 25, sort_order: 3 },
   { kind: "base", code: "BASE_40HC", container_type: "40HC", amount: 2550, sort_order: 2 },
@@ -56,6 +56,15 @@ describe("1B.6 — ExcelOnline adapter (hermetic, fake workbook)", () => {
       name: "UnpriceableRequestError",
       reason: "out_of_scope_mode",
     });
+  });
+
+  it("Gate-4 hardening: cardFor returns null unless the workbook card matches the request mode+lane", async () => {
+    // The workbook transport returns its single card regardless of the filter args; cardFor must
+    // still honour the port contract (null on mismatch) so the gate cannot say "quote" then have
+    // priceQuote throw. The card is FCL NLRTM-USNYC.
+    expect(await excel.cardFor(inScope({}))).not.toBeNull();
+    expect(await excel.cardFor(inScope({ mode: "BARGE" }))).toBeNull(); // mode mismatch
+    expect(await excel.cardFor(inScope({ destination_port_code: "DEDUI" }))).toBeNull(); // lane mismatch
   });
 
   it("P-EXCEL-RO: no write method on the adapter, source, or transport", () => {
