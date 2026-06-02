@@ -124,6 +124,7 @@ describe("P-1A.2 — StaticCard adapter is behaviour-identical to priceQuote()",
 describe("Q2-AC-Q0 — engine extension: 45HC is a real priceable container", () => {
   // A card that DOES define a 45HC base (shape of the new NLRTM-USLAX lane).
   const uslaxCard: RateCard = {
+    mode: "FCL",
     version: "2026-06-v1",
     validity_through: "2026-06-30",
     supported_lane: "NLRTM-USLAX",
