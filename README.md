@@ -26,22 +26,36 @@ model, but because of **where it refuses to**.
 
 ```mermaid
 flowchart LR
-    A["📧 Inbound email<br/>untrusted free text"]:::untrusted
-    A -->|"extract — LLM"| B["Structured request<br/>constrained schema"]:::data
-    B -->|"gate — code"| G{"priceable<br/>& in scope?"}:::code
-    G -->|"no"| E["🚨 Escalate<br/>to a human"]:::escalate
-    G -->|"yes"| P["💶 Price — code<br/>base + surcharges + fees<br/>deterministic €"]:::code
-    P -->|"retrieve — pgvector"| R["Grounding chunks<br/>explanations only"]:::data
-    R -->|"draft — LLM"| D["Reply prose"]:::llm
-    D -->|"guards — code"| Q{"injection /<br/>price drift /<br/>canary?"}:::code
-    Q -->|"violation"| E
-    Q -->|"clean"| O["✅ Drafted quote<br/>exact, auditable total"]:::data
+    A(["📧 Inbound email<br/>untrusted free text"]):::untrusted
+    B["📋 Structured request<br/>constrained schema"]:::data
+    G{"⚖️ priceable<br/>& in scope?"}:::code
+    P["💶 Price · code<br/>base + surcharges + fees<br/>one auditable €"]:::code
+    R[("🔎 Grounding chunks<br/>pgvector · explanations only")]:::data
+    D["✍️ Reply prose"]:::llm
+    Q{"🛡️ injection ·<br/>price drift ·<br/>canary?"}:::code
+    E(["🚨 Escalate<br/>to a human"]):::escalate
+    O(["✅ Drafted quote<br/>exact, auditable total"]):::done
 
-    classDef untrusted fill:#fdecec,stroke:#e06c6c,color:#7a1f1f;
-    classDef llm fill:#f0e6fb,stroke:#a06cd5,color:#3d1f6e;
-    classDef code fill:#e6eefb,stroke:#5b8def,color:#16306e;
-    classDef data fill:#e6f7ec,stroke:#4caf6e,color:#14532d;
-    classDef escalate fill:#fff4d6,stroke:#e0a800,color:#7a5b00;
+    A -. "extract · 🟣 LLM" .-> B
+    B == "gate · code" ==> G
+    G == "yes" ==> P
+    P == "retrieve" ==> R
+    R -. "draft · 🟣 LLM" .-> D
+    D == "guards · code" ==> Q
+    G -- "no" --> E
+    Q -- "violation" --> E
+    Q == "clean" ==> O
+
+    classDef untrusted fill:#fde4e4,stroke:#d9534f,stroke-width:2px,color:#6b1a1a;
+    classDef llm fill:#efe1fb,stroke:#9b59d0,stroke-width:2px,color:#3a1d63;
+    classDef code fill:#e1ebfb,stroke:#4d86e6,stroke-width:2px,color:#13315f;
+    classDef data fill:#e1f5e9,stroke:#3fa564,stroke-width:2px,color:#14532d;
+    classDef escalate fill:#fff0c7,stroke:#e0a800,stroke-width:2px,color:#6e5200;
+    classDef done fill:#d6f3e0,stroke:#2a9d54,stroke-width:3px,color:#0e3a22;
+
+    linkStyle 0,4 stroke:#9b59d0,stroke-width:2px;
+    linkStyle 6,7 stroke:#d9534f,stroke-width:2px;
+    linkStyle 8 stroke:#2a9d54,stroke-width:2.5px;
 ```
 
 <sub>🟣 **LLM** reads/writes language · 🔵 **deterministic code** makes every decision that must be correct · 🔴 untrusted input · 🟢 verified data. The point is *where it refuses to call the model*.</sub>
