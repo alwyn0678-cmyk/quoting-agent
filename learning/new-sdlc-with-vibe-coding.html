@@ -241,6 +241,41 @@
   .econ-label{font-size:13px;font-weight:700;color:var(--muted)}
   .tco-note{margin-top:16px;font-size:14.5px;padding:14px 16px;border-radius:var(--r2);transition:.3s}
 
+  /* ---------- Scenario / Apply ---------- */
+  .scn-head{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+  .scn-count{font-size:13px;color:var(--muted);white-space:nowrap}
+  .scn-count b{color:var(--ink)}
+  .scn-progress{flex:1;height:8px;border-radius:999px;background:var(--panel2);overflow:hidden}
+  .scn-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--vibe),var(--struct),var(--agentic));transition:width .4s;width:0%}
+  .scn-prompt{font-size:18px;font-weight:600;line-height:1.45;margin:16px 0 18px;min-height:54px}
+  .scn-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:680px){.scn-opts{grid-template-columns:1fr}}
+  .scn-opt{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;padding:14px;
+    border:1px solid var(--line);background:var(--panel2);border-radius:12px;font-size:13px;color:var(--muted)}
+  .scn-opt:hover{border-color:var(--accent)}
+  .scn-opt.picked-correct{border-color:var(--good);background:rgba(52,211,153,.12)}
+  .scn-opt.picked-wrong{border-color:var(--bad);background:rgba(251,113,133,.12)}
+  .scn-opt.reveal-correct{border-color:var(--good);box-shadow:0 0 0 1px var(--good) inset}
+  .scn-opt:disabled{cursor:default}
+  .scn-feedback{margin-top:16px;font-size:14.5px;padding:14px 16px;border-left:3px solid var(--accent);
+    background:rgba(139,92,246,.07);border-radius:0 var(--r2) var(--r2) 0;display:none;line-height:1.55}
+  .scn-feedback.show{display:block}
+  .scn-feedback .lab{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
+  .scn-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}
+
+  /* ---------- Glossary ---------- */
+  .glossary{display:grid;gap:10px}
+  .gl-item{border:1px solid var(--line);border-radius:var(--r2);background:var(--panel2);overflow:hidden}
+  .gl-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:15px 18px;border:none;background:transparent;text-align:left;font-size:15.5px;font-weight:700;color:var(--ink)}
+  .gl-q:hover{background:rgba(255,255,255,.02);transform:none}
+  .gl-q .tw{color:#c4b5fd}
+  .gl-q .car{color:var(--dim);transition:transform .25s;font-size:13px}
+  .gl-item.open .gl-q .car{transform:rotate(180deg)}
+  .gl-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--muted);font-size:14.5px;line-height:1.6}
+  .gl-a div{padding:0 18px 16px}
+  .gl-item.open .gl-a{max-height:260px}
+
   /* ---------- Quiz ---------- */
   .quiz{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:var(--panel)}
   .quiz .q{font-weight:700;font-size:16px;margin-bottom:14px}
@@ -280,6 +315,7 @@
     <a href="#intro">Intro</a>
     <a href="#agent">The Agent Loop</a>
     <a href="#spectrum">The Spectrum</a>
+    <a href="#apply">Apply It</a>
     <a href="#context">Context Lab</a>
     <a href="#sdlc">New SDLC</a>
     <a href="#factory">Factory Model</a>
@@ -287,6 +323,7 @@
     <a href="#roles">Conductor/Orchestrator</a>
     <a href="#economics">Economics</a>
     <a href="#start">Where to Start</a>
+    <a href="#glossary">Glossary</a>
     <a href="#quiz">Test Yourself</a>
   </div>
 </nav>
@@ -437,6 +474,35 @@
       </div>
       <p style="margin:14px 0 0;font-size:14px;color:var(--muted)">Without <b>both</b>, the practice is always vibe coding — no matter how sophisticated the prompts.</p>
     </div>
+  </div>
+</section>
+
+<!-- ============ APPLY IT (transfer exercise) ============ -->
+<section id="apply">
+  <div class="wrap">
+    <span class="kicker reveal">Apply it — don't just read it</span>
+    <h2 class="reveal">Where does it land?</h2>
+    <p class="lede reveal">Reading about the spectrum isn't the same as <i>using</i> it. Here's the skill that matters: for a given task, knowing where to draw the line. Read each scenario, commit to an answer, then check your reasoning. <b>The stakes decide.</b></p>
+
+    <div class="card reveal">
+      <div class="scn-head">
+        <div class="scn-count">Scenario <b id="scnNum">1</b> / <span id="scnTotal">6</span></div>
+        <div class="scn-progress"><div class="scn-progress-fill" id="scnFill"></div></div>
+      </div>
+      <div class="scn-prompt" id="scnPrompt"></div>
+      <div class="scn-opts">
+        <button class="scn-opt" data-pick="0"><span class="pill vibe">Vibe Coding</span><span>Prompt, accept, ship</span></button>
+        <button class="scn-opt" data-pick="1"><span class="pill struct">Structured</span><span>Detailed prompts, manual review</span></button>
+        <button class="scn-opt" data-pick="2"><span class="pill agentic">Agentic Engineering</span><span>Specs, tests, evals, guardrails</span></button>
+      </div>
+      <div class="scn-feedback" id="scnFeedback"></div>
+      <div class="scn-nav">
+        <button id="scnPrev" disabled>← Previous</button>
+        <span id="scnTally" style="font-size:13px;color:var(--muted)"></span>
+        <button id="scnNext">Next →</button>
+      </div>
+    </div>
+    <p class="reveal" style="font-size:13px;color:var(--dim);margin-top:12px;text-align:center">There's often a defensible case for the neighbouring zone — what matters is that your reasoning tracks the <b>stakes and reversibility</b>, not the tool.</p>
   </div>
 </section>
 
@@ -661,6 +727,16 @@
     <p class="lede reveal">The shift from syntax to intent is the work in front of us today. AI <b>amplifies the engineering culture it lands in</b>. Here's the practical on-ramp.</p>
 
     <div class="grid g2 reveal" id="startGrid"></div>
+  </div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section id="glossary">
+  <div class="wrap">
+    <span class="kicker reveal">Speak the language</span>
+    <h2 class="reveal">Key terms, in one place</h2>
+    <p class="lede reveal">The vocabulary that lets you have the “agentic engineering, not vibe coding” conversation with confidence. Click a term to expand its definition.</p>
+    <div class="glossary reveal" id="glossaryHost"></div>
   </div>
 </section>
 
@@ -1041,8 +1117,102 @@ $$('.opt').forEach(b=>b.addEventListener('click',()=>{
   if(answered===quiz.length){
     const pct=Math.round(score/quiz.length*100);
     sc.innerHTML=`You scored <b style="color:var(--agentic)">${score} / ${quiz.length}</b> (${pct}%). ${pct===100?'🏆 Agentic engineer — generation is solved, you\'ve got verification down.':pct>=60?'👍 Solid grasp. Re-read the spectrum & harness sections to lock it in.':'📚 Worth another pass — the spectrum and context sections are the core.'}`;
+    save('quizPct', pct);
   }
 }));
+
+/* ===================== Apply It — scenario transfer exercise ===================== */
+const scenarios=[
+  {p:'A weekend prototype to test whether an idea is even worth pursuing. You\'ll likely throw the code away on Monday.',
+   a:0, fb:'Pure vibe coding is the right speed. The stakes are near-zero, the code is disposable, and exploration beats discipline here. Spending hours on tests and specs would be over-engineering a throwaway.'},
+  {p:'A payment API that moves real money between customer accounts in production.',
+   a:2, fb:'Agentic engineering, no question. High stakes, hard-to-reverse failures, real financial and legal risk. This demands formal specs, automated test suites, CI/CD gates, and systematic verification at every stage.'},
+  {p:'Adding a feature to your team\'s established production codebase, following patterns that already exist.',
+   a:1, fb:'Structured AI-assisted coding fits best. The patterns constrain the work, but it still ships to users — so detailed prompts plus manual review of the critical paths is the sweet spot between speed and safety.'},
+  {p:'Migrating 200 files from a deprecated framework to its replacement — tedious, repetitive, well-defined.',
+   a:2, fb:'Lean agentic engineering. The task is well-specified enough to delegate to background agents (orchestrator mode), but the blast radius is large — you want tests/evals verifying each migrated file, not eyeballing 200 diffs.'},
+  {p:'A hackathon demo due in four hours. It just needs to look impressive on stage once.',
+   a:0, fb:'Vibe coding wins. One-shot demo, disposable afterward, speed is everything. The whole point is to embrace the exponential and not get bogged down in verification you\'ll never need.'},
+  {p:'An internal compliance tool that flags anomalies for auditors to act on. Wrong output could mean a missed violation.',
+   a:2, fb:'Agentic engineering. "Internal" is a trap here — the consequences of a silent failure are high (regulatory, financial). It needs evals with clear rubrics and guardrails, even though no external customer touches it.'},
+];
+let scnIdx=0;
+const scnPicks=load('scnPicks', {});
+$('#scnTotal').textContent=scenarios.length;
+function renderScn(){
+  const s=scenarios[scnIdx];
+  $('#scnNum').textContent=scnIdx+1;
+  $('#scnFill').style.width=((scnIdx+1)/scenarios.length*100)+'%';
+  $('#scnPrompt').textContent=s.p;
+  const fb=$('#scnFeedback'); fb.classList.remove('show');
+  const picked=scnPicks[scnIdx];
+  $$('.scn-opt').forEach(b=>{
+    b.className='scn-opt'; b.disabled=false;
+    const pick=+b.dataset.pick;
+    if(picked!=null){
+      b.disabled=true;
+      if(pick===s.a) b.classList.add(pick===picked?'picked-correct':'reveal-correct');
+      else if(pick===picked) b.classList.add('picked-wrong');
+    }
+  });
+  if(picked!=null) showScnFeedback(picked);
+  $('#scnPrev').disabled=scnIdx===0;
+  $('#scnNext').textContent=scnIdx===scenarios.length-1?'Finish':'Next →';
+  updateScnTally();
+}
+function showScnFeedback(picked){
+  const s=scenarios[scnIdx], right=picked===s.a;
+  const zone=['Vibe Coding','Structured','Agentic Engineering'][s.a];
+  const fb=$('#scnFeedback'); fb.classList.add('show');
+  fb.style.borderColor=right?'var(--good)':'var(--warn)';
+  fb.style.background=right?'rgba(52,211,153,.08)':'rgba(251,191,36,.08)';
+  fb.innerHTML=`<span class="lab" style="color:${right?'var(--good)':'var(--warn)'}">${right?'✅ Right call':'🤔 Best answer: '+zone}</span>${s.fb}`;
+}
+function updateScnTally(){
+  const done=Object.keys(scnPicks).length;
+  const correct=Object.entries(scnPicks).filter(([i,v])=>v===scenarios[i].a).length;
+  $('#scnTally').textContent=done?`${correct}/${done} matched the recommended zone`:'';
+}
+$$('.scn-opt').forEach(b=>b.addEventListener('click',()=>{
+  if(scnPicks[scnIdx]!=null) return;
+  const pick=+b.dataset.pick;
+  scnPicks[scnIdx]=pick; save('scnPicks',scnPicks);
+  renderScn();
+}));
+$('#scnNext').addEventListener('click',()=>{
+  if(scnIdx<scenarios.length-1){ scnIdx++; renderScn(); }
+  else { document.querySelector('#context').scrollIntoView({behavior:'smooth'}); }
+});
+$('#scnPrev').addEventListener('click',()=>{ if(scnIdx>0){ scnIdx--; renderScn(); } });
+renderScn();
+
+/* ===================== Glossary ===================== */
+const glossary=[
+  {t:'Vibe coding',d:'Describing what you want in natural language, accepting the AI\'s output, and pasting errors back when something breaks. Minimal structure or verification — right for prototypes and disposable code.'},
+  {t:'Agentic engineering',d:'AI as a powerful implementation engine inside carefully designed systems of constraints, tests, and feedback loops, with humans retaining oversight of architecture, correctness, and quality.'},
+  {t:'Agent',d:'A system that perceives a goal, plans steps, takes actions through tools, observes results, and iterates until done. Unlike a chatbot, it runs its own loop. Built from model, tools, memory, orchestration, and deployment.'},
+  {t:'Context engineering',d:'Providing AI agents with rich, structured information about your codebase, conventions, and intent. The real skill — code quality depends more on context than on clever prompts.'},
+  {t:'Static vs. dynamic context',d:'Static context (system instructions, rule files) is loaded every interaction — expensive but always on. Dynamic context (skills, tool results, RAG) loads on demand — you pay the token cost only when needed.'},
+  {t:'Agent Skills',d:'Structured, portable packages of procedural knowledge loaded only when a task calls for them. Via progressive disclosure, an agent stays a lightweight generalist that flexes into specialist roles on demand.'},
+  {t:'The harness',d:'Everything wrapped around the model: instructions, tools, sandboxes, orchestration, guardrails/hooks, and observability. Agent = Model + Harness. Most agent failures are harness (configuration) failures, not model failures.'},
+  {t:'The factory model',d:'The developer\'s primary output is no longer code — it\'s the system that produces code: specs, agents, tests, feedback loops, and guardrails. You design the assembly line and ensure quality control.'},
+  {t:'Conductor vs. Orchestrator',d:'Conductor = hands-on, real-time direction in the IDE (good for complex/unfamiliar work). Orchestrator = async delegation to background agents (good for well-defined tasks, migrations, test generation).'},
+  {t:'The 80% problem',d:'Agents generate ~80% of a feature fast, but the last 20% — edge cases, error handling, integration, subtle correctness — needs deep context models often lack. The errors are insidious because the code looks right.'},
+  {t:'Tests vs. evals',d:'Tests verify deterministic behaviour (this input → that output), checked by code. Evals verify non-deterministic behaviour (right trajectory, right tools, quality bar), checked by datasets, rubrics, and LM judges.'},
+  {t:'CapEx vs. OpEx',d:'CapEx is the upfront investment to build the system; OpEx is the ongoing cost to run, fix, and maintain it — heavily driven by the token economy. Vibe coding: low CapEx, high OpEx. Agentic engineering flips it.'},
+];
+$('#glossaryHost').innerHTML=glossary.map((g,i)=>`
+  <div class="gl-item" data-i="${i}">
+    <button class="gl-q"><span class="tw">${g.t}</span><span class="car">▼</span></button>
+    <div class="gl-a"><div>${g.d}</div></div>
+  </div>`).join('');
+$$('.gl-q').forEach(b=>b.addEventListener('click',()=>{
+  b.closest('.gl-item').classList.toggle('open');
+}));
+
+/* ===================== Persistence ===================== */
+function save(k,v){ try{ localStorage.setItem('sdlc_'+k, JSON.stringify(v)); }catch(e){} }
+function load(k,def){ try{ const v=localStorage.getItem('sdlc_'+k); return v==null?def:JSON.parse(v); }catch(e){ return def; } }
 </script>
 </body>
 </html>
