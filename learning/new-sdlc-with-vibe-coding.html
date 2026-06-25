@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The New SDLC with Vibe Coding — Interactive Lesson</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#0f1525; --panel:#141b2e; --panel2:#1a2236;
+    --ink:#e9eef7; --muted:#94a3b8; --dim:#5b6b86;
+    --line:#243049;
+    --vibe:#f59e0b;       /* amber - vibe coding */
+    --struct:#38bdf8;     /* sky - structured */
+    --agentic:#34d399;    /* emerald - agentic */
+    --accent:#8b5cf6;     /* violet */
+    --accent2:#ec4899;    /* pink */
+    --good:#34d399; --bad:#fb7185; --warn:#fbbf24;
+    --r:16px; --r2:12px;
+    --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:var(--sans);background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(139,92,246,.16), transparent 60%),
+      radial-gradient(1000px 600px at -10% 10%, rgba(56,189,248,.12), transparent 55%),
+      var(--bg);
+    color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(139,92,246,.4)}
+  a{color:var(--struct);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.hero{padding:90px 0 50px;text-align:center;position:relative;overflow:hidden}
+  .badge{display:inline-flex;gap:8px;align-items:center;font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
+    padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.02);margin-bottom:22px}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--agentic);
+    box-shadow:0 0 12px var(--agentic);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  h1{font-size:clamp(34px,6vw,62px);line-height:1.05;margin:0 0 18px;font-weight:800;
+    letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff 10%,#c4b5fd 45%,#7dd3fc 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:clamp(16px,2.4vw,21px);color:var(--muted);max-width:680px;margin:0 auto 14px}
+  .credit{font-size:13px;color:var(--dim);margin-top:18px}
+  .scroll-hint{margin-top:40px;color:var(--dim);font-size:13px;animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+  /* ---------- Progress / nav ---------- */
+  .progress-rail{position:fixed;top:0;left:0;height:4px;width:100%;z-index:60;
+    background:transparent}
+  .progress-bar{height:100%;width:0%;
+    background:linear-gradient(90deg,var(--vibe),var(--struct),var(--agentic));
+    box-shadow:0 0 16px rgba(52,211,153,.5);transition:width .12s linear}
+  nav.toc{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(10,14,26,.72);border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding:10px 24px;scrollbar-width:none}
+  nav.toc .wrap::-webkit-scrollbar{display:none}
+  nav.toc a{white-space:nowrap;font-size:13px;color:var(--muted);padding:7px 13px;
+    border-radius:999px;border:1px solid transparent;transition:.18s;font-weight:500}
+  nav.toc a:hover{color:var(--ink);background:rgba(255,255,255,.04);text-decoration:none}
+  nav.toc a.active{color:#fff;border-color:var(--line);background:rgba(139,92,246,.15)}
+
+  /* ---------- Sections ---------- */
+  section{padding:72px 0;border-top:1px solid transparent}
+  .kicker{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  h2{font-size:clamp(26px,4vw,40px);margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+  h3{font-size:20px;margin:26px 0 10px;font-weight:700}
+  .lede{font-size:18px;color:var(--muted);max-width:760px;margin:0 0 26px}
+  p{color:#d3dbea}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--line);border-radius:var(--r);padding:24px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;
+    border:1px solid var(--line)}
+  .pill.vibe{color:var(--vibe);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+  .pill.struct{color:var(--struct);border-color:rgba(56,189,248,.4);background:rgba(56,189,248,.08)}
+  .pill.agentic{color:var(--agentic);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)}
+
+  .callout{border-left:3px solid var(--accent);background:rgba(139,92,246,.07);
+    padding:16px 20px;border-radius:0 var(--r2) var(--r2) 0;margin:22px 0}
+  .callout .t{font-weight:700;color:#c4b5fd;font-size:13px;letter-spacing:.06em;
+    text-transform:uppercase;margin-bottom:6px}
+  .quote{font-size:clamp(20px,3vw,28px);font-weight:600;line-height:1.35;
+    letter-spacing:-.01em;color:#fff;border:none;text-align:center;padding:30px 10px}
+  .quote .g{background:linear-gradient(120deg,#fbbf24,#34d399);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+
+  /* ---------- Buttons / controls ---------- */
+  button,.btn{font-family:inherit;cursor:pointer;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);padding:10px 16px;border-radius:10px;
+    font-size:14px;font-weight:600;transition:.18s}
+  button:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap}
+  .seg button{border:none;background:transparent;padding:9px 16px}
+  .seg button.on{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(139,92,246,.4)}
+  .seg button:hover{transform:none}
+
+  /* ---------- Agent loop (SVG) ---------- */
+  .loop-stage{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+  @media(max-width:820px){.loop-stage{grid-template-columns:1fr}}
+  .loop-svg{width:100%;height:auto}
+  .loop-node{cursor:pointer}
+  .loop-node circle{transition:.3s}
+  .loop-readout{min-height:150px}
+  .loop-readout h4{margin:0 0 6px;font-size:18px;display:flex;align-items:center;gap:10px}
+  .loop-readout .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+    font-size:13px;font-weight:800;background:var(--accent);color:#fff}
+  .loop-ctrl{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+
+  /* parts of an agent */
+  .parts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}
+  @media(max-width:820px){.parts{grid-template-columns:1fr 1fr}}
+  .part{padding:16px;border:1px solid var(--line);border-radius:var(--r2);
+    background:var(--panel2);transition:.2s;cursor:default}
+  .part:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .part .ico{font-size:22px}
+  .part b{display:block;margin:8px 0 4px;font-size:15px}
+  .part span{font-size:12.5px;color:var(--muted);line-height:1.45}
+
+  /* ---------- Spectrum slider ---------- */
+  .spectrum-track{position:relative;height:14px;border-radius:999px;margin:30px 0 6px;
+    background:linear-gradient(90deg,var(--vibe),var(--struct),var(--agentic))}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;
+    background:transparent;cursor:pointer;margin:0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;
+    border-radius:50%;background:#fff;border:4px solid var(--accent);
+    box-shadow:0 4px 18px rgba(0,0,0,.5);margin-top:-8px;transition:.1s}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;
+    border:4px solid var(--accent);box-shadow:0 4px 18px rgba(0,0,0,.5)}
+  .spectrum-labels{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+  .spectrum-labels .a{color:var(--vibe)} .spectrum-labels .b{color:var(--struct)} .spectrum-labels .c{color:var(--agentic)}
+  .dim-readout{margin-top:20px;display:grid;gap:10px}
+  .dim-row{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center;
+    padding:12px 16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel2)}
+  @media(max-width:680px){.dim-row{grid-template-columns:1fr}}
+  .dim-row .k{font-weight:700;font-size:14px;color:var(--muted)}
+  .dim-row .v{font-size:15px;transition:.25s}
+  .stake-meter{display:flex;align-items:center;gap:14px;margin-top:24px;flex-wrap:wrap}
+  .stake-meter .label{font-weight:700}
+  .verdict{font-weight:800;font-size:18px;padding:8px 18px;border-radius:12px;transition:.25s}
+
+  /* ---------- Context lab ---------- */
+  .ctx-toggle{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .ctx-window{border:1px dashed var(--line);border-radius:var(--r);padding:18px;
+    background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,.012) 12px,rgba(255,255,255,.012) 24px)}
+  .ctx-bar{height:46px;border-radius:10px;display:flex;overflow:hidden;border:1px solid var(--line);margin:14px 0}
+  .ctx-seg{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+    color:#06121f;transition:width .5s cubic-bezier(.3,.8,.2,1);white-space:nowrap;overflow:hidden}
+  .ctx-static{background:linear-gradient(180deg,#fb7185,#e11d48)}
+  .ctx-dynamic{background:linear-gradient(180deg,#34d399,#059669)}
+  .ctx-free{background:repeating-linear-gradient(90deg,#1a2236,#1a2236 8px,#222c44 8px,#222c44 16px);color:var(--dim)}
+  .ctx-tokens{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .chip{display:inline-block;font-size:12px;padding:5px 11px;border-radius:8px;margin:4px 4px 0 0;
+    border:1px solid var(--line);background:var(--panel2);cursor:pointer;transition:.18s;user-select:none}
+  .chip.static{border-color:rgba(251,113,133,.4)}
+  .chip.dynamic{border-color:rgba(52,211,153,.4)}
+  .chip.on{box-shadow:0 0 0 2px var(--accent) inset}
+  .chip .tag{font-size:10px;opacity:.7;margin-left:4px}
+
+  .six{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:680px){.six{grid-template-columns:1fr}}
+  .six .c6{padding:14px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel2)}
+  .six .c6 b{font-size:14px} .six .c6 span{font-size:12.5px;color:var(--muted)}
+
+  /* ---------- SDLC ---------- */
+  .sdlc-flow{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 22px}
+  .phase{flex:1;min-width:130px;padding:14px;border:1px solid var(--line);border-radius:var(--r2);
+    background:var(--panel2);cursor:pointer;transition:.2s;position:relative;text-align:center}
+  .phase:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .phase.on{border-color:var(--accent);background:rgba(139,92,246,.14);box-shadow:0 8px 24px rgba(139,92,246,.2)}
+  .phase .ph-ico{font-size:22px} .phase .ph-name{font-size:13px;font-weight:700;margin-top:6px}
+  .phase .ph-comp{font-size:11px;margin-top:4px;font-weight:700}
+  .phase-detail{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:var(--panel)}
+  .phase-detail h4{margin:0 0 10px;font-size:19px}
+  .compress-bar{height:10px;border-radius:999px;background:var(--panel2);overflow:hidden;margin-top:8px}
+  .compress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--struct),var(--agentic));transition:width .5s}
+  .two-col-mini{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:680px){.two-col-mini{grid-template-columns:1fr}}
+  .mini{padding:12px;border-radius:var(--r2);font-size:13.5px}
+  .mini.before{background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.3)}
+  .mini.after{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3)}
+  .mini .h{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+
+  /* ---------- Harness ---------- */
+  .harness-eq{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+    font-size:clamp(20px,3.4vw,30px);font-weight:800;margin:6px 0 24px}
+  .harness-eq .box{padding:10px 20px;border-radius:14px;border:1px solid var(--line)}
+  .harness-eq .model{background:rgba(139,92,246,.14);color:#c4b5fd}
+  .harness-eq .harness{background:rgba(52,211,153,.12);color:var(--agentic)}
+  .harness-eq .agent{background:rgba(56,189,248,.12);color:var(--struct)}
+  .harness-eq .op{color:var(--dim)}
+  .harness-anatomy{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:680px){.harness-anatomy{grid-template-columns:1fr}}
+  .h-comp{padding:16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel2);
+    cursor:pointer;transition:.2s}
+  .h-comp:hover{border-color:var(--agentic);transform:translateY(-2px)}
+  .h-comp.on{border-color:var(--agentic);background:rgba(52,211,153,.1)}
+  .h-comp b{display:block;font-size:14px;margin-top:6px}
+  .h-comp p{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+  .h-detail{margin-top:14px;padding:16px;border-left:3px solid var(--agentic);
+    background:rgba(52,211,153,.06);border-radius:0 var(--r2) var(--r2) 0;font-size:14.5px;min-height:60px}
+
+  /* ---------- Conductor / Orchestrator ---------- */
+  .co-toggle{display:flex;justify-content:center;margin-bottom:22px}
+  .co-panel{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);
+    border-radius:var(--r);overflow:hidden}
+  @media(max-width:680px){.co-panel{grid-template-columns:1fr}}
+  .co-side{padding:22px;transition:.3s}
+  .co-side.dim{opacity:.32;filter:saturate(.4)}
+  .co-side h4{margin:0 0 4px;font-size:19px;display:flex;align-items:center;gap:8px}
+  .co-side .role{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .co-side ul{margin:12px 0 0;padding-left:18px;font-size:14px}
+  .co-side li{margin:6px 0}
+  .co-cond{background:rgba(56,189,248,.06)}
+  .co-orch{background:rgba(139,92,246,.06)}
+
+  /* ---------- Economics ---------- */
+  .econ-toggle{display:flex;gap:10px;margin-bottom:20px}
+  .econ-chart{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:end;
+    min-height:240px;padding:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .econ-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .econ-bars{display:flex;gap:18px;align-items:end;height:200px}
+  .ebar{width:54px;border-radius:8px 8px 0 0;display:flex;align-items:start;justify-content:center;
+    padding-top:8px;font-size:12px;font-weight:800;color:#06121f;transition:height .6s cubic-bezier(.3,.8,.2,1)}
+  .ebar.capex{background:linear-gradient(180deg,#a78bfa,#7c3aed);color:#fff}
+  .ebar.opex{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+  .econ-label{font-size:13px;font-weight:700;color:var(--muted)}
+  .tco-note{margin-top:16px;font-size:14.5px;padding:14px 16px;border-radius:var(--r2);transition:.3s}
+
+  /* ---------- Quiz ---------- */
+  .quiz{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:var(--panel)}
+  .quiz .q{font-weight:700;font-size:16px;margin-bottom:14px}
+  .opt{display:block;width:100%;text-align:left;margin:8px 0;padding:13px 16px;border-radius:12px;
+    border:1px solid var(--line);background:var(--panel2);font-size:14.5px}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{border-color:var(--good);background:rgba(52,211,153,.12);color:#bbf7d0}
+  .opt.wrong{border-color:var(--bad);background:rgba(251,113,133,.12);color:#fecdd3}
+  .opt:disabled{cursor:default}
+  .explain{margin-top:12px;font-size:14px;color:var(--muted);padding:12px 14px;
+    border-left:3px solid var(--accent);background:rgba(139,92,246,.06);border-radius:0 8px 8px 0;display:none}
+  .explain.show{display:block}
+  .quiz-score{font-size:14px;color:var(--muted);margin-top:8px}
+
+  /* ---------- Principles ---------- */
+  .principle{display:flex;gap:18px;align-items:flex-start;padding:20px;border:1px solid var(--line);
+    border-radius:var(--r);background:var(--panel2);margin-bottom:14px}
+  .principle .pnum{font-size:34px;font-weight:800;line-height:1;
+    background:linear-gradient(120deg,#fbbf24,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .principle b{font-size:17px}
+
+  footer{padding:60px 0 80px;text-align:center;color:var(--dim);border-top:1px solid var(--line);margin-top:40px}
+  .takeaway{font-size:clamp(20px,3vw,26px);font-weight:700;color:#fff;max-width:760px;margin:0 auto 30px;line-height:1.4}
+  .kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:6px;padding:2px 7px}
+
+  code.inl{font-family:var(--mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);
+    padding:2px 7px;border-radius:6px;color:#c4b5fd}
+  .fade-num{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="progress-rail"><div class="progress-bar" id="pbar"></div></div>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#intro">Intro</a>
+    <a href="#agent">The Agent Loop</a>
+    <a href="#spectrum">The Spectrum</a>
+    <a href="#context">Context Lab</a>
+    <a href="#sdlc">New SDLC</a>
+    <a href="#factory">Factory Model</a>
+    <a href="#harness">The Harness</a>
+    <a href="#roles">Conductor/Orchestrator</a>
+    <a href="#economics">Economics</a>
+    <a href="#start">Where to Start</a>
+    <a href="#quiz">Test Yourself</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="badge"><span class="dot"></span> Interactive Lesson · Day 1</div>
+    <h1>The New SDLC<br/>with Vibe Coding</h1>
+    <p class="sub">From ad-hoc prompting to <b style="color:var(--agentic)">agentic engineering</b> — an interactive tour of how AI is reshaping every phase of building software.</p>
+    <p class="credit">Based on the paper by Addy Osmani, Shubham Saboo &amp; Sokratis Kartakis (May 2026).<br/>Built as a hands-on lesson — <b>poke at every diagram</b>.</p>
+    <div class="scroll-hint">↓ scroll, or use the chips above to jump around</div>
+  </div>
+</header>
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <div class="wrap">
+    <span class="kicker reveal">The big idea</span>
+    <h2 class="reveal">From writing code to expressing intent</h2>
+    <p class="lede reveal">For most of computing history, programming was an act of translation: understand the problem, design a solution, then render it in syntax a machine can run. Every step adds friction. That friction is now collapsing.</p>
+
+    <div class="card reveal quote">
+      <span>“Generation is solved.</span> <span class="g">Verification, judgment, and direction are the new craft.”</span>
+    </div>
+
+    <div class="grid g3 reveal" style="margin-top:26px">
+      <div class="card" style="text-align:center">
+        <div style="font-size:34px;font-weight:800;color:var(--vibe)" class="fade-num" data-count="85">0</div>
+        <p style="margin:6px 0 0;font-size:14px;color:var(--muted)">of pro developers regularly use AI coding agents <span style="color:var(--dim)">(early 2026)</span></p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:34px;font-weight:800;color:var(--struct)" class="fade-num" data-count="51">0</div>
+        <p style="margin:6px 0 0;font-size:14px;color:var(--muted)">use them <b>daily</b></p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:34px;font-weight:800;color:var(--agentic)" class="fade-num" data-count="41">0</div>
+        <p style="margin:6px 0 0;font-size:14px;color:var(--muted)">of all new code is AI-generated</p>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--dim);margin-top:10px">(percentages — counters animate when on screen)</p>
+
+    <div class="callout reveal">
+      <div class="t">Why the word matters</div>
+      Telling a CTO your team is <b style="color:var(--vibe)">vibe coding</b> the payment system <i>should</i> raise alarm bells. Telling them you practice <b style="color:var(--agentic)">agentic engineering</b> — AI implementing under human-designed constraints, with tests ensuring correctness — is a completely different conversation. Same tools. Different discipline.
+    </div>
+
+    <h3 class="reveal">The 20-year arc: autocomplete → autonomy</h3>
+    <div class="card reveal">
+      <div id="evoTrack" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap"></div>
+      <p style="font-size:13px;color:var(--dim);margin:14px 0 0">Each step removed more of the "how" and left more room for the "what." Today an agent can clone a repo, plan a multi-file change, run tests, and open a PR — without you typing a line.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AGENT LOOP ============ -->
+<section id="agent">
+  <div class="wrap">
+    <span class="kicker reveal">Foundations</span>
+    <h2 class="reveal">What an agent actually is</h2>
+    <p class="lede reveal">A chatbot answers and waits. An <b>agent runs its own loop</b>: you give it a goal at the top, and it decides what to do at each step. Click a node to step through the loop — or press play.</p>
+
+    <div class="card reveal">
+      <div class="loop-stage">
+        <div>
+          <svg viewBox="0 0 360 360" class="loop-svg" id="loopSvg" aria-label="Agent loop diagram">
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#5b6b86"/>
+              </marker>
+            </defs>
+            <!-- orbit ring -->
+            <circle cx="180" cy="180" r="120" fill="none" stroke="#243049" stroke-width="2" stroke-dasharray="4 6"/>
+            <!-- rotating progress arc -->
+            <circle id="loopArc" cx="180" cy="180" r="120" fill="none" stroke="url(#g)" stroke-width="4"
+              stroke-linecap="round" stroke-dasharray="150 754" transform="rotate(-90 180 180)"/>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#34d399"/>
+            </linearGradient>
+            <!-- center -->
+            <circle cx="180" cy="180" r="46" fill="#141b2e" stroke="#8b5cf6" stroke-width="2"/>
+            <text x="180" y="174" text-anchor="middle" fill="#c4b5fd" font-size="13" font-weight="700">GOAL</text>
+            <text x="180" y="192" text-anchor="middle" fill="#94a3b8" font-size="10">at the top</text>
+            <!-- nodes generated by JS -->
+            <g id="loopNodes"></g>
+          </svg>
+        </div>
+        <div class="loop-readout" id="loopReadout">
+          <h4><span class="num">1</span> Perceive</h4>
+          <p id="loopDesc" style="color:var(--muted);font-size:15px">The agent reads its current context — the goal, prior steps, and any new information — to understand the state of the world.</p>
+          <div class="loop-ctrl">
+            <button id="loopPlay">▶ Auto-play loop</button>
+            <span style="font-size:13px;color:var(--dim)">or click any node</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="reveal">Every agent is built from five parts</h3>
+    <div class="parts reveal">
+      <div class="part"><div class="ico">🧠</div><b>Model</b><span>The reasoning engine. Reads context, decides the next thought, tool call, or message.</span></div>
+      <div class="part"><div class="ico">🔧</div><b>Tools</b><span>Connect the model to the world: APIs, code execution, databases, other agents.</span></div>
+      <div class="part"><div class="ico">💾</div><b>Memory</b><span>The state. Recalls past interactions &amp; project rules so it never starts blank.</span></div>
+      <div class="part"><div class="ico">🔁</div><b>Orchestration</b><span>The code that runs the loop — assembles context, dispatches calls, decides to continue.</span></div>
+      <div class="part"><div class="ico">🚀</div><b>Deployment</b><span>Turns the prototype into a service: hosting, identity, observability, infra.</span></div>
+    </div>
+    <div class="callout reveal" style="margin-top:20px">
+      <div class="t">The beating heart</div>
+      Get the mission → scan the scene → think it through → take action → observe &amp; iterate. <b>The loop is everything.</b> Every agent, however simple or sophisticated, is a variation on it.
+    </div>
+  </div>
+</section>
+
+<!-- ============ SPECTRUM ============ -->
+<section id="spectrum">
+  <div class="wrap">
+    <span class="kicker reveal">The core mental model</span>
+    <h2 class="reveal">Vibe coding → Agentic engineering</h2>
+    <p class="lede reveal">It's not a binary — it's a <b>spectrum</b>. The differentiator is <i>not</i> whether you use AI. It's how much <b>structure, verification, and human judgment</b> surround the AI's output. Drag the slider.</p>
+
+    <div class="card reveal">
+      <div class="spectrum-labels">
+        <span class="a">Vibe Coding</span>
+        <span class="b">Structured AI-Assisted</span>
+        <span class="c">Agentic Engineering</span>
+      </div>
+      <div class="spectrum-track"></div>
+      <input type="range" id="spec" min="0" max="100" value="0" />
+
+      <div class="dim-readout" id="dimReadout"></div>
+
+      <div class="stake-meter">
+        <span class="label">Right for:</span>
+        <span class="verdict" id="verdict">Prototypes, scripts, hackathons</span>
+        <span style="font-size:13px;color:var(--dim)" id="riskNote">High risk — acceptable for disposable code</span>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:22px">
+      <div class="t">Applied tip</div>
+      A weekend prototype can be pure vibe coding. A production API handling financial transactions demands agentic engineering. <b>The skill is knowing where to draw the line for each task.</b>
+    </div>
+
+    <div class="card reveal" style="margin-top:20px;border-color:rgba(52,211,153,.35)">
+      <h3 style="margin-top:0">The single biggest differentiator: how outputs get verified</h3>
+      <div class="grid g2" style="margin-top:6px">
+        <div class="mini after"><div class="h">✅ Tests</div>Verify the <b>deterministic</b> parts. Given <i>this</i> input, the function returns <i>that</i> output. Checked by code.</div>
+        <div class="mini after"><div class="h">🎯 Evals</div>Verify the <b>non-deterministic</b> parts. Did the agent take the right trajectory, choose the right tools, hit the quality bar? Checked by labelled datasets, rubrics &amp; LM judges.</div>
+      </div>
+      <p style="margin:14px 0 0;font-size:14px;color:var(--muted)">Without <b>both</b>, the practice is always vibe coding — no matter how sophisticated the prompts.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTEXT LAB ============ -->
+<section id="context">
+  <div class="wrap">
+    <span class="kicker reveal">The real skill</span>
+    <h2 class="reveal">Context engineering</h2>
+    <p class="lede reveal">Code quality depends less on clever prompts and more on the <b>quality of context</b> you provide. The question shifts from <i>“how do I trick the AI into good code?”</i> to <i>“what would a new teammate need to know — and how do I encode it?”</i></p>
+
+    <h3 class="reveal">The six types of context</h3>
+    <div class="six reveal">
+      <div class="c6"><b>📋 Instructions</b><br/><span>Core role, goals, operational boundaries.</span></div>
+      <div class="c6"><b>📚 Knowledge</b><br/><span>Retrieved docs, diagrams, domain data.</span></div>
+      <div class="c6"><b>💾 Memory</b><br/><span>Short-term session logs + long-term state.</span></div>
+      <div class="c6"><b>🎴 Examples</b><br/><span>Few-shot demos &amp; codebase patterns.</span></div>
+      <div class="c6"><b>🔧 Tools</b><br/><span>Precise definitions of APIs &amp; services.</span></div>
+      <div class="c6"><b>🛡️ Guardrails</b><br/><span>Hard constraints, formats, safety checks.</span></div>
+    </div>
+
+    <h3 class="reveal" style="margin-top:34px">Static vs. Dynamic context — the budget game</h3>
+    <p class="reveal" style="color:var(--muted);max-width:760px">Every token in <b style="color:#fb7185">static</b> context is present in <i>every</i> interaction (expensive but always-on). <b style="color:#34d399">Dynamic</b> context is loaded on demand — you only pay when it's needed. Toggle items in/out and watch the context window fill.</p>
+
+    <div class="card reveal">
+      <p style="font-size:13px;color:var(--dim);margin-top:0">Click items to load them into the context window. Notice how loading everything statically eats your budget.</p>
+      <div style="margin-bottom:8px"><b style="color:#fb7185;font-size:13px">STATIC — always loaded</b></div>
+      <div id="staticChips"></div>
+      <div style="margin:14px 0 8px"><b style="color:#34d399;font-size:13px">DYNAMIC — loaded on demand (via Skills / tools / RAG)</b></div>
+      <div id="dynamicChips"></div>
+
+      <div class="ctx-window" style="margin-top:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b style="font-size:13px">Context window</b>
+          <span class="ctx-tokens" id="ctxTokens">used 0 / 100k tokens</span>
+        </div>
+        <div class="ctx-bar" id="ctxBar">
+          <div class="ctx-seg ctx-free" style="width:100%">free</div>
+        </div>
+        <div id="ctxVerdict" style="font-size:13.5px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:22px">
+      <div class="t">Agent Skills — progressive disclosure</div>
+      The most powerful pattern for dynamic context. The agent stays a lightweight <b>generalist</b>, sees only skill <i>metadata</i> at startup, loads full instructions when a task matches, and pulls deep reference material only when explicitly needed. It can carry dozens of specialized capabilities while paying the token cost for only the one in use.
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEW SDLC ============ -->
+<section id="sdlc">
+  <div class="wrap">
+    <span class="kicker reveal">The transformation</span>
+    <h2 class="reveal">AI compresses the SDLC — unevenly</h2>
+    <p class="lede reveal">Implementation that took weeks now takes hours. But requirements, architecture, and verification stay stubbornly human-paced. The result isn't a faster old SDLC — it's a <b>different workflow</b>. Click each phase to see how it changes (and how much it compresses).</p>
+
+    <div class="sdlc-flow reveal" id="sdlcFlow"></div>
+    <div class="phase-detail reveal" id="phaseDetail"></div>
+  </div>
+</section>
+
+<!-- ============ FACTORY ============ -->
+<section id="factory">
+  <div class="wrap">
+    <span class="kicker reveal">The unifying mental model</span>
+    <h2 class="reveal">The factory model</h2>
+    <p class="lede reveal">The developer's primary output is <b>no longer code — it's the system that produces code.</b> A factory manager doesn't assemble every widget by hand; they design the assembly line and ensure quality control.</p>
+
+    <div class="card reveal">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-weight:700;font-size:15px">
+        <span style="padding:12px 18px;border-radius:12px;background:rgba(139,92,246,.14);color:#c4b5fd">👷 Developer designs the system</span>
+        <span style="color:var(--dim);font-size:22px">→</span>
+        <span style="padding:12px 18px;border-radius:12px;background:rgba(56,189,248,.12);color:var(--struct)">🤖 Agents produce the code</span>
+        <span style="color:var(--dim);font-size:22px">→</span>
+        <span style="padding:12px 18px;border-radius:12px;background:rgba(52,211,153,.12);color:var(--agentic)">✅ Tests verify the output</span>
+      </div>
+      <div class="grid g3" style="margin-top:22px">
+        <div class="mini after"><div class="h">Specs &amp; context</div>Define what needs to be built.</div>
+        <div class="mini after"><div class="h">Agents</div>Translate specs into implementation.</div>
+        <div class="mini after"><div class="h">Tests &amp; gates</div>Verify correctness automatically.</div>
+        <div class="mini after"><div class="h">Feedback loops</div>Route failures back to agents to fix.</div>
+        <div class="mini after"><div class="h">Guardrails</div>Constrain agents to safe behavior.</div>
+        <div class="mini after"><div class="h">The payoff</div>Give agents <b>success criteria</b>, not step-by-step instructions — then let them iterate.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HARNESS ============ -->
+<section id="harness">
+  <div class="wrap">
+    <span class="kicker reveal">What surrounds the model</span>
+    <h2 class="reveal">Harness engineering</h2>
+    <p class="lede reveal">There's a temptation to treat the model as the system — new model, smarter agent; old model, worse agent. <b>That intuition is wrong, and it leads to the wrong investments.</b></p>
+
+    <div class="harness-eq reveal">
+      <span class="box agent">Agent</span>
+      <span class="op">=</span>
+      <span class="box model">Model</span>
+      <span class="op">+</span>
+      <span class="box harness">Harness</span>
+    </div>
+
+    <p class="reveal" style="color:var(--muted);text-align:center;max-width:740px;margin:0 auto 26px">A raw model isn't an agent. It becomes one once a <b>harness</b> gives it state, tool execution, feedback loops, and enforceable constraints. Click each harness component:</p>
+
+    <div class="harness-anatomy reveal" id="harnessAnatomy"></div>
+    <div class="h-detail reveal" id="harnessDetail">👆 Click a component above to see what it does and where it lives in the SDLC.</div>
+
+    <div class="grid g2 reveal" style="margin-top:24px">
+      <div class="card" style="border-color:rgba(52,211,153,.35);text-align:center">
+        <div style="font-size:30px;font-weight:800;color:var(--agentic)">Top 30 → Top 5</div>
+        <p style="font-size:14px;color:var(--muted);margin:8px 0 0">On Terminal Bench 2.0, one team moved their agent into the Top 5 by changing <b>only the harness</b> — no model change at all.</p>
+      </div>
+      <div class="card" style="border-color:rgba(56,189,248,.35);text-align:center">
+        <div style="font-size:30px;font-weight:800;color:var(--struct)">+13.7 points</div>
+        <p style="font-size:14px;color:var(--muted);margin:8px 0 0">A LangChain study raised a coding agent's score by tweaking <b>only the system prompt, tools &amp; middleware</b> around a fixed model.</p>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:22px">
+      <div class="t">The everyday lesson</div>
+      When an agent does something wrong, the first instinct is to blame the model. More often the failure traces to a missing tool, a vague rule, an absent guardrail, or a context window stuffed with noise. <b>Most agent failures, examined honestly, are configuration failures.</b>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROLES ============ -->
+<section id="roles">
+  <div class="wrap">
+    <span class="kicker reveal">The evolving role</span>
+    <h2 class="reveal">Conductor &amp; Orchestrator</h2>
+    <p class="lede reveal">Two modes developers move between fluidly. Toggle to compare — and notice the <b>80% problem</b> that both must navigate.</p>
+
+    <div class="co-toggle reveal">
+      <div class="seg">
+        <button class="on" data-co="cond">🎼 Conductor</button>
+        <button data-co="orch">🎭 Orchestrator</button>
+        <button data-co="both">Compare both</button>
+      </div>
+    </div>
+
+    <div class="co-panel reveal">
+      <div class="co-side co-cond" id="sideCond">
+        <div class="role">Hands-on · Real-time</div>
+        <h4>🎼 The Conductor</h4>
+        <p style="font-size:14px;color:var(--muted);margin:4px 0 0">Works in real time with an AI pair-programmer. In the IDE, watching code appear, guiding with prompts and corrections — directing every movement.</p>
+        <ul>
+          <li><b>Good for:</b> complex logic, tricky debugging, unfamiliar codebases.</li>
+          <li><b>Tools:</b> Copilot, Gemini Code Assist, Cursor, Windsurf.</li>
+          <li><b>Strength:</b> preserves understanding &amp; control.</li>
+          <li><b>Risk:</b> becomes a bottleneck — directing every keystroke caps the throughput gain.</li>
+        </ul>
+      </div>
+      <div class="co-side co-orch" id="sideOrch">
+        <div class="role">Async · Multi-agent delegation</div>
+        <h4>🎭 The Orchestrator</h4>
+        <p style="font-size:14px;color:var(--muted);margin:4px 0 0">Operates at a higher abstraction. Defines goals, assigns them to agents working in parallel/background, checks in periodically, course-corrects.</p>
+        <ul>
+          <li><b>Good for:</b> well-defined tasks, bug fixes, migrations, test generation.</li>
+          <li><b>Tools:</b> Jules, Copilot agent mode, Cursor background agents, Claude Code.</li>
+          <li><b>Demands:</b> specification · decomposition · evaluation · system design.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:24px;border-color:rgba(251,191,36,.35)">
+      <h3 style="margin-top:0;color:var(--warn)">⚠️ The 80% Problem</h3>
+      <p style="margin:0">AI rapidly generates ~80% of a feature. The remaining <b>20%</b> — edge cases, error handling, integration points, subtle correctness — demands deep contextual knowledge models often lack.</p>
+      <div style="height:34px;border-radius:10px;overflow:hidden;display:flex;margin:16px 0 8px;border:1px solid var(--line)">
+        <div style="width:80%;background:linear-gradient(90deg,#34d399,#059669);display:grid;place-items:center;font-size:13px;font-weight:700;color:#06121f">80% — AI generates fast</div>
+        <div style="width:20%;background:linear-gradient(90deg,#fb7185,#e11d48);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff">20% — the hard part</div>
+      </div>
+      <p style="margin:8px 0 0;font-size:14px;color:var(--muted)">The errors evolved from syntax mistakes to <b>insidious conceptual failures</b>: wrong business-logic assumptions, missed edge cases, architecture that creates long-term debt. They're harder to catch precisely because the code <i>looks right</i> and may even pass basic tests. The pros use AI for what it's good at, and reserve their attention for where it struggles.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ECONOMICS ============ -->
+<section id="economics">
+  <div class="wrap">
+    <span class="kicker reveal">Follow the money</span>
+    <h2 class="reveal">The economics of AI development</h2>
+    <p class="lede reveal">For leaders, the metric isn't velocity — it's <b>Total Cost of Ownership</b>. The trade is between <b style="color:#a78bfa">CapEx</b> (upfront investment) and <b style="color:#f59e0b">OpEx</b> (ongoing cost to run, fix, maintain — heavily driven by the token economy).</p>
+
+    <div class="econ-toggle reveal seg">
+      <button class="on" data-econ="vibe">Vibe Coding</button>
+      <button data-econ="agentic">Agentic Engineering</button>
+    </div>
+
+    <div class="card reveal">
+      <div class="econ-chart">
+        <div class="econ-col">
+          <div class="econ-bars">
+            <div class="ebar capex" id="barCapex" style="height:18%">low</div>
+            <div class="ebar opex" id="barOpex" style="height:90%">high</div>
+          </div>
+          <div style="display:flex;gap:18px;margin-top:8px">
+            <span class="econ-label" style="color:#a78bfa">CapEx</span>
+            <span class="econ-label" style="color:#f59e0b">OpEx</span>
+          </div>
+        </div>
+        <div>
+          <h4 id="econTitle" style="margin:0 0 8px">Vibe Coding — Low CapEx, High OpEx</h4>
+          <div id="econPoints" style="font-size:14px;color:var(--muted)"></div>
+        </div>
+      </div>
+      <div class="tco-note" id="tcoNote"></div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:22px">
+      <div class="t">Context engineering is a financial lever</div>
+      LLMs charge for every token. A dense, high-signal payload (a precise <code class="inl">AGENTS.md</code> + guardrails) raises first-pass success and avoids costly trial-and-error loops. <b>Intelligent model routing</b> compounds it: frontier models for architecture &amp; hard implementation, cheap fast models for test generation, code review &amp; CI monitoring.
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHERE TO START ============ -->
+<section id="start">
+  <div class="wrap">
+    <span class="kicker reveal">Make it real</span>
+    <h2 class="reveal">Where to start — for an individual developer</h2>
+    <p class="lede reveal">The shift from syntax to intent is the work in front of us today. AI <b>amplifies the engineering culture it lands in</b>. Here's the practical on-ramp.</p>
+
+    <div class="grid g2 reveal" id="startGrid"></div>
+  </div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section id="quiz">
+  <div class="wrap">
+    <span class="kicker reveal">Check your understanding</span>
+    <h2 class="reveal">Test yourself</h2>
+    <p class="lede reveal">Five questions on the core ideas. No peeking.</p>
+    <div id="quizHost" class="reveal"></div>
+    <div class="quiz-score reveal" id="quizScore" style="text-align:center;font-size:16px;margin-top:18px"></div>
+  </div>
+</section>
+
+<!-- ============ PRINCIPLES / CLOSE ============ -->
+<section id="close">
+  <div class="wrap">
+    <span class="kicker reveal">The durable takeaways</span>
+    <h2 class="reveal">Three principles that outlast the tools</h2>
+    <div style="margin-top:24px">
+      <div class="principle reveal"><div class="pnum">1</div><div><b>Structure scales, vibes don't.</b><p style="margin:6px 0 0;color:var(--muted)">Vibe coding is valid for exploration and prototypes. For software organizations depend on, the discipline of agentic engineering isn't optional. The gap between “it seems to work” and “it works correctly under all conditions” is where outages and security holes live.</p></div></div>
+      <div class="principle reveal"><div class="pnum">2</div><div><b>AI amplifies your engineering culture.</b><p style="margin:6px 0 0;color:var(--muted)">Teams with strong testing, clear architecture, and healthy review get dramatically more value. AI is a force multiplier — it multiplies both your strengths <i>and</i> your weaknesses.</p></div></div>
+      <div class="principle reveal"><div class="pnum">3</div><div><b>The human role is evolving, not diminishing.</b><p style="margin:6px 0 0;color:var(--muted)">Builders who understand architecture, write precise specs, evaluate output critically, and design feedback loops are more valuable than ever. The skills shift from implementation to judgment.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="takeaway">“Intent is the new interface. The machine handles implementation; the human provides <span style="color:var(--agentic)">intent, architecture, and judgment</span>.”</div>
+    <p>Interactive lesson built from <b>The New SDLC with Vibe Coding</b> · Osmani, Saboo &amp; Kartakis, May 2026.</p>
+    <p style="margin-top:6px">Tip: every diagram is interactive — drag the <span class="kbd">spectrum</span>, click the <span class="kbd">loop nodes</span>, toggle the <span class="kbd">context window</span>.</p>
+  </div>
+</footer>
+
+<script>
+/* ===================== Helpers ===================== */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+
+/* ===================== Scroll progress + reveal + active nav ===================== */
+const pbar = $('#pbar');
+window.addEventListener('scroll',()=>{
+  const h = document.documentElement;
+  const pct = h.scrollTop/(h.scrollHeight-h.clientHeight)*100;
+  pbar.style.width = pct+'%';
+},{passive:true});
+
+const io = new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+},{threshold:.12});
+$$('.reveal').forEach(el=>io.observe(el));
+
+// active nav highlight
+const navLinks = $$('nav.toc a');
+const secs = navLinks.map(a=>$(a.getAttribute('href')));
+const navIo = new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(a=>a.classList.toggle('active', a.getAttribute('href')==='#'+e.target.id));
+    }
+  });
+},{rootMargin:'-40% 0px -55% 0px'});
+secs.forEach(s=>s&&navIo.observe(s));
+
+/* ===================== Counters ===================== */
+const counters = $$('.fade-num');
+const cIo = new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const el=e.target, target=+el.dataset.count; let cur=0;
+    const step=Math.max(1,Math.round(target/40));
+    const t=setInterval(()=>{ cur+=step; if(cur>=target){cur=target;clearInterval(t);} el.textContent=cur+'%'; },22);
+    cIo.unobserve(el);
+  });
+},{threshold:.6});
+counters.forEach(c=>cIo.observe(c));
+
+/* ===================== Evolution track ===================== */
+const evo = [
+  {y:'~2018',t:'Autocomplete',d:'Token prediction in the editor.'},
+  {y:'~2021',t:'Inline suggestions',d:'Completing entire functions.'},
+  {y:'~2023',t:'Chat interfaces',d:'Describe a feature in natural language.'},
+  {y:'2025+',t:'Autonomous agents',d:'Clone, plan, edit, test, open a PR.'},
+];
+$('#evoTrack').innerHTML = evo.map((s,i)=>`
+  <div style="flex:1;min-width:150px;padding:16px;border:1px solid var(--line);border-radius:12px;
+       background:linear-gradient(180deg, rgba(139,92,246,${0.04+i*0.04}), transparent);">
+    <div style="font-family:var(--mono);font-size:12px;color:var(--dim)">${s.y}</div>
+    <div style="font-weight:800;margin:6px 0 4px;font-size:15px;color:${['#f59e0b','#fbbf24','#38bdf8','#34d399'][i]}">${s.t}</div>
+    <div style="font-size:12.5px;color:var(--muted)">${s.d}</div>
+  </div>${i<evo.length-1?'<div style="display:flex;align-items:center;color:var(--dim);font-size:20px">→</div>':''}
+`).join('');
+
+/* ===================== Agent loop ===================== */
+const loopSteps = [
+  {t:'Perceive', d:'The agent reads its current context — the goal, prior steps, and any new information — to understand the state of the world.'},
+  {t:'Plan',    d:'The model reasons about what should happen next and decides the immediate next action toward the goal.'},
+  {t:'Act',     d:'It takes an action through a tool: call an API, run code, query a database, or delegate to another agent.'},
+  {t:'Observe', d:'It captures the result of that action — output, errors, new data — and feeds it back into context.'},
+  {t:'Iterate', d:'It loops: re-perceives with the new information and continues until the goal is met or a stopping condition fires.'},
+];
+const loopColors=['#8b5cf6','#a78bfa','#38bdf8','#22d3ee','#34d399'];
+const nodeG=$('#loopNodes');
+const cx=180, cy=180, R=120;
+let curStep=0, playing=false, playTimer=null;
+loopSteps.forEach((s,i)=>{
+  const ang = (-90 + i*(360/loopSteps.length))*Math.PI/180;
+  const x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang);
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.classList.add('loop-node'); g.dataset.i=i;
+  g.innerHTML=`
+    <circle cx="${x}" cy="${y}" r="30" fill="#141b2e" stroke="${loopColors[i]}" stroke-width="2"/>
+    <text x="${x}" y="${y-3}" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">${i+1}</text>
+    <text x="${x}" y="${y+12}" text-anchor="middle" fill="${loopColors[i]}" font-size="9">${s.t}</text>`;
+  g.addEventListener('click',()=>{ stopPlay(); setStep(i); });
+  nodeG.appendChild(g);
+});
+function setStep(i){
+  curStep=i;
+  $$('.loop-node circle').forEach((c,idx)=>{
+    c.setAttribute('r', idx===i?34:30);
+    c.setAttribute('fill', idx===i?loopColors[idx]:'#141b2e');
+    c.setAttribute('stroke-width', idx===i?3:2);
+  });
+  $$('.loop-node text').forEach(t=>{ if(t.getAttribute('font-size')==='12') t.setAttribute('fill', '#fff'); });
+  const ro=$('#loopReadout');
+  ro.querySelector('h4').innerHTML=`<span class="num" style="background:${loopColors[i]}">${i+1}</span> ${loopSteps[i].t}`;
+  $('#loopDesc').textContent=loopSteps[i].d;
+  // arc
+  const frac=(i+1)/loopSteps.length;
+  const circ=2*Math.PI*R;
+  $('#loopArc').setAttribute('stroke-dasharray', `${circ*frac} ${circ}`);
+}
+function stopPlay(){ playing=false; clearInterval(playTimer); $('#loopPlay').textContent='▶ Auto-play loop'; }
+$('#loopPlay').addEventListener('click',()=>{
+  if(playing){ stopPlay(); return; }
+  playing=true; $('#loopPlay').textContent='⏸ Pause';
+  playTimer=setInterval(()=>{ setStep((curStep+1)%loopSteps.length); },1400);
+});
+setStep(0);
+
+/* ===================== Spectrum slider ===================== */
+const dims = [
+  {k:'Intent specification', v:['Casual natural-language prompts','Detailed prompts with examples & constraints','Formal specs, architecture docs, memory files']},
+  {k:'Verification', v:['“Does it seem to work?”','Manual testing, spot-checking','Automated test suites, CI/CD gates, LM judges']},
+  {k:'Codebase understanding', v:['Minimal; may not read the code','Selective review of critical paths','Comprehensive review of architecture']},
+  {k:'Error handling', v:['Copy-paste errors back to the AI','Developer diagnoses root cause, AI fixes','Agents self-diagnose within bounds; humans handle architecture']},
+  {k:'Appropriate scope', v:['Prototypes, scripts, hackathons','Features within established codebases','Production systems, team-scale dev']},
+  {k:'Risk profile', v:['High — fine for disposable code','Moderate — judgment at key checkpoints','Low — systematic verification at every stage']},
+];
+const colsByZone=['var(--vibe)','var(--struct)','var(--agentic)'];
+const dr=$('#dimReadout');
+dr.innerHTML=dims.map((d,i)=>`<div class="dim-row"><div class="k">${d.k}</div><div class="v" id="dv${i}"></div></div>`).join('');
+const verdicts=[
+  {label:'Prototypes, scripts, hackathons', risk:'High risk — acceptable for disposable code', col:'rgba(245,158,11,.15)', txt:'var(--vibe)'},
+  {label:'Features in established codebases', risk:'Moderate risk — human judgment at checkpoints', col:'rgba(56,189,248,.15)', txt:'var(--struct)'},
+  {label:'Production, team-scale systems', risk:'Low risk — systematic verification at every stage', col:'rgba(52,211,153,.15)', txt:'var(--agentic)'},
+];
+function zoneFor(val){ return val<34?0:val<67?1:2; }
+function renderSpectrum(val){
+  const z=zoneFor(val);
+  dims.forEach((d,i)=>{
+    const el=$('#dv'+i);
+    el.textContent=d.v[z];
+    el.style.color=colsByZone[z];
+  });
+  const vd=$('#verdict');
+  vd.textContent=verdicts[z].label;
+  vd.style.background=verdicts[z].col;
+  vd.style.color=verdicts[z].txt;
+  $('#riskNote').textContent=verdicts[z].risk;
+}
+$('#spec').addEventListener('input',e=>renderSpectrum(+e.target.value));
+renderSpectrum(0);
+
+/* ===================== Context lab ===================== */
+const ctxItems=[
+  {n:'System instructions', k:'static', tok:8},
+  {n:'CLAUDE.md / AGENTS.md', k:'static', tok:6},
+  {n:'Global memory / persona', k:'static', tok:7},
+  {n:'Skill: PDF parsing', k:'dynamic', tok:9},
+  {n:'Tool result: test output', k:'dynamic', tok:7},
+  {n:'RAG: architecture doc', k:'dynamic', tok:12},
+  {n:'Windowed session history', k:'dynamic', tok:10},
+];
+const CAP=100;
+let loaded=new Set([0,1]); // start with some static loaded
+function renderChips(){
+  $('#staticChips').innerHTML=ctxItems.map((it,i)=>it.k==='static'?
+    `<span class="chip static ${loaded.has(i)?'on':''}" data-i="${i}">${it.n}<span class="tag">${it.tok}k</span></span>`:'').join('');
+  $('#dynamicChips').innerHTML=ctxItems.map((it,i)=>it.k==='dynamic'?
+    `<span class="chip dynamic ${loaded.has(i)?'on':''}" data-i="${i}">${it.n}<span class="tag">${it.tok}k</span></span>`:'').join('');
+  $$('.chip').forEach(c=>c.addEventListener('click',()=>{
+    const i=+c.dataset.i;
+    if(loaded.has(i)) loaded.delete(i); else loaded.add(i);
+    renderChips(); renderCtx();
+  }));
+}
+function renderCtx(){
+  let staticTok=0, dynTok=0;
+  loaded.forEach(i=>{ const it=ctxItems[i]; if(it.k==='static') staticTok+=it.tok; else dynTok+=it.tok; });
+  const used=staticTok+dynTok;
+  const free=Math.max(0,CAP-used);
+  const bar=$('#ctxBar');
+  bar.innerHTML=`
+    ${staticTok>0?`<div class="ctx-seg ctx-static" style="width:${staticTok}%">${staticTok>=10?'static '+staticTok+'k':''}</div>`:''}
+    ${dynTok>0?`<div class="ctx-seg ctx-dynamic" style="width:${dynTok}%">${dynTok>=10?'dynamic '+dynTok+'k':''}</div>`:''}
+    <div class="ctx-seg ctx-free" style="width:${free}%">${free>10?'free '+free+'k':''}</div>`;
+  $('#ctxTokens').textContent=`used ${used} / 100k tokens  ·  static ${staticTok}k always-on`;
+  let msg='';
+  if(staticTok>30) msg='⚠️ Heavy static load — every token here is paid on <b>every</b> interaction, even when irrelevant. Consider moving some to dynamic Skills.';
+  else if(used>CAP*0.85) msg='⚠️ Window nearly full — signal gets diluted. Trim or load on demand.';
+  else if(dynTok>0) msg='✅ Nice — dynamic context is loaded only when the task needs it. You pay per-use, not per-interaction.';
+  else msg='Static context defines who the agent is. Now try loading some <b>dynamic</b> items — they cost tokens only when needed.';
+  $('#ctxVerdict').innerHTML=msg;
+}
+renderChips(); renderCtx();
+
+/* ===================== SDLC phases ===================== */
+const phases=[
+  {ico:'📝',name:'Requirements',comp:90,col:'#34d399',
+    before:'A manual, error-prone handoff document. Persistent gap between what stakeholders want and what engineers build.',
+    after:'AI generates user stories from briefs, finds edge cases humans miss, produces API schemas from natural language, and builds interactive prototypes. Requirements become a conversation that produces spec + initial implementation simultaneously.'},
+  {ico:'🏛️',name:'Architecture',comp:25,col:'#fb7185',
+    before:'Fundamentally about trade-offs (consistency vs. availability, build vs. buy) tied to business context and strategy.',
+    after:'Stays the most human-centric phase. AI cannot fully grasp the trade-offs — but it excels at implementing decisions once made: scaffolding apps, generating consistent patterns, enforcing conventions.'},
+  {ico:'⚙️',name:'Implementation',comp:85,col:'#34d399',
+    before:'Developers write the bulk of the code by hand — boilerplate, algorithms, multi-file changes.',
+    after:'Agents generate whole features from descriptions. Productivity gains of 25–39% are real — but nuanced: one METR study found experienced devs took 19% longer on some tasks due to verification time. Writing becomes reviewing, guiding, verifying.'},
+  {ico:'🧪',name:'Testing & QA',comp:75,col:'#38bdf8',
+    before:'Humans write tests after the fact; verification is a separate, often-skipped chore.',
+    after:'Output evaluation checks the artifact (does it compile/pass?); trajectory evaluation checks the whole sequence of tool calls & reasoning. Both matter. Tests & evals become the primary way to communicate intent. Wire it into a continuous quality flywheel.'},
+  {ico:'🔍',name:'Review & Deploy',comp:70,col:'#38bdf8',
+    before:'Humans carry the full cognitive load of catching bugs, style issues and vulnerabilities in review.',
+    after:'AI is a first-pass reviewer for bugs, style, security, perf — reducing reviewer load (not replacing human judgment on design & strategy). Deploy pipelines become AI-aware: monitor health, auto-rollback, predict risk.'},
+  {ico:'🔧',name:'Maintenance',comp:80,col:'#34d399',
+    before:'Legacy code "too risky to touch" because only the original authors understood it. Migrations so tedious they never happened.',
+    after:'The most underestimated shift. Agents read a codebase, learn its patterns, and safely refactor, modernize APIs, and migrate frameworks — turning frozen technical debt into something you can actually pay down.'},
+];
+const flow=$('#sdlcFlow');
+flow.innerHTML=phases.map((p,i)=>`
+  <div class="phase ${i===0?'on':''}" data-i="${i}">
+    <div class="ph-ico">${p.ico}</div>
+    <div class="ph-name">${p.name}</div>
+    <div class="ph-comp" style="color:${p.col}">${p.comp}% faster</div>
+  </div>`).join('');
+function renderPhase(i){
+  const p=phases[i];
+  $('#phaseDetail').innerHTML=`
+    <h4>${p.ico} ${p.name}</h4>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:4px">How much AI compresses this phase</div>
+    <div class="compress-bar"><div class="compress-fill" style="width:${p.comp}%"></div></div>
+    <div style="font-size:12px;color:var(--dim);margin-top:4px">${p.comp}% of the work compressed by AI ${p.comp<40?'— stays stubbornly human-paced':''}</div>
+    <div class="two-col-mini">
+      <div class="mini before"><div class="h">Before AI</div>${p.before}</div>
+      <div class="mini after"><div class="h">With AI</div>${p.after}</div>
+    </div>`;
+  $$('.phase').forEach((el,idx)=>el.classList.toggle('on',idx===i));
+}
+$$('.phase').forEach(el=>el.addEventListener('click',()=>renderPhase(+el.dataset.i)));
+renderPhase(0);
+
+/* ===================== Harness anatomy ===================== */
+const harnessComps=[
+  {ico:'📋',n:'Instructions & Rule Files',d:'AGENTS.md, CLAUDE.md, GEMINI.md, skill files, sub-agent prompts — the text defining who the agent is and what it must never do.',phase:'Used when <b>configuring the harness</b> (Requirements/Planning/Architecture): you set the rules and constraints before the agent writes production code.'},
+  {ico:'🔧',n:'Tools',d:'Functions, MCP servers, and APIs the agent can call — plus the prose telling the model when and how to call them.',phase:'Used when <b>running the harness</b> (Implementation): the model reads files, searches, and runs code through these tools.'},
+  {ico:'📦',n:'Sandboxes',d:'Where the agent\'s code actually runs — what it can access and, crucially, what it cannot reach.',phase:'Used when <b>running the harness</b> (Implementation): generated code executes in an isolated environment.'},
+  {ico:'🎛️',n:'Orchestration logic',d:'Sub-agent spawning, model routing, hand-offs between specialists, and the rules that govern when each fires.',phase:'Used in the <b>feedback loop</b> (Testing/QA): captures a failing test\'s error and routes it back to the model — the think→act→observe loop.'},
+  {ico:'🛡️',n:'Guardrails / Hooks',d:'Deterministic code that runs at lifecycle points: before a tool call, after a file edit, before a commit. For things the agent should never forget but often does.',phase:'Used in <b>QA</b> and <b>Deployment</b>: e.g. block a commit that contains a hard-coded password — deterministically, every time.'},
+  {ico:'📊',n:'Observability',d:'Logs, traces, evals, cost & latency metering. Without it, there\'s no way to tell if the agent is doing well or quietly drifting.',phase:'Used when <b>observing the harness</b> (Review/Deploy/Maintenance): track token cost, latency, and drift; audit exactly why an agent made a decision.'},
+];
+$('#harnessAnatomy').innerHTML=harnessComps.map((c,i)=>`
+  <div class="h-comp ${i===0?'on':''}" data-i="${i}">
+    <div style="font-size:22px">${c.ico}</div>
+    <b>${c.n}</b><p>${c.d}</p>
+  </div>`).join('');
+function renderHarness(i){
+  $('#harnessDetail').innerHTML=`<b style="color:var(--agentic)">${harnessComps[i].ico} ${harnessComps[i].n}</b> — ${harnessComps[i].phase}`;
+  $$('.h-comp').forEach((el,idx)=>el.classList.toggle('on',idx===i));
+}
+$$('.h-comp').forEach(el=>el.addEventListener('click',()=>renderHarness(+el.dataset.i)));
+renderHarness(0);
+
+/* ===================== Conductor / Orchestrator ===================== */
+$$('[data-co]').forEach(b=>b.addEventListener('click',()=>{
+  $$('[data-co]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  const m=b.dataset.co;
+  $('#sideCond').classList.toggle('dim', m==='orch');
+  $('#sideOrch').classList.toggle('dim', m==='cond');
+}));
+
+/* ===================== Economics ===================== */
+const econ={
+  vibe:{title:'Vibe Coding — Low CapEx, High OpEx', capex:18, opex:90,
+    points:`<ul style="margin:0;padding-left:18px">
+      <li><b>Token burn rate:</b> dumping huge unstructured files, repeatedly asking the model to fix its own unverified mistakes — an expensive prompting loop with low first-pass success.</li>
+      <li><b>Maintenance tax:</b> inconsistent "spaghetti" — engineers spend days reverse-engineering it six months later.</li>
+      <li><b>Security remediation:</b> no eval harness → rapid generation of vulnerabilities → exponentially costlier to fix in production.</li>
+    </ul>`,
+    note:{txt:'💸 Cheap to start, expensive forever. The barrier to entry is ~zero, but a compounding OpEx debt is hidden underneath.', bg:'rgba(251,113,133,.1)', bd:'rgba(251,113,133,.35)'}},
+  agentic:{title:'Agentic Engineering — High CapEx, Low OpEx', capex:80, opex:24,
+    points:`<ul style="margin:0;padding-left:18px">
+      <li><b>Upfront investment:</b> design API schemas, build deterministic test suites, structure the agent's context — before a line of production code.</li>
+      <li><b>Marginal cost drops:</b> output is structurally sound, pre-tested, aligned to standards. The "factory" is strictly governed.</li>
+      <li><b>Levers:</b> context engineering raises first-pass success; model routing sends cheap tasks to cheap models.</li>
+    </ul>`,
+    note:{txt:'🏗️ Expensive to set up, cheap to run & maintain. The upfront cost flips the economic model — lower Total Cost of Ownership at scale.', bg:'rgba(52,211,153,.1)', bd:'rgba(52,211,153,.35)'}},
+};
+function renderEcon(k){
+  const e=econ[k];
+  $('#barCapex').style.height=e.capex+'%'; $('#barCapex').textContent=e.capex>50?'high':'low';
+  $('#barOpex').style.height=e.opex+'%'; $('#barOpex').textContent=e.opex>50?'high':'low';
+  $('#econTitle').textContent=e.title;
+  $('#econPoints').innerHTML=e.points;
+  const n=$('#tcoNote'); n.innerHTML=e.note.txt; n.style.background=e.note.bg; n.style.border='1px solid '+e.note.bd;
+}
+$$('[data-econ]').forEach(b=>b.addEventListener('click',()=>{
+  $$('[data-econ]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  renderEcon(b.dataset.econ);
+}));
+renderEcon('vibe');
+
+/* ===================== Where to start cards ===================== */
+const startCards=[
+  {n:'1',t:'Set up an AGENTS.md',d:'Pick the convention matching your agent. Start with ten lines: stack, conventions, hard rules, workflow. Add a rule every time the agent does something it shouldn\'t do again.'},
+  {n:'2',t:'Install skills for your agent',d:'Give your coding agent a set of skills (e.g. an Agents CLI) to build, evaluate, deploy and optimize agents — without learning a new SDK.'},
+  {n:'3',t:'Pick one repetitive workflow',d:'Make it your first agent: a research workflow, a code review, a recurring report. Building one agent end-to-end teaches more than reading about a hundred.'},
+  {n:'4',t:'Write tests & evals before the code',d:'Together they are the contract with the AI. A good eval suite communicates intent more precisely than any prompt — and turns vibe coding into agentic engineering.'},
+  {n:'5',t:'Review every line that ships',d:'Be skeptical of anything clever. Check imports for real packages. Verify error handling covers realistic failures. Code the team doesn\'t understand becomes debugging cost it can\'t afford.'},
+  {n:'6',t:'Maintain your developer skills',d:'AI handles the routine so you focus on the hard. That only works if debugging, system design, and intuition for correctness stay sharp. Treat AI as a way to apply expertise at scale — not replace it.'},
+];
+$('#startGrid').innerHTML=startCards.map(c=>`
+  <div class="card" style="display:flex;gap:16px;align-items:flex-start">
+    <div style="font-size:26px;font-weight:800;color:var(--accent);line-height:1">${c.n}</div>
+    <div><b style="font-size:16px">${c.t}</b><p style="margin:6px 0 0;font-size:14px;color:var(--muted)">${c.d}</p></div>
+  </div>`).join('');
+
+/* ===================== Quiz ===================== */
+const quiz=[
+  {q:'What is the single biggest differentiator between vibe coding and agentic engineering?',
+   opts:['The specific AI model you use','How outputs get verified (tests + evals)','How fast the agent generates code','Whether you use a terminal or an IDE'],
+   a:1, e:'It\'s not the model or the tool — a developer can vibe code or apply agentic engineering with the same agent. The differentiator is how much structure and verification surround the output. Tests verify deterministic parts; evals verify non-deterministic parts.'},
+  {q:'In the equation Agent = Model + Harness, what does the harness include?',
+   opts:['Only the system prompt','Just the tools and APIs','Instructions, tools, sandboxes, orchestration, guardrails & observability','The training data of the model'],
+   a:2, e:'The harness is all the scaffolding around the model. On Terminal Bench 2.0, a team reached the Top 5 by changing only the harness — no model change. Most agent failures are configuration failures, not model failures.'},
+  {q:'What best describes the "80% problem"?',
+   opts:['AI is correct 80% of the time on average','Agents generate ~80% of a feature fast, but the last 20% (edge cases, integration, subtle correctness) needs deep context they lack','You should only let AI write 80% of any file','80% of developers use AI daily'],
+   a:1, e:'The hard 20% — edge cases, error handling, integration points, subtle correctness — demands contextual knowledge models often lack. These errors are insidious because the code "looks right" and may pass basic tests.'},
+  {q:'Why is the static-vs-dynamic context boundary a real engineering trade-off?',
+   opts:['Static context is always free','Dynamic context can never be trusted','Static context is paid on every interaction; too much wastes tokens & dilutes signal, too little means the agent forgets rules','Dynamic context loads faster than static'],
+   a:2, e:'Static context (system instructions, rule files) is present in every interaction regardless of relevance — expensive. Dynamic context (skills, tool results, RAG) is loaded on demand. The best systems treat this boundary as a first-class, versioned decision.'},
+  {q:'In the factory model, what is the developer\'s primary output?',
+   opts:['As many lines of code as possible','The system that produces code — specs, agents, tests, feedback loops, guardrails','Detailed documentation','The fastest possible prompt'],
+   a:1, e:'A factory manager designs the assembly line and ensures quality control rather than assembling every widget by hand. Success comes from giving agents success criteria rather than step-by-step instructions, then letting them iterate.'},
+];
+let score=0, answered=0;
+$('#quizHost').innerHTML=quiz.map((item,qi)=>`
+  <div class="quiz" style="margin-bottom:18px">
+    <div class="q">${qi+1}. ${item.q}</div>
+    ${item.opts.map((o,oi)=>`<button class="opt" data-q="${qi}" data-o="${oi}">${o}</button>`).join('')}
+    <div class="explain" id="exp${qi}">${item.e}</div>
+  </div>`).join('');
+$$('.opt').forEach(b=>b.addEventListener('click',()=>{
+  const qi=+b.dataset.q, oi=+b.dataset.o, correct=quiz[qi].a;
+  const host=b.closest('.quiz');
+  if(host.dataset.done) return;
+  host.dataset.done='1'; answered++;
+  $$('.opt',host).forEach(x=>{
+    x.disabled=true;
+    if(+x.dataset.o===correct) x.classList.add('correct');
+  });
+  if(oi===correct){ score++; }
+  else b.classList.add('wrong');
+  $('#exp'+qi).classList.add('show');
+  const sc=$('#quizScore');
+  sc.innerHTML=`Score: <b style="color:var(--agentic)">${score}</b> / ${answered} answered`;
+  if(answered===quiz.length){
+    const pct=Math.round(score/quiz.length*100);
+    sc.innerHTML=`You scored <b style="color:var(--agentic)">${score} / ${quiz.length}</b> (${pct}%). ${pct===100?'🏆 Agentic engineer — generation is solved, you\'ve got verification down.':pct>=60?'👍 Solid grasp. Re-read the spectrum & harness sections to lock it in.':'📚 Worth another pass — the spectrum and context sections are the core.'}`;
+  }
+}));
+</script>
+</body>
+</html>
