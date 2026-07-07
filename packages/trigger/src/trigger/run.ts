@@ -16,6 +16,7 @@ import { AnthropicLlmClient, createSupabaseRateEngine } from "../../../agents/sr
  *
  * onFailure (codex Gate-4 P2-c): once Trigger.dev exhausts retries, flip a still-'processing' row to
  * 'error' so it isn't stranded forever (the poll re-enqueues only 'received'). First-writer-safe.
+ * markError is itself a Supabase call, so it is guarded — onFailure logs and never throws.
  */
 export const runRequestTask = task({
   id: "run-request",
@@ -30,6 +31,16 @@ export const runRequestTask = task({
     return await runAndPersist(tenantId, requestId, deps, store);
   },
   onFailure: async ({ payload }) => {
-    await new SupabaseRunStore(createServiceClient()).markError(payload.tenantId, payload.requestId);
+    // markError is a network call to Supabase — plausibly the SAME outage that failed the run. Never
+    // throw from onFailure: log and return, so the failure handler itself cannot crash. (If markError
+    // fails the row stays 'processing' — this log line is the operator's breadcrumb for that.)
+    try {
+      await new SupabaseRunStore(createServiceClient()).markError(payload.tenantId, payload.requestId);
+    } catch (err) {
+      console.error(
+        `run-request onFailure: markError failed for ${payload.tenantId}/${payload.requestId}`,
+        err,
+      );
+    }
   },
 });

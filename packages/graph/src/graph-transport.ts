@@ -38,6 +38,10 @@ export class GraphFetchTransport implements GraphTransport {
       grant_type: "client_credentials",
       client_id: this.creds.clientId,
       client_secret: this.creds.clientSecret,
+      // `.default` = ALL application permissions consented to this app registration — Mail.Send
+      // included (the send worker shares this GRAPH_CLIENT_ID). App-only tokens cannot express
+      // "read-only": least privilege on the read path is structural (OutlookMailbox exposes no send
+      // method), NOT token-level; see GRAPH_SCOPES in outlook.ts for the honest statement.
       scope: "https://graph.microsoft.com/.default",
     }).toString();
     const res = await this.fetchImpl(`${LOGIN}/${this.creds.tenantId}/oauth2/v2.0/token`, {
@@ -94,7 +98,9 @@ export class GraphFetchTransport implements GraphTransport {
   }
 }
 
-const GRAPH_ENV_KEYS = [
+/** Env the live Graph mailbox needs — the SINGLE source of truth: hasGraphEnv, the factory below, and
+ *  the poll's loud-failure message all derive from this list, so list and checks cannot desync. */
+export const GRAPH_ENV_KEYS = [
   "GRAPH_TENANT_ID",
   "GRAPH_CLIENT_ID",
   "GRAPH_CLIENT_SECRET",
@@ -102,23 +108,33 @@ const GRAPH_ENV_KEYS = [
   "GRAPH_QUOTE_FOLDER",
 ] as const;
 
-/** True only when every live-Graph env var is set — the poll uses this to pick live vs stub. */
-export function hasGraphEnv(): boolean {
-  return GRAPH_ENV_KEYS.every((k) => Boolean(process.env[k]));
+/** The subset of `keys` not set (or empty) in the environment — factories and callers derive both
+ *  their checks and their error messages from this, against the exported key lists. */
+export function missingEnv(keys: readonly string[]): string[] {
+  return keys.filter((k) => !process.env[k]);
 }
 
-/** Build the live, folder-scoped OutlookMailbox from env. Throws if any var is missing
- *  (mirrors createServiceClient's env handling). */
+/** True only when every live-Graph env var is set — callers use this to gate the live path. */
+export function hasGraphEnv(): boolean {
+  return missingEnv(GRAPH_ENV_KEYS).length === 0;
+}
+
+/** Build the live, folder-scoped OutlookMailbox from env. Throws NAMING the missing keys if any var
+ *  is absent — the check is derived from GRAPH_ENV_KEYS, never a hand-maintained copy. */
 export function createOutlookMailboxFromEnv(): OutlookMailbox {
-  const tenantId = process.env.GRAPH_TENANT_ID;
-  const clientId = process.env.GRAPH_CLIENT_ID;
-  const clientSecret = process.env.GRAPH_CLIENT_SECRET;
-  const user = process.env.GRAPH_MAILBOX_USER;
-  const folderId = process.env.GRAPH_QUOTE_FOLDER;
-  if (!tenantId || !clientId || !clientSecret || !user || !folderId) {
-    throw new Error(
-      "GRAPH_TENANT_ID / GRAPH_CLIENT_ID / GRAPH_CLIENT_SECRET / GRAPH_MAILBOX_USER / GRAPH_QUOTE_FOLDER required for the live Graph mailbox",
-    );
+  const missing = missingEnv(GRAPH_ENV_KEYS);
+  if (missing.length > 0) {
+    throw new Error(`${missing.join(" / ")} required for the live Graph mailbox`);
   }
-  return new OutlookMailbox(new GraphFetchTransport({ tenantId, clientId, clientSecret }), user, folderId);
+  // Safe cast: missingEnv just proved every key is set and non-empty.
+  const env = process.env as Record<(typeof GRAPH_ENV_KEYS)[number], string>;
+  return new OutlookMailbox(
+    new GraphFetchTransport({
+      tenantId: env.GRAPH_TENANT_ID,
+      clientId: env.GRAPH_CLIENT_ID,
+      clientSecret: env.GRAPH_CLIENT_SECRET,
+    }),
+    env.GRAPH_MAILBOX_USER,
+    env.GRAPH_QUOTE_FOLDER,
+  );
 }

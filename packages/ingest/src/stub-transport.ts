@@ -39,14 +39,18 @@ const CORPUS: StubMessage[] = [
   },
 ];
 
-/** OutlookMailbox.listSince builds "...$filter=receivedDateTime gt <cursor>&$orderby=...". */
+/** OutlookMailbox.listSince builds "...$filter=receivedDateTime ge <encoded cursor>&$orderby=...". */
 function parseCursor(path: string): string {
-  const m = /receivedDateTime gt ([^&]+)/.exec(path);
+  const m = /receivedDateTime ge ([^&]+)/.exec(path);
   return m && m[1] ? decodeURIComponent(m[1]) : "1970-01-01T00:00:00Z";
 }
 
 export class StubGraphTransport implements GraphTransport {
-  /** Server-side $filter is mimicked here: return only corpus messages newer than the cursor, asc. */
+  /** Server-side $filter is mimicked here: return only corpus messages newer than the cursor, asc.
+   *  Deliberate divergence: the live filter is `ge` (boundary re-read, made safe by dedup — see
+   *  listSince), but the stub keeps a strict `>` so its FIXED two-message corpus converges to an
+   *  empty steady state instead of re-serving the boundary message as an eternal duplicate every
+   *  cycle (demo/eval noise; the dedup path is proven by the ingest tests, not this stub). */
   async get(path: string): Promise<unknown> {
     const cursor = parseCursor(path);
     const value = CORPUS.filter((m) => m.receivedDateTime > cursor)

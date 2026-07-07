@@ -1,4 +1,4 @@
-import { GraphFetchTransport, type GraphCredentials } from "./graph-transport.js";
+import { GraphFetchTransport, missingEnv } from "./graph-transport.js";
 
 /**
  * Outlook SEND (D-27 — deliberately reverses D-14/R1's "no send"). Used ONLY by the trusted
@@ -47,6 +47,8 @@ export class OutlookSender {
   }
 }
 
+/** Env the send worker needs (no GRAPH_QUOTE_FOLDER — sending is folder-agnostic). The single source
+ *  of truth for hasGraphSendEnv AND the factory below, so list and check cannot desync. */
 const SEND_ENV_KEYS = [
   "GRAPH_TENANT_ID",
   "GRAPH_CLIENT_ID",
@@ -56,18 +58,24 @@ const SEND_ENV_KEYS = [
 
 /** True only when every var the send worker needs is set. */
 export function hasGraphSendEnv(): boolean {
-  return SEND_ENV_KEYS.every((k) => Boolean(process.env[k]));
+  return missingEnv(SEND_ENV_KEYS).length === 0;
 }
 
-/** Build the live sender from env (the send-outbox worker uses this). Throws if any var is missing. */
+/** Build the live sender from env (the send-outbox worker uses this). Throws NAMING the missing keys
+ *  if any var is absent — the check is derived from SEND_ENV_KEYS, never a hand-maintained copy. */
 export function createOutlookSenderFromEnv(): OutlookSender {
-  const tenantId = process.env.GRAPH_TENANT_ID;
-  const clientId = process.env.GRAPH_CLIENT_ID;
-  const clientSecret = process.env.GRAPH_CLIENT_SECRET;
-  const user = process.env.GRAPH_MAILBOX_USER;
-  if (!tenantId || !clientId || !clientSecret || !user) {
-    throw new Error("GRAPH_TENANT_ID / GRAPH_CLIENT_ID / GRAPH_CLIENT_SECRET / GRAPH_MAILBOX_USER required for the send worker");
+  const missing = missingEnv(SEND_ENV_KEYS);
+  if (missing.length > 0) {
+    throw new Error(`${missing.join(" / ")} required for the send worker`);
   }
-  const creds: GraphCredentials = { tenantId, clientId, clientSecret };
-  return new OutlookSender(new GraphFetchTransport(creds), user);
+  // Safe cast: missingEnv just proved every key is set and non-empty.
+  const env = process.env as Record<(typeof SEND_ENV_KEYS)[number], string>;
+  return new OutlookSender(
+    new GraphFetchTransport({
+      tenantId: env.GRAPH_TENANT_ID,
+      clientId: env.GRAPH_CLIENT_ID,
+      clientSecret: env.GRAPH_CLIENT_SECRET,
+    }),
+    env.GRAPH_MAILBOX_USER,
+  );
 }
