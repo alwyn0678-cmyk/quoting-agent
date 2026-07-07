@@ -1,9 +1,8 @@
 import type { RequestView } from "../../src/lib/dashboard";
+import { eur, utc, reasonLabel } from "../../src/lib/format";
 import { StatusBadge } from "./StatusBadge";
+import { SubmitButton } from "./SubmitButton";
 import { unarchiveAction, requeueAction } from "../actions";
-
-const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
-const utc = (iso: string) => `${new Date(iso).toLocaleString("en-GB", { timeZone: "UTC" })} UTC`;
 
 /** Archive detail: a read-only summary of an archived request + restore / re-run controls. */
 export function ArchiveDetail({ r }: { r: RequestView }) {
@@ -25,7 +24,7 @@ export function ArchiveDetail({ r }: { r: RequestView }) {
         </div>
       ) : (
         <div className="escalation">
-          <strong>Escalated{r.escalation_reason ? ` — ${r.escalation_reason.replace(/_/g, " ")}` : ""}.</strong>{" "}
+          <strong>Escalated{r.escalation_reason ? ` — ${reasonLabel(r.escalation_reason)}` : ""}.</strong>{" "}
           Archived without a sent reply.
         </div>
       )}
@@ -33,16 +32,12 @@ export function ArchiveDetail({ r }: { r: RequestView }) {
       <div className="actions">
         <form action={unarchiveAction}>
           <input type="hidden" name="requestId" value={r.id} />
-          <button type="submit" className="btn ghost">
-            ↩ Restore
-          </button>
+          <SubmitButton className="btn ghost">↩ Restore</SubmitButton>
         </form>
         {r.status === "escalated" || r.status === "error" ? (
           <form action={requeueAction}>
             <input type="hidden" name="requestId" value={r.id} />
-            <button type="submit" className="btn primary">
-              ↻ Re-run with agent
-            </button>
+            <SubmitButton className="btn primary">↻ Re-run with agent</SubmitButton>
           </form>
         ) : null}
       </div>

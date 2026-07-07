@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { listRequestsForTenant, quotationsOnly, activeOnly, navCounts } from "../../src/lib/dashboard";
+import { eur } from "../../src/lib/format";
 import { AppShell } from "../components/AppShell";
 import { RequestList, type RowItem } from "../components/RequestList";
 import { QuoteDetail } from "../components/QuoteDetail";
 
 export const dynamic = "force-dynamic";
-
-const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
 
 export default async function QuotesPage({
   searchParams,

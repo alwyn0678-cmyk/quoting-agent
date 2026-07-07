@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { use, useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "../../lib/supabase/client";
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  // set by /auth/callback when the code exchange fails (expired / already-used magic link)
+  const params = use(searchParams);
+  const authError = Array.isArray(params.error) ? params.error[0] ?? null : params.error ?? null;
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -53,6 +60,11 @@ export default function LoginPage() {
       </form>
         {message && (
           <div className={`notice ${status === "error" ? "err" : "ok"}`}>{message}</div>
+        )}
+        {authError && status === "idle" && (
+          <div className="notice err">
+            That sign-in link expired or was already used. Request a new one above.
+          </div>
         )}
       </div>
     </div>

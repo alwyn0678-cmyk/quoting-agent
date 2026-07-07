@@ -1,8 +1,7 @@
 import type { RequestView } from "../../src/lib/dashboard";
+import { eur, utc } from "../../src/lib/format";
+import { SubmitButton } from "./SubmitButton";
 import { approveAction, archiveAction } from "../actions";
-
-const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
-const utc = (iso: string) => `${new Date(iso).toLocaleString("en-GB", { timeZone: "UTC" })} UTC`;
 
 export function QuoteDetail({ r }: { r: RequestView }) {
   const q = r.quote;
@@ -61,9 +60,7 @@ export function QuoteDetail({ r }: { r: RequestView }) {
         <div className="actions">
           <form action={approveAction}>
             <input type="hidden" name="requestId" value={r.id} />
-            <button type="submit" className="btn primary">
-              ✓ Approve &amp; send reply
-            </button>
+            <SubmitButton className="btn primary">✓ Approve &amp; send reply</SubmitButton>
           </form>
         </div>
       ) : null}
@@ -110,9 +107,7 @@ export function QuoteDetail({ r }: { r: RequestView }) {
           <div className="actions">
             <form action={archiveAction}>
               <input type="hidden" name="requestId" value={r.id} />
-              <button type="submit" className="btn ghost">
-                Archive
-              </button>
+              <SubmitButton className="btn ghost">Archive</SubmitButton>
             </form>
           </div>
         </>

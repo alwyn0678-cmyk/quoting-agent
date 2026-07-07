@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { listRequestsForTenant, archivedOnly, navCounts } from "../../src/lib/dashboard";
+import { eur } from "../../src/lib/format";
 import { AppShell } from "../components/AppShell";
 import { RequestList, type RowItem } from "../components/RequestList";
 import { ArchiveDetail } from "../components/ArchiveDetail";
 
 export const dynamic = "force-dynamic";
-
-const eur = (n: number) => `EUR ${n.toLocaleString("en-US")}`;
 
 export default async function ArchivePage({
   searchParams,
