@@ -16,7 +16,7 @@ async function main(): Promise<void> {
       clientId: process.env.GRAPH_CLIENT_ID,
       clientSecret: process.env.GRAPH_CLIENT_SECRET,
     });
-    const res = (await transport.get(`/users/${user}/mailFolders?$top=100&$select=id,displayName`)) as {
+    const res = (await transport.get(`/users/${encodeURIComponent(user)}/mailFolders?$top=100&$select=id,displayName`)) as {
       value: { id: string; displayName: string }[];
     };
     console.log("displayName\tid  (copy the 'Quote requests' id into GRAPH_QUOTE_FOLDER)");

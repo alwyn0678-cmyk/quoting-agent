@@ -27,6 +27,12 @@ if (!url || !serviceKey) {
 
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+/** supabase-js never throws — fail LOUDLY with context instead of ignoring a returned error. */
+function must<T extends { error: unknown }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what} failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+  return res;
+}
+
 const T = "c1c10000-0000-4000-8000-0000000000a1"; // this eval's tenant
 const TW = "d2d20000-0000-4000-8000-0000000000b2"; // a different tenant (claim-gate probe)
 const MB = "inbox";
@@ -70,20 +76,23 @@ const countFor = async (table: string, requestId: string): Promise<number> => {
 };
 
 async function cleanup(): Promise<void> {
-  await admin.from("audit_log").delete().in("tenant_id", [T, TW]);
-  await admin.from("quotes").delete().in("tenant_id", [T, TW]);
-  await admin.from("drafts").delete().in("tenant_id", [T, TW]);
-  await admin.from("quote_requests").delete().in("tenant_id", [T, TW]);
-  await admin.from("poll_state").delete().in("tenant_id", [T, TW]);
-  await admin.from("tenants").delete().in("id", [T, TW]);
+  must(await admin.from("audit_log").delete().in("tenant_id", [T, TW]), "cleanup audit_log");
+  must(await admin.from("quotes").delete().in("tenant_id", [T, TW]), "cleanup quotes");
+  must(await admin.from("drafts").delete().in("tenant_id", [T, TW]), "cleanup drafts");
+  must(await admin.from("quote_requests").delete().in("tenant_id", [T, TW]), "cleanup quote_requests");
+  must(await admin.from("poll_state").delete().in("tenant_id", [T, TW]), "cleanup poll_state");
+  must(await admin.from("tenants").delete().in("id", [T, TW]), "cleanup tenants");
 }
 
 async function main(): Promise<void> {
   await cleanup(); // idempotent start
-  await admin.from("tenants").upsert([
-    { id: T, name: "Live Store Tenant" },
-    { id: TW, name: "Other Tenant" },
-  ]);
+  must(
+    await admin.from("tenants").upsert([
+      { id: T, name: "Live Store Tenant" },
+      { id: TW, name: "Other Tenant" },
+    ]),
+    "seed tenants",
+  );
 
   const ingest = new SupabaseIngestStore(admin);
   const runStore = new SupabaseRunStore(admin);

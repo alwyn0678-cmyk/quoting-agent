@@ -31,6 +31,20 @@ async function main(): Promise<void> {
     if (selErr) throw selErr;
 
     const id: string = existing?.id ?? randomUUID();
+
+    // Deactivate any OTHER currently-active card for this (tenant, mode, lane) BEFORE upserting the
+    // new one: the engine resolves the active card by created_at DESC (SupabaseRateCardSource), so a
+    // superseded card left is_active would silently win over a re-imported older workbook.
+    const { error: deactErr } = await db
+      .from("rate_cards")
+      .update({ is_active: false })
+      .eq("tenant_id", TENANT_ID)
+      .eq("mode", card.mode)
+      .eq("lane", card.lane)
+      .eq("is_active", true)
+      .neq("id", id);
+    if (deactErr) throw deactErr;
+
     const { error: upErr } = await db.from("rate_cards").upsert({
       id,
       tenant_id: TENANT_ID,

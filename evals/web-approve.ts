@@ -24,6 +24,12 @@ if (!url || !anonKey || !serviceKey) {
 
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+/** supabase-js never throws — fail LOUDLY with context instead of ignoring a returned error. */
+function must<T extends { error: unknown }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what} failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+  return res;
+}
+
 const TA = "c1d2e3f4-0000-4000-8000-00000000000a";
 const TB = "c1d2e3f4-0000-4000-8000-00000000000b";
 const EMAIL_A = "approve-a@test.local";
@@ -31,31 +37,31 @@ const EMAIL_B = "approve-b@test.local";
 const PW = "Test-APV-pw-7c4e22";
 
 async function deleteUserByEmail(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+  const { data } = must(await admin.auth.admin.listUsers({ page: 1, perPage: 200 }), "listUsers");
   const u = data.users.find((x) => x.email === email);
-  if (u) await admin.auth.admin.deleteUser(u.id);
+  if (u) must(await admin.auth.admin.deleteUser(u.id), `deleteUser ${email}`);
 }
 
 async function cleanup(): Promise<void> {
-  await admin.from("quote_requests").delete().in("tenant_id", [TA, TB]); // cascades quotes + drafts
-  await admin.from("profiles").delete().in("tenant_id", [TA, TB]);
-  await admin.from("tenants").delete().in("id", [TA, TB]);
+  must(await admin.from("quote_requests").delete().in("tenant_id", [TA, TB]), "cleanup quote_requests"); // cascades quotes + drafts
+  must(await admin.from("profiles").delete().in("tenant_id", [TA, TB]), "cleanup profiles");
+  must(await admin.from("tenants").delete().in("id", [TA, TB]), "cleanup tenants");
   await deleteUserByEmail(EMAIL_A);
   await deleteUserByEmail(EMAIL_B);
 }
 
 async function seedTenant(tenantId: string, email: string, name: string): Promise<string> {
-  await admin.from("tenants").upsert({ id: tenantId, name });
+  must(await admin.from("tenants").upsert({ id: tenantId, name }), `seed tenant ${name}`);
   const { data: created, error } = await admin.auth.admin.createUser({ email, password: PW, email_confirm: true });
   if (error || !created.user) throw error ?? new Error("createUser failed");
-  await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: tenantId });
+  must(await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: tenantId }), `seed profile ${email}`);
   const { data: req, error: rErr } = await admin
     .from("quote_requests")
     .insert({ tenant_id: tenantId, source: "sample", subject: `req for ${name}`, status: "awaiting_review" })
     .select("id")
     .single();
   if (rErr) throw rErr;
-  await admin.from("drafts").insert({ request_id: req.id, tenant_id: tenantId, subject: "Re", body: "all-in EUR 3,520." });
+  must(await admin.from("drafts").insert({ request_id: req.id, tenant_id: tenantId, subject: "Re", body: "all-in EUR 3,520." }), `seed draft for ${name}`);
   return req.id as string;
 }
 

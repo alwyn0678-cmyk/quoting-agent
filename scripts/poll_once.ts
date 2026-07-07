@@ -27,7 +27,7 @@ const MAILBOX = "inbox";
 
 async function main(): Promise<void> {
   if (!hasGraphEnv()) throw new Error("GRAPH_* env not set — cannot poll the live mailbox");
-  const tenantId = process.env.QUOTEAGENT_TENANT_ID ?? LINKPORT_TENANT_ID;
+  const tenantId = process.env.QUOTEAGENT_TENANT_ID || LINKPORT_TENANT_ID; // || so empty-string falls back (matches send_outbox.ts)
   const supabase = createServiceClient();
 
   const result = await pollMailbox(tenantId, MAILBOX, createOutlookMailboxFromEnv(), new SupabaseIngestStore(supabase));
@@ -39,12 +39,19 @@ async function main(): Promise<void> {
   const client = new AnthropicLlmClient();
   const engine = createSupabaseRateEngine(tenantId);
   const store = new SupabaseRunStore(supabase);
+  let failed = 0;
   for (const requestId of result.toRun) {
-    const summary = await runAndPersist(tenantId, requestId, { client, engine }, store);
-    console.log(`run ${requestId}: ${JSON.stringify(summary)}`);
+    // Per-id isolation: one failing run must not abort the rest of the batch.
+    try {
+      const summary = await runAndPersist(tenantId, requestId, { client, engine }, store);
+      console.log(`run ${requestId}: ${JSON.stringify(summary)}`);
+    } catch (e) {
+      failed += 1;
+      console.error(`run ${requestId} FAILED: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+    }
   }
-  console.log(`done — ${result.toRun.length} request(s) processed. Refresh the dashboard.`);
-  process.exit(0);
+  console.log(`done — ${result.toRun.length - failed} of ${result.toRun.length} request(s) processed${failed > 0 ? `, ${failed} FAILED` : ""}. Refresh the dashboard.`);
+  process.exit(failed > 0 ? 1 : 0);
 }
 
 main().catch((e: unknown) => {

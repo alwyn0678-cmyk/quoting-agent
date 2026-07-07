@@ -20,6 +20,12 @@ if (!url || !anonKey || !serviceKey) {
 
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+/** supabase-js never throws — fail LOUDLY with context instead of ignoring a returned error. */
+function must<T extends { error: unknown }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what} failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+  return res;
+}
+
 const TI = "e1f2a3b4-0000-4000-8000-00000000000a";
 const TO = "e1f2a3b4-0000-4000-8000-00000000000b";
 const EMAIL = "usage-demo@test.local";
@@ -27,30 +33,33 @@ const PW = "Test-USG-pw-2a8f44";
 const TO_MARKER = 999; // input_tokens value only TO's row carries — must never be visible to TI
 
 async function deleteUserByEmail(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+  const { data } = must(await admin.auth.admin.listUsers({ page: 1, perPage: 200 }), "listUsers");
   const u = data.users.find((x) => x.email === email);
-  if (u) await admin.auth.admin.deleteUser(u.id);
+  if (u) must(await admin.auth.admin.deleteUser(u.id), `deleteUser ${email}`);
 }
 
 async function cleanup(): Promise<void> {
-  await admin.from("audit_log").delete().in("tenant_id", [TI, TO]);
-  await admin.from("quote_requests").delete().in("tenant_id", [TI, TO]);
-  await admin.from("profiles").delete().in("tenant_id", [TI, TO]);
-  await admin.from("tenants").delete().in("id", [TI, TO]);
+  must(await admin.from("audit_log").delete().in("tenant_id", [TI, TO]), "cleanup audit_log");
+  must(await admin.from("quote_requests").delete().in("tenant_id", [TI, TO]), "cleanup quote_requests");
+  must(await admin.from("profiles").delete().in("tenant_id", [TI, TO]), "cleanup profiles");
+  must(await admin.from("tenants").delete().in("id", [TI, TO]), "cleanup tenants");
   await deleteUserByEmail(EMAIL);
 }
 
 async function main(): Promise<void> {
   await cleanup(); // idempotent start
-  await admin.from("tenants").upsert([
-    { id: TI, name: "Usage Tenant" },
-    { id: TO, name: "Other Tenant" },
-  ]);
+  must(
+    await admin.from("tenants").upsert([
+      { id: TI, name: "Usage Tenant" },
+      { id: TO, name: "Other Tenant" },
+    ]),
+    "seed tenants",
+  );
   const { data: created, error } = await admin.auth.admin.createUser({ email: EMAIL, password: PW, email_confirm: true });
   if (error || !created.user) throw error ?? new Error("createUser failed");
-  await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: TI });
+  must(await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: TI }), "seed profile");
 
-  await admin.from("audit_log").insert([
+  must(await admin.from("audit_log").insert([
     {
       tenant_id: TI,
       event: "quote",
@@ -78,7 +87,7 @@ async function main(): Promise<void> {
       est_cost_usd: 0.9,
       injection_flag: false,
     },
-  ]);
+  ]), "seed audit_log rows");
 
   // ── browser path: anon client + session, the exact /usage read ──
   const client = createClient(url, anonKey, { auth: { autoRefreshToken: false, persistSession: false } });

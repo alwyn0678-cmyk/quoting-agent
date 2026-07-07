@@ -12,12 +12,16 @@ interface LaneSpec {
   lines: Line[];
 }
 
+// Valid through: today + 90 days (UTC), so a regenerated sheet is never born expired. The 90-day
+// validity window is an INVENTED assumption (docs/ASSUMPTIONS.md) — a real forwarder sets its own.
+const VALIDITY = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
 const LANES: LaneSpec[] = [
   {
     lane: "NLRTM-USNYC", // PARITY: must equal the seed / StaticCard exactly (A1-A9)
     mode: "FCL",
     version: "2026-06-v1",
-    validity: "2026-06-30",
+    validity: VALIDITY,
     lines: [
       ["base", "BASE_20GP", "20GP", 1800, 0],
       ["base", "BASE_40GP", "40GP", 2400, 1],
@@ -34,7 +38,7 @@ const LANES: LaneSpec[] = [
     lane: "NLRTM-USLAX", // NEW richer lane (Rotterdam -> Los Angeles); adds 45HC, CAF, PSS
     mode: "FCL",
     version: "2026-06-v1",
-    validity: "2026-06-30",
+    validity: VALIDITY,
     lines: [
       ["base", "BASE_20GP", "20GP", 2200, 0],
       ["base", "BASE_40GP", "40GP", 2900, 1],
@@ -54,7 +58,7 @@ const LANES: LaneSpec[] = [
     lane: "DEHAM-USNYC", // NEW richer lane (Hamburg -> New York); adds 45HC, CONGESTION
     mode: "FCL",
     version: "2026-06-v1",
-    validity: "2026-06-30",
+    validity: VALIDITY,
     lines: [
       ["base", "BASE_20GP", "20GP", 1900, 0],
       ["base", "BASE_40GP", "40GP", 2500, 1],
@@ -73,7 +77,7 @@ const LANES: LaneSpec[] = [
     lane: "NLRTM-DEDUI", // BARGE — Rotterdam -> Duisburg (Rhine). All figures INVENTED (ASSUMPTIONS D)
     mode: "BARGE",
     version: "2026-06-v1",
-    validity: "2026-06-30",
+    validity: VALIDITY,
     lines: [
       ["base", "BASE_20GP", "20GP", 280, 0],
       ["base", "BASE_40GP", "40GP", 420, 1],

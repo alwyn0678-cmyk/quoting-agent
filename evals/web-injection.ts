@@ -24,29 +24,35 @@ if (!url || !anonKey || !serviceKey) {
 
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+/** supabase-js never throws — fail LOUDLY with context instead of ignoring a returned error. */
+function must<T extends { error: unknown }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what} failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+  return res;
+}
+
 const TI = "d1e2f3a4-0000-4000-8000-00000000000a";
 const EMAIL = "injection-demo@test.local";
 const PW = "Test-INJ-pw-5b9d33";
 
 async function deleteUserByEmail(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+  const { data } = must(await admin.auth.admin.listUsers({ page: 1, perPage: 200 }), "listUsers");
   const u = data.users.find((x) => x.email === email);
-  if (u) await admin.auth.admin.deleteUser(u.id);
+  if (u) must(await admin.auth.admin.deleteUser(u.id), `deleteUser ${email}`);
 }
 
 async function cleanup(): Promise<void> {
-  await admin.from("quote_requests").delete().eq("tenant_id", TI); // cascades quotes + drafts
-  await admin.from("profiles").delete().eq("tenant_id", TI);
-  await admin.from("tenants").delete().eq("id", TI);
+  must(await admin.from("quote_requests").delete().eq("tenant_id", TI), "cleanup quote_requests"); // cascades quotes + drafts
+  must(await admin.from("profiles").delete().eq("tenant_id", TI), "cleanup profiles");
+  must(await admin.from("tenants").delete().eq("id", TI), "cleanup tenants");
   await deleteUserByEmail(EMAIL);
 }
 
 async function main(): Promise<void> {
   await cleanup(); // idempotent start
-  await admin.from("tenants").upsert({ id: TI, name: "Injection Demo" });
+  must(await admin.from("tenants").upsert({ id: TI, name: "Injection Demo" }), "seed tenant");
   const { data: created, error } = await admin.auth.admin.createUser({ email: EMAIL, password: PW, email_confirm: true });
   if (error || !created.user) throw error ?? new Error("createUser failed");
-  await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: TI });
+  must(await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: TI }), "seed profile");
 
   // (a) escalated — out_of_scope_mode, no quote/draft
   const { data: esc, error: e1 } = await admin
@@ -70,17 +76,20 @@ async function main(): Promise<void> {
     .select("id")
     .single();
   if (e2) throw e2;
-  await admin.from("quotes").insert({
-    request_id: inj.id,
-    tenant_id: TI,
-    rate_card_version: quote.rate_card_version,
-    container_type: "40HC",
-    container_qty: 1,
-    all_in_total: quote.all_in_total,
-    breakdown_snapshot: quote,
-    validity_through: quote.validity_through,
-  });
-  await admin.from("drafts").insert({ request_id: inj.id, tenant_id: TI, subject: "Re", body: "all-in EUR 3,520." });
+  must(
+    await admin.from("quotes").insert({
+      request_id: inj.id,
+      tenant_id: TI,
+      rate_card_version: quote.rate_card_version,
+      container_type: "40HC",
+      container_qty: 1,
+      all_in_total: quote.all_in_total,
+      breakdown_snapshot: quote,
+      validity_through: quote.validity_through,
+    }),
+    "seed quote",
+  );
+  must(await admin.from("drafts").insert({ request_id: inj.id, tenant_id: TI, subject: "Re", body: "all-in EUR 3,520." }), "seed draft");
 
   // ── browser path: anon client + session, the exact dashboard read ──
   const client = createClient(url, anonKey, { auth: { autoRefreshToken: false, persistSession: false } });

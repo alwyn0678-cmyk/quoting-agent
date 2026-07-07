@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAgent, AnthropicLlmClient } from "../packages/agents/src/index.js";
-import { scoreFixture, summarize, type Fixture, type FixtureScore } from "./score.js";
+import { scoreFixture, summarize, PASS_GATE, type Fixture, type FixtureScore } from "./score.js";
 
 /**
  * Live eval runner (npm run eval). Runs the real pipeline against every golden fixture, scores
@@ -17,13 +17,18 @@ async function main(): Promise<void> {
   const scores: FixtureScore[] = [];
 
   for (const file of files) {
-    const fixture = JSON.parse(readFileSync(join(fixturesDir, file), "utf8")) as Fixture;
+    let fixture: Fixture | undefined;
     let score: FixtureScore;
     try {
+      // parse INSIDE the try: one malformed fixture scores as a failure instead of aborting the run
+      fixture = JSON.parse(readFileSync(join(fixturesDir, file), "utf8")) as Fixture;
       const output = await runAgent(fixture.input, client);
       score = scoreFixture(fixture, output);
     } catch (err) {
-      score = { id: fixture.id, pass: false, checks: [{ name: "ran", pass: false, detail: err instanceof Error ? err.message : String(err) }] };
+      const detail = err instanceof Error ? err.message : String(err);
+      score = fixture
+        ? { id: fixture.id, pass: false, checks: [{ name: "ran", pass: false, detail }] }
+        : { id: file, pass: false, checks: [{ name: "parse_fixture", pass: false, detail: `malformed fixture JSON: ${detail}` }] };
     }
     scores.push(score);
     console.log(`${score.pass ? "PASS" : "FAIL"}  ${score.id}`);
@@ -35,7 +40,7 @@ async function main(): Promise<void> {
   const summary = summarize(scores);
   console.log(
     `\n${summary.passed}/${summary.total} fixtures pass ` +
-      `(gate >= 6/8: ${summary.passed >= 6}, injection must-pass: ${summary.injectionPass}) ` +
+      `(gate >= ${PASS_GATE}/${summary.total}: ${summary.passed >= PASS_GATE}, injection must-pass: ${summary.injectionPass}) ` +
       `-> ${summary.gatePass ? "GATE PASS" : "GATE FAIL"}`,
   );
   process.exit(summary.gatePass ? 0 : 1);

@@ -45,12 +45,27 @@ async function main(): Promise<void> {
   const requestId = data.id as string;
   console.log(`ingested request ${requestId} (source=paste) — running the live pipeline...`);
 
-  const summary = await runAndPersist(
-    tenantId,
-    requestId,
-    { client: new AnthropicLlmClient(), engine: createSupabaseRateEngine(tenantId) },
-    new SupabaseRunStore(supabase),
-  );
+  // Paste rows have no dedup, so a pipeline failure must not strand the row in 'received'/'processing'
+  // forever — mark it 'error' (same markError the Trigger.dev run task uses on failure) and exit 1.
+  const store = new SupabaseRunStore(supabase);
+  let summary;
+  try {
+    summary = await runAndPersist(
+      tenantId,
+      requestId,
+      { client: new AnthropicLlmClient(), engine: createSupabaseRateEngine(tenantId) },
+      store,
+    );
+  } catch (err) {
+    console.error(`pipeline FAILED for request ${requestId}: ${err instanceof Error ? err.message : String(err)}`);
+    try {
+      await store.markError(tenantId, requestId);
+      console.error(`request ${requestId} marked status=error`);
+    } catch (markErr) {
+      console.error(`could not mark request ${requestId} as error: ${markErr instanceof Error ? markErr.message : String(markErr)}`);
+    }
+    process.exit(1);
+  }
 
   console.log(JSON.stringify(summary, null, 2));
   console.log("Done — refresh the dashboard to see it.");

@@ -18,6 +18,12 @@ if (!url || !anonKey || !serviceKey) {
 
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
+/** supabase-js never throws — fail LOUDLY with context instead of ignoring a returned error. */
+function must<T extends { error: unknown }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what} failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+  return res;
+}
+
 const TA = "a1b2c3d4-0000-4000-8000-00000000000a";
 const TB = "a1b2c3d4-0000-4000-8000-00000000000b";
 const EMAIL_A = "ac5-web-a@test.local";
@@ -25,41 +31,44 @@ const EMAIL_B = "ac5-web-b@test.local";
 const PW = "Test-AC5-pw-9f3a21";
 
 async function deleteUserByEmail(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+  const { data } = must(await admin.auth.admin.listUsers({ page: 1, perPage: 200 }), "listUsers");
   const u = data.users.find((x) => x.email === email);
-  if (u) await admin.auth.admin.deleteUser(u.id);
+  if (u) must(await admin.auth.admin.deleteUser(u.id), `deleteUser ${email}`);
 }
 
 async function cleanup(): Promise<void> {
-  await admin.from("quote_requests").delete().in("tenant_id", [TA, TB]); // cascades quotes + drafts
-  await admin.from("profiles").delete().in("tenant_id", [TA, TB]);
-  await admin.from("tenants").delete().in("id", [TA, TB]);
+  must(await admin.from("quote_requests").delete().in("tenant_id", [TA, TB]), "cleanup quote_requests"); // cascades quotes + drafts
+  must(await admin.from("profiles").delete().in("tenant_id", [TA, TB]), "cleanup profiles");
+  must(await admin.from("tenants").delete().in("id", [TA, TB]), "cleanup tenants");
   await deleteUserByEmail(EMAIL_A);
   await deleteUserByEmail(EMAIL_B);
 }
 
 async function seedTenant(tenantId: string, email: string, name: string): Promise<string> {
-  await admin.from("tenants").upsert({ id: tenantId, name });
+  must(await admin.from("tenants").upsert({ id: tenantId, name }), `seed tenant ${name}`);
   const { data: created, error } = await admin.auth.admin.createUser({ email, password: PW, email_confirm: true });
   if (error || !created.user) throw error ?? new Error("createUser failed");
-  await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: tenantId });
+  must(await admin.from("profiles").upsert({ user_id: created.user.id, tenant_id: tenantId }), `seed profile ${email}`);
   const { data: req, error: rErr } = await admin
     .from("quote_requests")
     .insert({ tenant_id: tenantId, source: "sample", subject: `req for ${name}`, status: "awaiting_review" })
     .select("id")
     .single();
   if (rErr) throw rErr;
-  await admin.from("quotes").insert({
-    request_id: req.id,
-    tenant_id: tenantId,
-    rate_card_version: "2026-06-v1",
-    container_type: "40HC",
-    container_qty: 1,
-    all_in_total: 3520,
-    breakdown_snapshot: { all_in_total: 3520 },
-    validity_through: "2026-06-30",
-  });
-  await admin.from("drafts").insert({ request_id: req.id, tenant_id: tenantId, subject: "Re", body: "all-in EUR 3,520." });
+  must(
+    await admin.from("quotes").insert({
+      request_id: req.id,
+      tenant_id: tenantId,
+      rate_card_version: "2026-06-v1",
+      container_type: "40HC",
+      container_qty: 1,
+      all_in_total: 3520,
+      breakdown_snapshot: { all_in_total: 3520 },
+      validity_through: "2026-06-30",
+    }),
+    `seed quote for ${name}`,
+  );
+  must(await admin.from("drafts").insert({ request_id: req.id, tenant_id: tenantId, subject: "Re", body: "all-in EUR 3,520." }), `seed draft for ${name}`);
   return req.id as string;
 }
 

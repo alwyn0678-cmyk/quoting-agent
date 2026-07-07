@@ -6,7 +6,14 @@ import { createClient } from "@supabase/supabase-js";
 const email = process.argv[2] ?? "alwyn0678@gmail.com";
 const LINKPORT = "11111111-1111-4111-8111-111111111111";
 
-const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+const url = process.env.SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !serviceKey) {
+  console.error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY required");
+  process.exit(1);
+}
+
+const admin = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
