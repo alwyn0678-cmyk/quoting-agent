@@ -51,3 +51,6 @@ evals/cache/
 
 # Brainstorming visual-companion artifacts (local design mockups)
 .superpowers/
+
+# Generated knowledge-graph output (tooling artifact, not source)
+graphify-out/

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
   "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
@@ -34,19 +37,24 @@
     "db:test:p1b2": "bash scripts/db.sh supabase/tests/p1b2_seed_sum.sql",
     "db:test:p1c2": "bash scripts/db.sh supabase/tests/p1c2_run.sql",
     "db:test:persist": "bash scripts/db.sh supabase/tests/persist_run_outcome.sql",
-    "db:test:ac4": "bash scripts/db.sh supabase/tests/ac4_snapshot.sql"
+    "db:test:ac4": "bash scripts/db.sh supabase/tests/ac4_snapshot.sql",
+    "db:migrate:hardening": "bash scripts/db.sh supabase/migrations/0015_audit_hardening.sql",
+    "db:test:hardening": "bash scripts/db.sh supabase/tests/hardening_dml_denial.sql && bash scripts/db.sh supabase/tests/hardening_persist_orphan.sql && bash scripts/db.sh supabase/tests/hardening_sent_gate_insert.sql && bash scripts/db.sh supabase/tests/hardening_requeue_lease.sql && bash scripts/db.sh supabase/tests/hardening_active_card_unique.sql"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "exceljs": "^4.4.0",
     "tsx": "^4.22.3",
     "typescript": "^5.7.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
     "@supabase/supabase-js": "^2.106.2",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
