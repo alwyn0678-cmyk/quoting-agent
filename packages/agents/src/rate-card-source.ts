@@ -36,6 +36,21 @@ export interface RateCardSource {
  * is otherwise unspecified.
  */
 export function assembleRateCard(card: RateCardRow, lines: RateCardLineRow[]): RateCard {
+  // Fail fast on malformed source rows (hand-edited DB row, bad import): a clear, named error at
+  // card-resolution time — never a raw ZodError from inside priceQuote AFTER the gate said "quote".
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(card.validity_through)) {
+    throw new Error(
+      `rate card '${card.version}' (${card.lane}): validity_through '${card.validity_through}' is not YYYY-MM-DD`,
+    );
+  }
+  for (const l of lines) {
+    if (!Number.isInteger(l.amount) || l.amount < 0) {
+      throw new Error(
+        `rate card '${card.version}' (${card.lane}) line '${l.code}': amount ${l.amount} is not a whole non-negative EUR integer`,
+      );
+    }
+  }
+
   const base: Record<string, number> = {};
   for (const l of lines) {
     if (l.kind === "base" && l.container_type) base[l.container_type] = l.amount;

@@ -60,10 +60,17 @@ export async function runAgent(
 
     // Ground the reply prose in trusted knowledge retrieved from STRUCTURED quote fields (never the
     // raw email). Retrieval runs AFTER pricing and feeds only the draft — RAG never touches the price.
-    const groundingContext = await retriever.retrieve(
-      buildRetrievalQuery(quote, extraction.incoterm),
-      RAG_TOP_K,
-    );
+    // Grounding is OPTIONAL by design (EmptyRetriever is a valid retriever), so a retrieval failure
+    // (embedding-API 429/503, RPC error) degrades to an ungrounded draft instead of crashing the run.
+    let groundingContext: Awaited<ReturnType<KnowledgeRetriever["retrieve"]>> = [];
+    try {
+      groundingContext = await retriever.retrieve(
+        buildRetrievalQuery(quote, extraction.incoterm),
+        RAG_TOP_K,
+      );
+    } catch (err) {
+      console.error("[agent] knowledge retrieval failed; drafting ungrounded:", err);
+    }
 
     const drafted = await generateDraft(
       {
@@ -82,8 +89,9 @@ export async function runAgent(
     draft = drafted.draft;
     draftUsage = drafted.usage;
 
-    // Fail closed on any injection-outcome violation (leak / price tampering).
-    const guard = injectionGuard({ extraction, quote, draft });
+    // Fail closed on any injection-outcome violation (leak / price tampering). The guard
+    // re-derives the price against the SAME gate-validated card the engine priced on.
+    const guard = injectionGuard({ extraction, quote, draft, card });
     if (!guard.safe) {
       decision = "escalate";
       escalationReason = "guard_violation";

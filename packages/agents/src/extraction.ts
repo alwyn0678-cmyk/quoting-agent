@@ -47,8 +47,9 @@ export function buildExtractionSystemPrompt(): string {
   ].join("\n");
 }
 
-/** Escape angle brackets so the email's own text (e.g. `</email>`) cannot close the data block. */
-function escapeForTag(s: string): string {
+/** Escape angle brackets so the email's own text (e.g. `</email>`) cannot close the data block.
+ *  Exported: the draft boundary uses the same escaping for its email-derived fields. */
+export function escapeForTag(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 

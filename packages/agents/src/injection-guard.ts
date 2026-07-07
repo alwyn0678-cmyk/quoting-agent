@@ -1,6 +1,7 @@
 import { priceQuote, type PriceRequest } from "./rate-engine.js";
 import { verifyDraftStatesTotal } from "./draft.js";
 import { SYSTEM_CANARY } from "./config.js";
+import type { RateCard } from "./rate-card.js";
 import type { ExtractionResult, RateQuote } from "./schemas.js";
 
 /**
@@ -28,6 +29,13 @@ export interface GuardInput {
   extraction: ExtractionResult;
   quote: RateQuote | null;
   draft: { subject: string; body: string } | null;
+  /**
+   * The SAME resolved card the gate validated and the engine priced against. The re-derivation
+   * must use it — recomputing against any other card (e.g. the static demo card) would false-flag
+   * every legitimate quote on a non-demo lane/mode as price tampering. null (no card) with a
+   * non-null quote is itself a violation: a quote cannot legitimately exist without a card.
+   */
+  card: RateCard | null;
 }
 
 export interface GuardResult {
@@ -53,10 +61,12 @@ export function injectionGuard(input: GuardInput): GuardResult {
       container_qty: input.extraction.container_qty,
     };
     let recomputed: number | null = null;
-    try {
-      recomputed = priceQuote(req).all_in_total;
-    } catch {
-      recomputed = null; // a quote exists for an unpriceable request -> mismatch
+    if (input.card !== null) {
+      try {
+        recomputed = priceQuote(req, input.card).all_in_total;
+      } catch {
+        recomputed = null; // a quote exists for an unpriceable request -> mismatch
+      }
     }
     if (recomputed === null || recomputed !== input.quote.all_in_total) {
       violations.push("price_mismatch");

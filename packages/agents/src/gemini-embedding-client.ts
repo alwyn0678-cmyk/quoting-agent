@@ -10,10 +10,14 @@ export type FetchLike = (
 const defaultFetch: FetchLike = (url, init) =>
   (globalThis as unknown as { fetch: FetchLike }).fetch(url, init);
 
-/** Gemini Embedding 2 has no task_type param — task is given as an in-prompt instruction. */
+/** Gemini Embedding 2 has no task_type param — task is given as an in-prompt instruction.
+ *  NOTE the asymmetric pair: documents embed as "retrieval document", queries as "search query"
+ *  (the query side previously said "search result" — a copy-paste bug that degraded alignment).
+ *  The document instruction and the "| query:" template below are FROZEN to match the vectors
+ *  already stored in knowledge_chunks — changing either requires re-running `npm run rag:index`. */
 const TASK_INSTRUCTION: Record<EmbeddingTask, string> = {
   document: "task: retrieval document",
-  query: "task: search result",
+  query: "task: search query",
 };
 
 /**

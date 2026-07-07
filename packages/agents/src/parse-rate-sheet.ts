@@ -51,6 +51,23 @@ export function parseRateSheet(sheets: RawSheet[]): ParsedCard[] {
     if (!lane || !version || !validity) {
       throw new Error(`sheet '${sheet.name}': missing Lane / Version / Valid through meta`);
     }
+    // Format checks (fail fast at import, not at quote time): lane is two 5-char UN/LOCODEs; the
+    // validity must be ISO YYYY-MM-DD — an Excel date CELL stringifies as 'Mon Jun 30 2026 …' and
+    // would otherwise import fine, then blow up every quote on the card at RateQuoteSchema.parse.
+    if (!/^[A-Z]{2}[A-Z2-9]{3}-[A-Z]{2}[A-Z2-9]{3}$/.test(lane)) {
+      throw new Error(`sheet '${sheet.name}': Lane '${lane}' is not 'ORIGIN-DEST' UN/LOCODEs`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(validity)) {
+      throw new Error(
+        `sheet '${sheet.name}': Valid through '${validity}' is not YYYY-MM-DD (type it as text, not an Excel date cell)`,
+      );
+    }
+    // Mode defaults to FCL when the row is absent (tested back-compat), but a PRESENT value must be
+    // clean uppercase — 'fcl' vs 'FCL' would silently create a card no lookup ever matches.
+    const mode = meta["Mode"] || "FCL";
+    if (!/^[A-Z]{2,10}$/.test(mode)) {
+      throw new Error(`sheet '${sheet.name}': Mode '${mode}' must be uppercase letters (e.g. FCL, BARGE)`);
+    }
 
     // 2) line rows until a blank row or end of data
     const lines: RateCardLineRow[] = [];
@@ -93,7 +110,7 @@ export function parseRateSheet(sheets: RawSheet[]): ParsedCard[] {
     }
     if (lines.length === 0) throw new Error(`sheet '${sheet.name}': no line rows`);
 
-    out.push({ card: { mode: meta["Mode"] || "FCL", version, validity_through: validity, lane }, lines });
+    out.push({ card: { mode, version, validity_through: validity, lane }, lines });
   }
 
   return out;

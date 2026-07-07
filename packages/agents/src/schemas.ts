@@ -6,10 +6,11 @@ import { z } from "zod";
  * tests. Monetary values are whole EUR by deliberate choice (ASSUMPTIONS.md B3).
  */
 
-/** UN/LOCODE: 2-letter country + 3-char location (letters or digits 2-9). */
+/** UN/LOCODE: 2-letter country + 3-char location (letters or digits 2-9 — 0/1 are excluded
+ *  by the spec to avoid O/I confusion; the regex now matches the comment). */
 const portCodeSchema = z
   .string()
-  .regex(/^[A-Z]{2}[A-Z0-9]{3}$/, "expected a 5-char UN/LOCODE");
+  .regex(/^[A-Z]{2}[A-Z2-9]{3}$/, "expected a 5-char UN/LOCODE");
 
 const locationSchema = z.object({
   raw: z.string(),

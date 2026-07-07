@@ -58,17 +58,25 @@ export class EmptyRetriever implements KnowledgeRetriever {
  * (with MockEmbeddingClient) AND a working no-DB mode (with GeminiEmbeddingClient).
  */
 export class InMemoryKnowledgeRetriever implements KnowledgeRetriever {
-  private embedded: { item: KnowledgeChunk; vec: number[] }[] | null = null;
+  // Memoizes the PROMISE (not the result) so two concurrent first retrievals share one corpus
+  // embedding instead of both seeing null and paying the embedding API twice. A failed first
+  // attempt clears the memo so the next call can retry.
+  private embedded: Promise<{ item: KnowledgeChunk; vec: number[] }[]> | null = null;
 
   constructor(
     private readonly chunks: KnowledgeChunk[],
     private readonly embeddings: EmbeddingClient,
   ) {}
 
-  private async ensure(): Promise<{ item: KnowledgeChunk; vec: number[] }[]> {
+  private ensure(): Promise<{ item: KnowledgeChunk; vec: number[] }[]> {
     if (!this.embedded) {
-      const vecs = await this.embeddings.embed(this.chunks.map((c) => c.content), "document");
-      this.embedded = this.chunks.map((item, i) => ({ item, vec: vecs[i] ?? [] }));
+      this.embedded = this.embeddings
+        .embed(this.chunks.map((c) => c.content), "document")
+        .then((vecs) => this.chunks.map((item, i) => ({ item, vec: vecs[i] ?? [] })))
+        .catch((err) => {
+          this.embedded = null;
+          throw err;
+        });
     }
     return this.embedded;
   }
@@ -101,6 +109,8 @@ export class SupabaseKnowledgeRetriever implements KnowledgeRetriever {
       match_count: k,
     });
     if (error) throw error;
+    // supabase-js can resolve { data: null, error: null } for empty results — treat as no matches.
+    if (!Array.isArray(data)) return [];
     return (data as { source: string; title: string; content: string }[]).map((r) => ({
       source: r.source,
       title: r.title,

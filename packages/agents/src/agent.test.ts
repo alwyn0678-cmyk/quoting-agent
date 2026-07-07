@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { runAgent } from "./agent.js";
 import { RoutingMockLlmClient } from "./mock-llm.js";
 import { StaticCardRateEngine } from "./rate-engine.js";
+import type { RateCard } from "./rate-card.js";
 import {
   SYSTEM_CANARY,
   EXTRACTION_MODEL,
@@ -80,6 +81,52 @@ describe("T14 — end-to-end terminal behaviour (mocked pipeline)", () => {
     expect(out.escalation_reason).toBe("guard_violation");
     expect(out.quote).toBeNull();
     expect(out.draft).toBeNull();
+  });
+});
+
+describe("composed pipeline on a NON-default card — the guard must not re-price against the demo card", () => {
+  // Regression for the audit finding that killed every multi-modal quote: runAgent priced against
+  // the resolved (barge) card but the guard re-derived via the static FCL demo card, so every
+  // legitimate barge/USLAX quote false-flagged as price_mismatch and escalated.
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-b1",
+    validity_through: "2026-12-31",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "40HC": 300 },
+    surcharges: [{ code: "LOWSULPHUR", amount_per_container: 40 }],
+    per_shipment_fees: [{ code: "DOC", amount: 25 }],
+  };
+  const bargeExtraction: ExtractionResult = {
+    ...baseExtraction,
+    destination: { raw: "Duisburg", port_code: "DEDUI" },
+    mode: "BARGE",
+    container_qty: 1,
+  };
+
+  it("quotes a barge request end-to-end (extract -> gate -> price -> draft -> guard)", async () => {
+    // 1 x 40HC barge: (300 + 40) * 1 + 25 = 365
+    const out = await runAgent(
+      email,
+      routed(bargeExtraction, "all-in EUR 365."),
+      new StaticCardRateEngine(bargeCard),
+    );
+    expect(out.decision).toBe("quote");
+    expect(out.escalation_reason).toBeNull();
+    expect(out.quote?.all_in_total).toBe(365);
+    expect(out.quote?.lane).toBe("NLRTM-DEDUI");
+  });
+
+  it("still fails closed on real tampering on the non-default card", async () => {
+    // Draft states a total that is NOT the engine total -> draft_total_mismatch -> escalate.
+    const out = await runAgent(
+      email,
+      routed(bargeExtraction, "all-in EUR 1."),
+      new StaticCardRateEngine(bargeCard),
+    );
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("guard_violation");
+    expect(out.quote).toBeNull();
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { injectionGuard, type GuardInput } from "./injection-guard.js";
 import { priceQuote } from "./rate-engine.js";
+import { RATE_CARD, type RateCard } from "./rate-card.js";
 import { SYSTEM_CANARY } from "./config.js";
 import type { ExtractionResult } from "./schemas.js";
 
@@ -34,6 +35,7 @@ const clean: GuardInput = {
   extraction,
   quote: realQuote,
   draft: { subject: "Re: Quote request", body: "Our all-in rate is EUR 3,520." },
+  card: RATE_CARD,
 };
 
 describe("T12 (offline parts) — injection produced no harm", () => {
@@ -80,5 +82,59 @@ describe("T12 (offline parts) — injection produced no harm", () => {
     const r = injectionGuard(bad);
     expect(r.safe).toBe(false);
     expect(r.violations).toContain("draft_total_mismatch");
+  });
+
+  it("flags a quote with no resolved card (a quote cannot exist card-less)", () => {
+    const cardless: GuardInput = { ...clean, card: null };
+    expect(injectionGuard(cardless).violations).toContain("price_mismatch");
+  });
+});
+
+describe("guard re-derives against the RESOLVED card, not the static demo card (multi-modal)", () => {
+  const bargeCard: RateCard = {
+    mode: "BARGE",
+    version: "2026-06-b1",
+    validity_through: "2026-12-31",
+    supported_lane: "NLRTM-DEDUI",
+    base_per_container: { "40HC": 300 },
+    surcharges: [{ code: "LOWSULPHUR", amount_per_container: 40 }],
+    per_shipment_fees: [{ code: "DOC", amount: 25 }],
+  };
+  const bargeExtraction: ExtractionResult = {
+    ...extraction,
+    origin: { raw: "Rotterdam", port_code: "NLRTM" },
+    destination: { raw: "Duisburg", port_code: "DEDUI" },
+    mode: "BARGE",
+    injection_detected: false,
+  };
+  const bargeQuote = priceQuote(
+    {
+      origin_port_code: "NLRTM",
+      destination_port_code: "DEDUI",
+      mode: "BARGE",
+      container_type: "40HC",
+      container_qty: 1,
+    },
+    bargeCard,
+  );
+
+  it("passes a legitimate barge quote when given the barge card it was priced on", () => {
+    const r = injectionGuard({
+      extraction: bargeExtraction,
+      quote: bargeQuote,
+      draft: { subject: "Re: Barge quote", body: `All-in total EUR ${bargeQuote.all_in_total}.` },
+      card: bargeCard,
+    });
+    expect(r).toEqual({ safe: true, violations: [] });
+  });
+
+  it("still flags tampering on the barge lane (attacker total never matches)", () => {
+    const r = injectionGuard({
+      extraction: bargeExtraction,
+      quote: { ...bargeQuote, all_in_total: 1 },
+      draft: { subject: "Re: Barge quote", body: "All-in total EUR 1." },
+      card: bargeCard,
+    });
+    expect(r.violations).toContain("price_mismatch");
   });
 });

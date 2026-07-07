@@ -29,7 +29,7 @@ describe("Q3 GeminiEmbeddingClient (fake fetch)", () => {
     const body = JSON.parse(cap.init?.body ?? "{}");
     expect(body.outputDimensionality).toBe(EMBEDDING_DIMS); // camelCase REST field (Gate-4 fix #2)
     expect(body.output_dimensionality).toBeUndefined(); // the snake_case form must NOT be sent
-    expect(body.content.parts[0].text).toContain("search result"); // query task instruction
+    expect(body.content.parts[0].text).toContain("search query"); // query task instruction (audit fix: was "search result")
     expect(body.content.parts[0].text).toContain("what is BAF");
   });
 
