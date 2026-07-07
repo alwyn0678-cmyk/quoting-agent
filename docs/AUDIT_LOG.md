@@ -4,7 +4,81 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
-## Multi-modal rate sheet — BARGE (NLRTM → DEDUI) · 2026-06-02
+## Full-repo audit + hardening sweep · 2026-07-07
+
+### Scope
+Alwyn: "full audit, improve stability, serious upgrade in code and design." Five parallel
+read-only auditors (core agents pkg · graph/ingest/trigger · apps/web · scripts/evals · supabase
+SQL) + dependency audit, then one coordinated fix batch. Baseline before: 202 tests green, 7 npm
+vulnerabilities (1 critical, dev-chain). After: **215 tests green, 3 clean typecheck roots,
+0 npm vulnerabilities**, and a live CLI run (fixture 01 → EUR 6930) proving the pipeline.
+
+### The one CRITICAL finding (and why every unit test missed it)
+**The injection guard re-priced every quote against the hardcoded FCL demo card**
+(`injectionGuard` → `priceQuote(req)` with no card argument → default `RATE_CARD`), not the
+engine-resolved card the gate validated and the engine priced on. Every quote on a non-demo
+lane/mode (BARGE NLRTM-DEDUI, FCL USLAX/DEHAM — the entire D-30 multi-modal feature) recomputed
+against the wrong card → `price_mismatch` → the valid quote+draft destroyed and escalated as
+`guard_violation`. Gate, engine, and extraction each proved their own multi-modal behaviour in
+isolation; **no test composed the full pipeline on a non-default card** — a textbook
+unit-covered/integration-dead blind spot. Fixed: `GuardInput` now carries the gate-validated
+`card` (null card + non-null quote is itself a violation, fail closed); regression tests run
+`runAgent` end-to-end on a barge card, both clean and tampered.
+
+### Other fixes shipped in this sweep
+- **Draft boundary hardened**: email-derived fields (requester/lane text/commodity) now escaped +
+  confined to a `<customer_fields>` data block (same treatment as the `<email>` block at
+  extraction); system prompt instructs data-not-instructions; module comment no longer overstates.
+- **Mail-loss window closed** (graph): `listSince` follows `@odata.nextLink` (cap 20 pages) and
+  filters `ge` instead of `gt` (safe under the 0008 message-id dedup); cursor URL-encoded.
+- **No silent stub**: the Trigger.dev poll task now THROWS naming missing GRAPH_* keys instead of
+  silently injecting stub emails into the real tenant; stub requires explicit
+  `QUOTEAGENT_ALLOW_STUB_MAILBOX=1`. `onFailure`/`markError` guarded; batchTrigger chunked (100).
+- **Retrieval degrades, never crashes**: a RAG/embedding failure now drafts ungrounded instead of
+  stranding the request in 'processing' (proven live: the demo run hit an unreachable Supabase and
+  completed). Retriever also memoizes the embed PROMISE (no duplicate paid corpus embeds) and
+  tolerates null RPC data.
+- **Rate-card data validated at both boundaries**: parse-rate-sheet rejects malformed Lane /
+  Excel-date "Valid through" / lowercase Mode at import; assembleRateCard rejects non-integer or
+  negative amounts at assembly — classified errors, never a post-gate ZodError.
+- **Dashboard resilience** (apps/web): server actions catch RPC state-conflict errors (double
+  click / two reviewers no longer crash the page — losing racer re-renders true state);
+  `error.tsx` boundary; pending-aware SubmitButton; in-flight requests show "Processing" instead
+  of a false "Escalated"; `/login?error=auth` surfaced; shared `format.ts` (eur/utc/reasonLabel).
+- **SQL hardening (migration 0015 + 5 new tests, NOT yet applied to the live project)**:
+  revoke browser DML on `knowledge_chunks`/`poll_state` (hosted-Supabase default privileges made
+  them tenant-writable → RAG-poisoning channel); revoke PUBLIC execute on `match_knowledge`;
+  `persist_run_outcome` flips status BEFORE inserts (orphan-quote-on-escalated closed);
+  sent-gate trigger now BEFORE INSERT OR UPDATE; `claim_for_send` sends
+  `coalesce(edited_body, body)` (reviewer edits were silently dropped); requeue clears the send
+  lease; partial unique index = one active card per (tenant, lane, mode).
+  Apply with `npm run db:migrate:hardening` then `npm run db:test:hardening`.
+- **Ops scripts**: db.sh now FAILS on non-2xx (was exit-0 on every error — every db:* script could
+  silently no-op) and resolves the repo root from its own location; import deactivates superseded
+  cards; ingest_email marks 'error' on pipeline failure; poll_once continues past per-id failures;
+  gen_rate_sheet computes validity = today+90d (invented window); eval seeds/cleanups check every
+  Supabase error; adapter fixture-05 expectation derives from the live engine (multi-lane drift).
+- **Honesty fixes**: the "no Mail.Send scope" claim was code-structure-only (the `.default`
+  client-credentials token carries ALL consented app permissions) — comments + test renamed to say
+  so; Gemini QUERY embeds were mislabeled "task: search result" → now "search query" (document
+  side frozen to match stored vectors); UN/LOCODE regex now matches its own comment ([A-Z2-9]).
+- **Deps/infra**: vitest 2→4 + uuid override → 0 vulnerabilities; GitHub Actions CI (core tests +
+  typecheck, web typecheck); engines >=22.9; graphify-out/ ignored.
+
+### Known gaps deliberately NOT fixed (logged, not hidden)
+- **No card-expiry check anywhere** — the static demo card's validity (2026-06-30) is now in the
+  past and quotes still state it. Needs an escalation-reason vocabulary + DB check-constraint
+  change; deferred as its own task rather than rushed here.
+- 'processing' rows still have no lease-based self-recovery (only the run task's onFailure).
+- `verifyDraftStatesTotal` still passes on any coincidental numeric token and rejects EU
+  space-thousands (documented in-code as out of scope).
+- Composite (request_id, tenant_id) FKs, hot-path indexes, and `poll_state.cursor` as timestamptz:
+  scale/integrity hygiene deferred (demo-scale).
+- Excel Online adapter remains a gated POC with dead branches (documented).
+
+All five auditor reports were reconciled; every fix above maps to a finding, and the suite grew
+202 → 215 tests (regression tests for the critical guard bug, draft escaping, pagination/ge
+cursor, web format lib).
 
 ### Scope
 Alwyn: "upgrade the rate sheet — truck, rail, barge, airfreight." Brainstormed down to ONE mode
