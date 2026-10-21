@@ -275,7 +275,9 @@ describe("P1a switch — v2 quotes (QuoteViewV2 snapshot) alongside v1", () => {
     route: "Shanghai (CNSHA) → Rotterdam (NLRTM)",
     transit_days: 32,
     valid_until: "2026-11-30",
+    itemized: true,
     lines: [{ code: "OFR", label: "Ocean freight", quantity: "2 × 40' High Cube", sell: { minor: total, currency } }],
+    included: ["Ocean freight"],
     total: { minor: total, currency },
     fx_notes: [],
     ...over,
@@ -304,11 +306,13 @@ describe("P1a switch — v2 quotes (QuoteViewV2 snapshot) alongside v1", () => {
         }),
         option("o2", "2350000", "USD", { transit_days: null, valid_until: "2026-11-15" }),
       ],
+      assumptions: ["Port-to-port service; local charges beyond those listed are not included."],
     }); // the fixture is a real QuoteViewV2, so the local mirror is checked against the agent's schema
     const q = v2(buildRequestView(v2Row(snapshot)));
     expect(q.headline).toBe("Shanghai (CNSHA) → Rotterdam (NLRTM) · FCL · 2 options");
     expect(q.total).toBe("USD 21,109.50");
-    expect(q.validity).toBe("2026-11-15"); // earliest valid_until across options
+    expect(q.validity).toBe("2026-11-30"); // the summarised (first) option's validity, as in quotes.validity_through
+    expect(q.assumptions).toEqual(["Port-to-port service; local charges beyond those listed are not included."]);
     expect(q.option_count).toBe(2);
     expect(q.currency).toBe("USD");
     expect(q.options.map((o) => o.total)).toEqual(["USD 21,109.50", "USD 23,500.00"]);
@@ -318,8 +322,21 @@ describe("P1a switch — v2 quotes (QuoteViewV2 snapshot) alongside v1", () => {
     expect(q.options[1]!.transit_days).toBeNull();
   });
 
+  it("a total-only (cost-based) option carries the included charge names and no amounts", () => {
+    const snapshot = QuoteViewV2Schema.parse({
+      quote_version: 2,
+      quote_currency: "EUR",
+      options: [option("o1", "721707", "EUR", { itemized: false, lines: [], included: ["Ocean freight", "Origin terminal handling"] })],
+      assumptions: [],
+    });
+    const o = v2(buildRequestView(v2Row(snapshot))).options[0]!;
+    expect(o.lines).toEqual([]);
+    expect(o.included).toEqual(["Ocean freight", "Origin terminal handling"]);
+    expect(o.total).toBe("EUR 7,217.07");
+  });
+
   it("a JPY total renders with exponent 0 (no decimals)", () => {
-    const snapshot = QuoteViewV2Schema.parse({ quote_version: 2, quote_currency: "JPY", options: [option("o1", "1234567", "JPY")] });
+    const snapshot = QuoteViewV2Schema.parse({ quote_version: 2, quote_currency: "JPY", options: [option("o1", "1234567", "JPY")], assumptions: [] });
     const q = v2(buildRequestView(v2Row(snapshot)));
     expect(q.total).toBe("JPY 1,234,567");
     expect(q.headline).toBe("Shanghai (CNSHA) → Rotterdam (NLRTM) · FCL");

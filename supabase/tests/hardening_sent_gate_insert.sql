@@ -22,6 +22,8 @@ insert into public.quote_requests (id, tenant_id, source, status) values
   ('0f300000-0000-4000-8000-0000000000a1','0f300000-0000-4000-8000-000000000001','sample','awaiting_review');
 insert into public.drafts (request_id, tenant_id, subject, body) values
   ('0f300000-0000-4000-8000-0000000000a1','0f300000-0000-4000-8000-000000000001','Re','draft body');
+insert into public.quotes (request_id, tenant_id, rate_card_version, container_type, container_qty, all_in_total, breakdown_snapshot, validity_through) values
+  ('0f300000-0000-4000-8000-0000000000a1','0f300000-0000-4000-8000-000000000001','t','40HC',1,100,'{}'::jsonb,'2026-12-31');
 
 -- ── negative: a row BORN 'sent' must be blocked, even for the privileged (RLS-bypassing) session ──
 do $$

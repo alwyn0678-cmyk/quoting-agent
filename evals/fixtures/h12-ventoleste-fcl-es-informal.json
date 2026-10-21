@@ -1,0 +1,32 @@
+{
+  "id": "h12-ventoleste-fcl-es-informal",
+  "description": "Informal Spanish (short, abbreviations).",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Diego <diego@cafe-andino.example>",
+    "subject": "cotiza porfa",
+    "body": "Hola! me cotizas 1x40 HC Santos-Rotterdam? puerto a puerto, café. gracias!!"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 1
+      }
+    },
+    "quote": {
+      "currency": "BRL",
+      "total": "18997.10",
+      "options": 2
+    },
+    "language": "es"
+  }
+}

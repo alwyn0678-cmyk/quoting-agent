@@ -1,0 +1,22 @@
+{
+  "id": "h11-kopjeveld-dg-lithium",
+  "description": "Lithium-ion batteries (UN3480, class 9) go to a specialist.",
+  "tenant": "kopjeveld",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Sipho Ndlovu <sipho@voltpower.example>",
+    "subject": "1x20 Shanghai - Durban batteries",
+    "body": "Hi,\n\nPlease quote 1 x 20GP Shanghai to Durban, port to port. Cargo: lithium-ion batteries UN3480, class 9.\n\nThanks,\nSipho"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_cargo",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "ZADUR",
+      "mode": "FCL"
+    }
+  }
+}

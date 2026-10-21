@@ -1,0 +1,32 @@
+{
+  "id": "h05-kopjeveld-fcl-french",
+  "description": "A French email (no French phrasebook): the reply falls back to English.",
+  "tenant": "kopjeveld",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Amélie Laurent <a.laurent@vins-du-cap.example>",
+    "subject": "Demande de cotation Durban - Rotterdam",
+    "body": "Bonjour,\n\nMerci de nous coter 1 conteneur 40' HC de Durban à Rotterdam, port à port. Marchandise : vin en bouteilles.\n\nCordialement,\nAmélie Laurent"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "ZADUR",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 1
+      }
+    },
+    "quote": {
+      "currency": "ZAR",
+      "total": "58408.86",
+      "options": 2
+    },
+    "language": "en"
+  }
+}

@@ -137,6 +137,17 @@ export class Dec {
   }
 
   /** Round to `scale` decimal places with an explicit mode (exact when scale ≥ current scale). */
+  /** The same value without trailing fractional zeros (canonical form; exact, no string round trip). */
+  trimmed(): Dec {
+    let coef = this.coef;
+    let scale = this.scale;
+    while (scale > 0 && coef % 10n === 0n) {
+      coef /= 10n;
+      scale -= 1;
+    }
+    return new Dec(coef, scale);
+  }
+
   round(scale: number, mode: RoundingMode): Dec {
     checkScale(scale);
     if (scale >= this.scale) return new Dec(this.rescaled(scale), scale);

@@ -9,10 +9,11 @@ import { toStrictJsonSchema } from "./strict-json-schema.js";
 import { AnthropicLlmClient, type AnthropicMessagesApi } from "./anthropic.js";
 import { AiSdkLlmClient } from "./ai-sdk.js";
 import { estimateStepCostUsd } from "./pricing.js";
-import { ReplayLlmClient, RecordingLlmClient } from "./replay.js";
+import { ReplayLlmClient, RecordingLlmClient, CassetteMissError } from "./replay.js";
 import { resolveLlmFromEnv } from "./resolve.js";
 import { LlmOutputError, LlmRefusalError, type StructuredCall } from "../llm.js";
-import { ShipmentRequestSchema as ExtractionResultSchema } from "../../../core/src/request/schema.js";
+import { ExtractionWireSchema } from "../pipeline/extraction-wire.js";
+import { ShipmentRequestSchema } from "../../../core/src/request/schema.js";
 
 const DraftSchema = z.object({ subject: z.string(), body: z.string() });
 import { MockLlmClient } from "../mock-llm.js";
@@ -50,7 +51,7 @@ describe("P0.2 model refs — provider/model strings", () => {
 });
 
 describe("P0.2 strict JSON schema — portable structured-output schema", () => {
-  const schema = toStrictJsonSchema(ExtractionResultSchema);
+  const schema = toStrictJsonSchema(ExtractionWireSchema);
   const walk = (node: unknown, visit: (o: Record<string, unknown>) => void) => {
     if (Array.isArray(node)) node.forEach((n) => walk(n, visit));
     else if (node && typeof node === "object") {
@@ -65,7 +66,8 @@ describe("P0.2 strict JSON schema — portable structured-output schema", () => 
   });
   it("strips keywords providers reject; the client-side Zod parse still enforces them", () => {
     const banned = ["$schema", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "pattern", "minLength", "maxLength"];
-    walk(schema, (o) => banned.forEach((k) => expect(o).not.toHaveProperty(k)));
+    // on the constraint-rich core schema (regexes, bounds), not the flat wire, so the test is not vacuous
+    walk(toStrictJsonSchema(ShipmentRequestSchema), (o) => banned.forEach((k) => expect(o).not.toHaveProperty(k)));
   });
 });
 
@@ -105,15 +107,20 @@ describe("P0.2 Anthropic adapter — native structured outputs, no forced tool_c
     expect(out.usage).toEqual({ input_tokens: 120, output_tokens: 40 });
     expect(out.model).toBe("anthropic/claude-opus-5-5");
   });
-  it("opts into server-side refusal fallbacks on models that support them", async () => {
+  it("server-side fallbacks are OFF by default: an un-evaluated model never answers (invariant 8)", async () => {
     const { api, requests } = fakeMessages(okMessage('{"subject":"s","body":"b"}'));
     await new AnthropicLlmClient({ messages: api }).callStructured(call());
+    expect(requests[0]).not.toHaveProperty("fallbacks");
+  });
+  it("opted in, server-side refusal fallbacks are sent on models that support them", async () => {
+    const { api, requests } = fakeMessages(okMessage('{"subject":"s","body":"b"}'));
+    await new AnthropicLlmClient({ messages: api, serverFallbacks: true }).callStructured(call());
     expect(requests[0]!.fallbacks).toBe("default");
     expect(requests[0]!.betas).toContain("server-side-fallback-2026-07-01");
   });
-  it("does not send fallbacks for models without them (Haiku)", async () => {
+  it("does not send fallbacks for models without them (Haiku), even opted in", async () => {
     const { api, requests } = fakeMessages(okMessage('{"subject":"s","body":"b"}', { model: "claude-haiku-5-5" }));
-    await new AnthropicLlmClient({ messages: api }).callStructured(call({ model: "anthropic/claude-haiku-5-5" }));
+    await new AnthropicLlmClient({ messages: api, serverFallbacks: true }).callStructured(call({ model: "anthropic/claude-haiku-5-5" }));
     expect(requests[0]).not.toHaveProperty("fallbacks");
   });
   it("reports the model that actually served the request (a fallback may answer)", async () => {
@@ -165,6 +172,44 @@ describe("P0.2 AI SDK adapter — any other provider", () => {
   });
 });
 
+describe("AI SDK adapter × the real extraction contract (architecture review #9)", () => {
+  it("sends a strict-mode-portable schema (no unions, every property required) and round-trips a request", async () => {
+    const { extractShipmentRequest } = await import("../pipeline/extract.js");
+    const { requestToExtractionWire } = await import("../pipeline/extraction-wire.js");
+    const { SAMPLE_FCL_REQUEST } = await import("../pipeline/testing.js");
+    let sent: unknown;
+    const mock = new MockLanguageModelV4({
+      provider: "openai.chat",
+      modelId: "gpt-5.1",
+      doGenerate: async (options) => {
+        sent = (options as { responseFormat?: { schema?: unknown } }).responseFormat?.schema;
+        return {
+          content: [{ type: "text", text: JSON.stringify(requestToExtractionWire(SAMPLE_FCL_REQUEST)) }],
+          finishReason: { unified: "stop", raw: "stop" },
+          usage: { inputTokens: { total: 900, noCache: 900, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 300, text: 300, reasoning: 0 } },
+          warnings: [],
+        };
+      },
+    });
+    const out = await extractShipmentRequest({ from: "a@b.example", subject: "s", body: "b" }, new AiSdkLlmClient(async () => mock), "openai/gpt-5.1");
+    expect(out.request).toEqual(SAMPLE_FCL_REQUEST);
+    let unions = 0;
+    let open = 0;
+    const walk = (n: unknown): void => {
+      if (Array.isArray(n)) return n.forEach(walk);
+      if (!n || typeof n !== "object") return;
+      const o = n as Record<string, unknown>;
+      if (Array.isArray(o.type) || o.anyOf || o.oneOf) unions += 1;
+      if (o.type === "object" && o.properties && Object.keys(o.properties).length !== ((o.required as string[]) ?? []).length) open += 1;
+      Object.values(o).forEach(walk);
+    };
+    expect(sent).toBeDefined();
+    walk(sent);
+    expect(unions).toBe(0);
+    expect(open).toBe(0);
+  });
+});
+
 describe("P0.2 pricing — honest cost per step", () => {
   it("prices known Claude models from the published table", () => {
     // claude-opus-5-5: $4 / $20 per MTok
@@ -185,9 +230,12 @@ describe("P0.2 replay — recorded responses for the no-key demo", () => {
     expect(replayed.data).toEqual({ subject: "s", body: "b" });
     expect(replayed.model).toBe("anthropic/claude-opus-5-5");
   });
-  it("a request with no recording fails with a clear, actionable error", async () => {
+  it("a request with no recording fails with a clear, actionable error — a harness fault, not a model fault", async () => {
     const dir = mkdtempSync(join(tmpdir(), "qa-cassettes-"));
-    await expect(new ReplayLlmClient(dir).callStructured(call({ userContent: "something new" }))).rejects.toThrow(/no recorded response/i);
+    const miss = new ReplayLlmClient(dir).callStructured(call({ userContent: "something new" }));
+    await expect(miss).rejects.toThrow(/no recorded response/i);
+    await expect(miss).rejects.toBeInstanceOf(CassetteMissError);
+    await expect(miss).rejects.not.toBeInstanceOf(LlmOutputError); // never escalates as model_output_invalid
   });
 });
 
@@ -233,7 +281,7 @@ describe("Codex review fixes — P0 hardening of the LLM layer", () => {
     expect(() => toStrictJsonSchema(z.object({ m: z.record(z.string(), z.number()) }))).toThrow(/open record/i);
   });
   it("#1 the extraction schema converts (per-field confidence is a closed list, not a record)", () => {
-    expect(() => toStrictJsonSchema(ExtractionResultSchema)).not.toThrow();
+    expect(() => toStrictJsonSchema(ExtractionWireSchema)).not.toThrow();
   });
   it("#3 Anthropic: any stop reason other than end_turn is rejected", async () => {
     for (const stop_reason of ["pause_turn", "model_context_window_exceeded", "stop_sequence", "tool_use"]) {

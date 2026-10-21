@@ -40,6 +40,25 @@ export interface TenantPresentation {
   terms_ref: string | null;
   /** Trusted registry: tariff carrier key → display label. Carriers not listed are not named. */
   carrier_labels: Readonly<Record<string, string>>;
+  /**
+   * Show per-line amounts on COST-BASED (BUY) offers. Default false: a line sold at cost (e.g. a
+   * pass-through local charge) or at a uniform markup reveals the forwarder's buy price, so those
+   * options show the included charges by name and the option total only. SELL tariffs are always
+   * itemised (their lines are already customer prices). An explicit, admin-owned commercial choice.
+   */
+  itemize_cost_based?: boolean;
+}
+
+/** Whether an option's lines may be shown with amounts (see TenantPresentation.itemize_cost_based). */
+export function isItemized(o: Pick<RouteOption, "price_kind">, tenant: Pick<TenantPresentation, "itemize_cost_based">): boolean {
+  return o.price_kind === "SELL" || tenant.itemize_cost_based === true;
+}
+
+/** Number/date locale for a draft: the tenant's when it is in the draft's language, else that
+ *  language's default — an English reply never shows "USD 584,47". */
+const LANGUAGE_LOCALE: Record<Language, string> = { en: "en-GB", nl: "nl-NL", de: "de-DE", es: "es-ES", pt: "pt-BR", zh: "zh-CN" };
+export function draftLocale(tenantLocale: string, lang: Language): string {
+  return tenantLocale.split("-")[0] === lang ? tenantLocale : LANGUAGE_LOCALE[lang];
 }
 
 /** One printable line: NFKC-normalised; every control (Cc) and format (Cf) character removed. */
@@ -98,21 +117,24 @@ function qtyText(l: ChargeLine, lang: Language): string {
   }
 }
 
-function optionBlock(o: RouteOption, n: number, lang: Language, tenant: TenantPresentation, quoteCurrency: string): string {
+function optionBlock(o: RouteOption, n: number, lang: Language, tenant: TenantPresentation, locale: string, quoteCurrency: string): string {
   const label = tenant.carrier_labels[o.carrier];
   const carrier = label ? sanitizeLine(label, 40) : null;
   const head = [
     `${phrase(lang, "option")} ${n}${carrier ? ` · ${carrier}` : ""}`,
     o.transit_days !== null ? phrase(lang, "transit", { days: String(o.transit_days) }) : null,
-    phrase(lang, "valid_until", { date: formatDate(o.valid_until, tenant.locale) }),
+    phrase(lang, "valid_until", { date: formatDate(o.valid_until, locale) }),
   ]
     .filter(Boolean)
     .join(" · ");
-  const lines = [...o.legs.flatMap((leg) => leg.lines), ...o.adjustments].map((l) => {
-    const q = qtyText(l, lang);
-    return `  - ${phrase(lang, chargeKey(l.code))}${q ? ` (${q})` : ""}: ${formatMoney(l.sell, tenant.locale)}`;
-  });
-  const total = `  ${phrase(lang, "total")}: ${formatMoney(o.totals.quote, tenant.locale)}`;
+  const all = [...o.legs.flatMap((leg) => leg.lines), ...o.adjustments];
+  const lines = isItemized(o, tenant)
+    ? all.map((l) => {
+        const q = qtyText(l, lang);
+        return `  - ${phrase(lang, chargeKey(l.code))}${q ? ` (${q})` : ""}: ${formatMoney(l.sell, locale)}`;
+      })
+    : [`  ${phrase(lang, "includes")}: ${[...new Set(all.map((l) => phrase(lang, chargeKey(l.code))))].join(", ")}`];
+  const total = `  ${phrase(lang, "total")}: ${formatMoney(o.totals.quote, locale)}`;
   const fx = o.fx_conversions
     .filter((r) => r.kind === "SELL")
     .map(
@@ -121,7 +143,7 @@ function optionBlock(o: RouteOption, n: number, lang: Language, tenant: TenantPr
           from: r.from,
           to: quoteCurrency,
           source: phrase(lang, r.source.toUpperCase().startsWith("ECB") ? "fx_source_ecb" : "fx_source_other"),
-          date: formatDate(r.as_of, tenant.locale),
+          date: formatDate(r.as_of, locale),
         })})`,
     );
   return [head, ...lines, total, ...fx].join("\n");
@@ -139,6 +161,7 @@ export function renderQuoteEmail(args: {
   const { tenant, request, result } = args;
   intlLocale(tenant.locale);
   const lang = choice.language;
+  const locale = draftLocale(tenant.locale, lang);
   if (!request.origin.unlocode || !request.destination.unlocode) throw new Error("render: origin/destination unresolved");
   const route = `${portLabel(request.origin.unlocode)} → ${portLabel(request.destination.unlocode)}`;
   const presented = result.presented.map((id) => result.candidates.find((c) => c.id === id));
@@ -168,14 +191,14 @@ export function renderQuoteEmail(args: {
     `${phrase(lang, "mode")}: ${request.mode} · ${phrase(lang, "cargo")}: ${cargoText}`,
     [
       request.incoterm ? `${phrase(lang, "incoterm")}: ${request.incoterm}` : null,
-      request.ready_date ? `${phrase(lang, "ready")}: ${formatDate(request.ready_date, tenant.locale)}` : null,
+      request.ready_date ? `${phrase(lang, "ready")}: ${formatDate(request.ready_date, locale)}` : null,
     ]
       .filter(Boolean)
       .join(" · ") || null,
   ]
     .filter(Boolean)
     .join("\n");
-  const options = options0.map((o, i) => optionBlock(o, i + 1, lang, tenant, result.quote_currency)).join("\n\n");
+  const options = options0.map((o, i) => optionBlock(o, i + 1, lang, tenant, locale, result.quote_currency)).join("\n\n");
   const notes = [
     request.cargo.dangerous_goods === null || request.cargo.temperature_controlled === null ? phrase(lang, "assume_general") : null,
     phrase(lang, "assume_port"),

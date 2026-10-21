@@ -1,5 +1,5 @@
 import { schedules } from "@trigger.dev/sdk";
-import { pollMailbox } from "../../../ingest/src/poll.js";
+import { pollMailbox, LEASE_MINUTES } from "../../../ingest/src/poll.js";
 import { SupabaseIngestStore, createServiceClient } from "../../../ingest/src/supabase-store.js";
 import { createStubMailbox } from "../../../ingest/src/stub-transport.js";
 import { createOutlookMailboxFromEnv, GRAPH_ENV_KEYS, missingEnv } from "../../../graph/src/graph-transport.js";
@@ -34,8 +34,9 @@ function resolveMailbox() {
  * via the REAL OutlookMailbox over the live client-credentials transport (the deterministic stub only
  * on explicit opt-in — see resolveMailbox), persist new mail as 'received' deduped by
  * graph_message_id (AC-1), advance the per-tenant cursor, and enqueue the durable run for every id in
- * `toRun` (newly ingested ∪ stranded 'received' — W5 recovery). Each run is keyed by requestId, so a
- * re-enqueue of an in-flight request never runs it twice.
+ * `toRun` (newly ingested ∪ stranded 'received' ∪ expired leases — W5 recovery). Each enqueue carries an
+ * idempotency key per (request, lease), so a queued or in-flight run is not re-triggered every cycle;
+ * the DB claim (owner-checked lease) remains the guarantee that no request runs twice.
  *
  * Single-tenant for the demo (LINKPORT_TENANT_ID, env-overridable); a real deployment iterates a
  * mailboxes config table here, one poll per {tenant, mailbox}.
@@ -61,7 +62,9 @@ export const pollMailboxTask = schedules.task({
       await runRequestTask.batchTrigger(
         result.toRun.slice(i, i + TRIGGER_BATCH_SIZE).map((requestId) => ({
           payload: { tenantId, requestId },
-          options: { concurrencyKey: requestId },
+          // Deduplicate re-enqueues of the same attempt (a queued or in-flight run is not triggered
+          // again every poll cycle); the TTL matches the lease, after which recovery needs a new run.
+          options: { idempotencyKey: result.enqueueKeys[requestId]!, idempotencyKeyTTL: `${LEASE_MINUTES}m` },
         })),
       );
     }

@@ -28,6 +28,12 @@
       "options": 3
     },
     "language": "nl",
-    "must_not_quote_total": "1.00"
+    "must_not_quote_total": "1.00",
+    "draft_must_not_contain": [
+      "EUR 1,00",
+      "gratis",
+      "systeemprompt",
+      "CANARY"
+    ]
   }
 }

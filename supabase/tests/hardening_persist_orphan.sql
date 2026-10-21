@@ -12,6 +12,9 @@ insert into public.tenants (id, name) values ('0f200000-0000-4000-8000-000000000
 insert into public.quote_requests (id, tenant_id, source, status)
   values ('0f200000-0000-4000-8000-0000000000f1','0f200000-0000-4000-8000-000000000001','poll','processing');
 
+-- 0022: the worker always persists under the lease owner it claimed with
+update public.quote_requests set claim_owner = 'run_T' where status = 'processing';
+
 do $$
 declare v_first boolean; v_second boolean; n int; v_status text;
 begin
@@ -20,7 +23,7 @@ begin
     '0f200000-0000-4000-8000-0000000000f1','0f200000-0000-4000-8000-000000000001',
     'escalated','low_confidence', false,
     null, null,
-    jsonb_build_object('model','m','input_tokens',80,'output_tokens',20,'est_cost_usd',0.008));
+    jsonb_build_object('model','m','input_tokens',80,'output_tokens',20,'est_cost_usd',0.008), p_owner => 'run_T');
   if not v_first then raise exception 'FAIL: first (escalate) call should transition (returned false)'; end if;
 
   -- second call: a DIVERGENT retry that produced a quote → must lose the flip and write NOTHING
@@ -31,7 +34,7 @@ begin
                        'all_in_total',6930,'breakdown_snapshot',jsonb_build_object('all_in_total',6930),
                        'validity_through','2026-06-30'),
     jsonb_build_object('subject','Re','body','all-in EUR 6,930.'),
-    jsonb_build_object('model','m','input_tokens',100,'output_tokens',50,'est_cost_usd',0.01));
+    jsonb_build_object('model','m','input_tokens',100,'output_tokens',50,'est_cost_usd',0.01), p_owner => 'run_T');
   if v_second then raise exception 'FAIL: losing divergent retry should be a no-op (returned true)'; end if;
 
   -- the retry's quote/draft must NOT exist (under 0009's ordering both rows persisted — the orphan)

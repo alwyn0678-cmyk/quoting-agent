@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk";
+import { logger, task } from "@trigger.dev/sdk";
 import { runAndPersist } from "../../../ingest/src/run.js";
 import { SupabaseRunStore, createServiceClient } from "../../../ingest/src/supabase-store.js";
 import { createLlmFromEnv } from "../../../agents/src/index.js";
@@ -21,7 +21,9 @@ import { productionRunDeps } from "../../../ingest/src/production.js";
  */
 export const runRequestTask = task({
   id: "run-request",
-  queue: { concurrencyLimit: 1 },
+  // One global queue: at most this many agent runs at once across all requests (a provider rate-limit
+  // and spend bound). Per-request exclusion is the DB lease (claim_request), not the queue.
+  queue: { concurrencyLimit: 4 },
   run: async (payload: { tenantId: string; requestId: string }, { ctx }) => {
     const { tenantId, requestId } = payload;
     const client = createServiceClient();
@@ -29,7 +31,7 @@ export const runRequestTask = task({
     if (llm.mode === "demo") {
       throw new Error("run-request needs a live LLM provider (set ANTHROPIC_API_KEY or QUOTEAGENT_MODEL)");
     }
-    return await runAndPersist(tenantId, requestId, ctx.run.id, productionRunDeps(client, tenantId, llm), new SupabaseRunStore(client));
+    return await runAndPersist(tenantId, requestId, ctx.run.id, { ...productionRunDeps(client, tenantId, llm), log: (line) => logger.info("quote_run", { ...line }) }, new SupabaseRunStore(client));
   },
   onFailure: async ({ payload, ctx }) => {
     try {

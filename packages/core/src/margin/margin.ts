@@ -33,6 +33,8 @@ export function validateMarginRule(r: MarginRule): string[] {
   if (r.kind === "MARKUP_ON_BUY" && !within("0", "10")) errors.push(`margin rule '${r.id}': MARKUP_ON_BUY must be in [0, 10]`);
   if (r.kind === "GROSS_MARGIN" && !within("0", "0.95")) errors.push(`margin rule '${r.id}': GROSS_MARGIN must be in [0, 0.95]`);
   if (r.kind === "FLAT") {
+    // A flat fee IS the margin; a minimum on top would always add a second charge (pricing review #4).
+    if (r.min_margin) errors.push(`margin rule '${r.id}': FLAT rules cannot carry min_margin`);
     if (!r.currency) errors.push(`margin rule '${r.id}': FLAT needs a currency`);
     else {
       try {

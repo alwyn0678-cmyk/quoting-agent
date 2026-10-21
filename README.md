@@ -92,13 +92,15 @@ supabase start && npm run db:test   # every SQL proof on a fresh local database 
 
 ## Design judgments worth noticing
 
-- **Pricing is deterministic code, never the model.** A quote is `base + per-container surcharges +
-  per-shipment fees`, summed to one integer-EUR total — reproducible and auditable line by line. An LLM
-  that "usually" prices right is useless to a forwarder bound by the figure they send.
-- **RAG is scoped to the reply prose, never the price** ([Q3](docs/AGENT_DESIGN.md)). Retrieval grounds
-  *explanations* of charges/terms (Gemini embeddings + Supabase pgvector) and runs **after** pricing, so
-  a retrieved chunk is structurally incapable of moving a number — and a retrieval *failure* degrades to
-  an ungrounded draft instead of crashing the run. Knowing when **not** to use RAG is the point.
+- **Pricing is deterministic code, never the model.** Exact decimal money in minor units, one rounding
+  per line, FX converted once per currency with a receipt, margins per tenant policy — every quote line
+  carries a receipt back to its tariff row and snapshot hash, and an independent guard re-checks the
+  totals before anything is drafted. An LLM that "usually" prices right is useless to a forwarder.
+- **The reply is written by code, not the model.** The model only chooses the reply's language and tone
+  from fixed options; every customer-visible word comes from a reviewed six-language phrasebook and every
+  number from the engine. An injected email can change a phrase choice — never a price, a promise or a
+  recipient. (Retrieval-augmented drafting was retired in P1a for this reason: there is no model prose
+  left to ground.)
 - **A hard trusted/untrusted boundary — at both LLM steps.** The email is untrusted: extraction reads it
   inside an escaped `<email>` data block, turning free text into a constrained schema. The draft step
   gets engine-verified figures, and the few email-derived text fields it needs (names, lane text,
@@ -131,8 +133,7 @@ CI runs the hermetic suite + all typecheck roots on every push.
 
 ```
 apps/        cli (the Phase 0 slice)  ·  web (approval dashboard)
-packages/    agents (the core)  ·  graph  ·  ingest  ·  trigger
-knowledge/   the authored RAG corpus (all invented)
+packages/    core (pure pricing/gate/draft)  ·  agents (pipeline, LLM + tariff ports)  ·  graph  ·  ingest  ·  trigger
 rates/       the committed Excel rate sheet
 evals/       golden fixtures + live eval runners
 supabase/    migrations + RLS policies + SQL tests
@@ -153,7 +154,7 @@ docs/        design, evals, observability, assumptions, audit trail
 ## Status
 
 **Phase 0** (the CLI vertical slice: email → extract → price → grounded draft) is complete and tested.
-**Phase 1** components — Excel→Supabase rate import, scoped RAG (live), the approval dashboard, and the
+**Phase 1** components — Excel→Supabase rate import, the approval dashboard, and the
 MS Graph autonomous poll — are built behind the same ports; some live wiring is gated on
 account/credential setup. A **2026-07 full-repo audit + hardening sweep** (multi-modal guard fix,
 mail-loss pagination, dashboard resilience, SQL hardening migration 0015, 0 npm vulnerabilities) is

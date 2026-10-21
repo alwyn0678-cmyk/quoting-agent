@@ -1,5 +1,6 @@
 import { runAgentV2, type AgentDeps, type RunOptions } from "../../agents/src/pipeline/run.js";
 import { quoteRowV2, type OutcomeDetailPublic, type QuoteRowV2 } from "../../agents/src/pipeline/output.js";
+import { runLogLine, type RunLogLine } from "../../agents/src/pipeline/observability.js";
 import type { Wire } from "../../core/src/pricing/wire.js";
 
 /**
@@ -60,7 +61,10 @@ export interface RunStore {
   persistOutcome(requestId: string, tenantId: string, owner: string, outcome: PersistOutcome): Promise<boolean>;
 }
 
-export type RunDeps = AgentDeps;
+export type RunDeps = AgentDeps & {
+  /** Receives one structured line per run (spec §14). Default: JSON on stdout. */
+  log?: (line: RunLogLine) => void;
+};
 
 export type RunSummary =
   | { ran: false; reason: "not_claimable" }
@@ -88,7 +92,9 @@ export async function runAndPersist(
 
   // Model refusals / invalid output escalate inside runAgentV2; anything thrown here is an
   // infrastructure fault and propagates so the durable job retries (same owner → re-claimable).
+  const started = Date.now();
   const out = await runAgentV2({ from: request.from_email ?? "", subject: request.subject ?? "", body: request.body ?? "" }, deps, options);
+  (deps.log ?? ((l) => console.log(JSON.stringify(l))))(runLogLine(out, { tenant_id: tenantId, request_id: requestId, owner, duration_ms: Date.now() - started }));
 
   const status = out.decision === "quote" ? "awaiting_review" : "escalated";
   const transitioned = await store.persistOutcome(requestId, tenantId, owner, {

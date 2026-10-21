@@ -186,14 +186,13 @@ describe("Codex review (engine) — fixes", () => {
     expect(lines.find((l) => l.code === "V")!.buy).toEqual(money(100000n, "USD"));
     expect(r.candidates[0]!.legs[0]!.quantities.revenue_tons!.toString()).toBe("1.001");
   });
-  it("#2 a FLAT fee does not count towards the minimum margin", () => {
+  it("#2 (revised by the pricing review) a FLAT rule with a minimum margin is a configuration error", () => {
+    // Codex engine #2 made the flat fee not count towards the minimum, which always charged FLAT + MIN
+    // (EUR 50 + EUR 100 on top of cost). A flat fee IS the margin, so the combination is now rejected.
     const t = load(tariff([fclLine("N45", "45G1", "100", "0", { charges: [c({ rate: "100", currency: "EUR" })] })]));
     const flat: MarginRule = { id: "F", match: {}, kind: "FLAT", value: Dec.parse("50"), currency: "EUR", applies_to: "ALL", priority: 0, min_margin: money(10000n, "EUR") };
     const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 1 }] })), [t], ctx([flat]));
-    if (r.kind !== "priced") throw new Error(JSON.stringify(r));
-    const o = r.candidates[0]!;
-    expect(o.adjustments.map((a) => `${a.code}:${a.sell.minor}`)).toEqual(["MARGIN_FLAT:5000", "MARGIN_ADJ:10000"]);
-    expect(o.totals.quote).toEqual(money(25000n, "EUR"));
+    expect(r.kind === "unpriceable" && r.reason).toBe("tariff_config_error");
   });
   it("#3 amounts beyond the money bound are a named result, never a raw exception", () => {
     const t = load(tariff([fclLine("N45", "45G1", "999999999999", "999999999999")]));

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { buildMockWorld } from "./build.js";
 import { MOCK_WORLD_DIR, readMockWorld, tenantRuntime, mockWorldSource } from "./load.js";
 import { price } from "../../../core/src/pricing/engine.js";
+import { checkInvariants } from "../../../core/src/guard/guard.js";
 import { normalizeCargo } from "../../../core/src/request/normalize.js";
 import type { Cargo } from "../../../core/src/request/schema.js";
 
@@ -42,6 +43,8 @@ describe("mock world — deterministic, valid, priceable", () => {
         const r = price({ mode, origin, destination, cargo: normalizeCargo(cg), ready_date: null }, tariffs, rt.context("2026-10-21"));
         expect(r.kind, `${t.id} ${lane}: ${r.kind === "unpriceable" ? r.reason + " " + r.detail : ""}`).toBe("priced");
         if (r.kind === "priced") expect(r.candidates[0]!.totals.quote.currency).toBe(t.quote_currency);
+        // independent invariants hold on every real result (sums, FX, provenance, margins, validity)
+        expect(checkInvariants(r, tariffs, rt.context("2026-10-21")), `${t.id} ${lane}`).toEqual([]);
       }
     }
   });
@@ -53,5 +56,45 @@ describe("mock world — deterministic, valid, priceable", () => {
     const after = price({ ...req, ready_date: "2026-11-20" }, tariffs, rt.context("2026-10-21"));
     if (before.kind !== "priced" || after.kind !== "priced") throw new Error("expected priced");
     expect(after.candidates.length).toBe(before.candidates.length - 1);
+  });
+});
+
+describe("guard invariants catch a deterministic-but-wrong result (architecture review #5)", () => {
+  const world = readMockWorld();
+  const rt = tenantRuntime(world, "linkport");
+  const ctx = rt.context("2026-10-21");
+  const priced = async () => {
+    const tariffs = await mockWorldSource(world).snapshot("linkport");
+    const r = price({ mode: "FCL", origin: "CNSHA", destination: "NLRTM", cargo: normalizeCargo(cargo({ containers: [{ type_raw: "40HC", qty: 2 }] })), ready_date: null }, tariffs, ctx);
+    if (r.kind !== "priced") throw new Error("expected priced");
+    return { r, tariffs };
+  };
+  const mutate = async (f: (o: ReturnType<typeof structuredClone<Awaited<ReturnType<typeof priced>>["r"]>>) => void) => {
+    const { r, tariffs } = await priced();
+    const copy = structuredClone(r);
+    f(copy);
+    return checkInvariants(copy, tariffs, ctx);
+  };
+
+  it("a line amount changed without its subtotal", async () => {
+    expect(await mutate((r) => { const l = r.candidates[0]!.legs[0]!.lines[0]!; l.sell = { ...l.sell, minor: l.sell.minor + 1n }; })).toContain("subtotal_mismatch");
+  });
+  it("a quote total that is not subtotal + converted subtotals", async () => {
+    expect(await mutate((r) => { const t = r.candidates[0]!.totals; t.quote = { ...t.quote, minor: t.quote.minor + 100n }; })).toContain("fx_total_mismatch");
+  });
+  it("a receipt that points at a tariff not in this snapshot", async () => {
+    expect(await mutate((r) => { r.candidates[0]!.legs[0]!.lines[0]!.receipt.content_hash = "0".repeat(64); })).toContain("unknown_tariff_receipt");
+  });
+  it("a line sold below its buy", async () => {
+    expect(
+      await mutate((r) => {
+        const l = r.candidates[0]!.legs[0]!.lines.find((x) => x.buy)!;
+        l.buy = { ...l.buy!, minor: l.sell.minor + 1n };
+      }),
+    ).toContain("sell_below_buy");
+  });
+  it("a presented option that is not a candidate, or validity before as-of", async () => {
+    expect(await mutate((r) => { r.presented = ["nope"]; })).toContain("presented_not_candidate");
+    expect(await mutate((r) => { r.candidates[0]!.valid_until = "2026-01-01"; })).toContain("expired_validity");
   });
 });

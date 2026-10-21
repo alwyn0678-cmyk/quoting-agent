@@ -3,9 +3,9 @@ import { toMajorString, type Money } from "../../../core/src/money/money.js";
 import { EQUIPMENT } from "../../../core/src/places/equipment.js";
 import { portLabel } from "../../../core/src/places/ports.js";
 import { chargeKey, phrase } from "../../../core/src/draft/phrasebook.js";
-import { DraftChoiceSchema } from "../../../core/src/draft/render.js";
+import { DraftChoiceSchema, isItemized, type TenantPresentation } from "../../../core/src/draft/render.js";
 import { ESCALATION_REASONS, type EscalationReason } from "../../../core/src/reasons.js";
-import { ShipmentRequestSchema, RequestFieldSchema } from "../../../core/src/request/schema.js";
+import { ShipmentRequestSchema, RequestFieldSchema, type ShipmentRequest } from "../../../core/src/request/schema.js";
 import type { ChargeLine, PricingResult, RouteOption } from "../../../core/src/pricing/types.js";
 import type { Wire } from "../../../core/src/pricing/wire.js";
 
@@ -38,7 +38,11 @@ export const QuoteOptionViewSchema = z
     route: z.string(),
     transit_days: z.number().int().nullable(),
     valid_until: z.string(),
+    /** false for cost-based offers unless the tenant opted in: lines is then empty (no amounts that
+     *  would reveal buy prices) and `included` names the charges. Mirrors the customer email. */
+    itemized: z.boolean(),
     lines: z.array(QuoteLineViewSchema),
+    included: z.array(z.string()),
     total: MoneyWire,
     fx_notes: z.array(z.object({ from: z.string(), to: z.string(), source: z.string(), as_of: z.string() }).strict()),
   })
@@ -49,6 +53,8 @@ export const QuoteViewV2Schema = z
     quote_version: z.literal(2),
     quote_currency: z.string().length(3),
     options: z.array(QuoteOptionViewSchema).min(1),
+    /** Code-rendered assumptions the quote rests on (spec §15.3), as stated in the customer email. */
+    assumptions: z.array(z.string()),
   })
   .strict();
 export type QuoteViewV2 = z.infer<typeof QuoteViewV2Schema>;
@@ -88,21 +94,22 @@ function quantityText(l: ChargeLine): string {
   }
 }
 
-function optionView(o: RouteOption, carrierLabels: Readonly<Record<string, string>>): z.infer<typeof QuoteOptionViewSchema> {
+function optionView(o: RouteOption, tenant: TenantPresentation): z.infer<typeof QuoteOptionViewSchema> {
   const leg = o.legs[0]!;
+  const all = [...o.legs.flatMap((l) => l.lines), ...o.adjustments];
+  const itemized = isItemized(o, tenant);
   return {
     option_id: o.id,
-    carrier_label: carrierLabels[o.carrier] ?? null,
+    carrier_label: tenant.carrier_labels[o.carrier] ?? null,
     mode: leg.mode,
     route: `${portLabel(leg.origin)} → ${portLabel(leg.destination)}`,
     transit_days: o.transit_days,
     valid_until: o.valid_until,
-    lines: [...o.legs.flatMap((l) => l.lines), ...o.adjustments].map((l) => ({
-      code: l.code,
-      label: phrase("en", chargeKey(l.code)),
-      quantity: quantityText(l),
-      sell: moneyWire(l.sell),
-    })),
+    itemized,
+    lines: itemized
+      ? all.map((l) => ({ code: l.code, label: phrase("en", chargeKey(l.code)), quantity: quantityText(l), sell: moneyWire(l.sell) }))
+      : [],
+    included: [...new Set(all.map((l) => phrase("en", chargeKey(l.code))))],
     total: moneyWire(o.totals.quote),
     fx_notes: o.fx_conversions
       .filter((r) => r.kind === "SELL")
@@ -110,12 +117,17 @@ function optionView(o: RouteOption, carrierLabels: Readonly<Record<string, strin
   };
 }
 
-export function buildQuoteView(result: Extract<PricingResult, { kind: "priced" }>, carrierLabels: Readonly<Record<string, string>>): QuoteViewV2 {
+export function buildQuoteView(result: Extract<PricingResult, { kind: "priced" }>, tenant: TenantPresentation, request: ShipmentRequest): QuoteViewV2 {
   const presented = result.presented.map((id) => result.candidates.find((c) => c.id === id)!);
+  const assumptions = [
+    request.cargo.dangerous_goods === null || request.cargo.temperature_controlled === null ? phrase("en", "assume_general") : null,
+    phrase("en", "assume_port"),
+  ].filter((a): a is string => a !== null);
   return QuoteViewV2Schema.parse({
     quote_version: 2,
     quote_currency: result.quote_currency,
-    options: presented.map((o) => optionView(o, carrierLabels)),
+    options: presented.map((o) => optionView(o, tenant)),
+    assumptions,
   });
 }
 
@@ -150,7 +162,7 @@ export function quoteRowV2(view: QuoteViewV2): QuoteRowV2 {
     total_minor: first.total.minor,
     option_count: view.options.length,
     breakdown_snapshot: view,
-    validity_through: view.options.map((o) => o.valid_until).reduce((a, b) => (b < a ? b : a)),
+    validity_through: first.valid_until,
   };
 }
 
@@ -171,6 +183,8 @@ export const AgentOutputV2Schema = z
     quote_view: QuoteViewV2Schema.nullable(),
     outcome: OutcomeDetailPublicSchema,
     draft: DraftOutSchema.nullable(),
+    /** Fingerprint of the prompts + output schemas that produced this run (observability.ts). */
+    prompt_version: z.string(),
     /** The model's closed style choices (language, formality, intro, closing); null if not reached. */
     draft_style: DraftChoiceSchema.nullable(),
     usage: z

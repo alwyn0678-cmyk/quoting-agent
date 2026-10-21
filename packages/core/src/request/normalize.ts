@@ -12,15 +12,19 @@ import type { Cargo } from "./schema.js";
 /** Canonical scales for normalised totals (spec §1): weight kg 3 dp, volume m³ 6 dp. */
 export const WEIGHT_SCALE = 3;
 export const VOLUME_SCALE = 6;
-const canon = (d: Dec | null, scale: number): Dec | null =>
-  d === null ? null : Dec.parse(d.round(scale, "HALF_AWAY_FROM_ZERO").toString());
+const canon = (d: Dec | null, scale: number): Dec | null => (d === null ? null : d.round(scale, "HALF_AWAY_FROM_ZERO").trimmed());
+
+/** Physical plausibility bounds on effective totals (1,000,000 t; 10,000,000 m³): beyond them the
+ *  request is rejected as request_too_large before any pricing arithmetic. */
+export const MAX_TOTAL_WEIGHT_KG = Dec.parse("1000000000");
+export const MAX_TOTAL_VOLUME_CBM = Dec.parse("10000000");
 
 /** Relative difference above which stated and derived totals conflict (ASSUMPTIONS.md H3). */
 export const CONFLICT_TOLERANCE = Dec.parse("0.02");
 
 const KG_PER: Record<"kg" | "lb" | "t", Dec> = { kg: Dec.ONE, lb: Dec.parse("0.45359237"), t: Dec.parse("1000") };
-const CM_PER: Record<"cm" | "m" | "in" | "ft", Dec> = {
-  cm: Dec.ONE, m: Dec.parse("100"), in: Dec.parse("2.54"), ft: Dec.parse("30.48"),
+const CM_PER: Record<"mm" | "cm" | "m" | "in" | "ft", Dec> = {
+  mm: Dec.parse("0.1"), cm: Dec.ONE, m: Dec.parse("100"), in: Dec.parse("2.54"), ft: Dec.parse("30.48"),
 };
 const CBM_PER: Record<"cbm" | "cft", Dec> = { cbm: Dec.ONE, cft: Dec.parse("0.028316846592") };
 const CM3_PER_CBM = Dec.parse("1000000");
@@ -45,6 +49,8 @@ export interface NormalizedCargo {
   weight_kg: Dec | null;
   volume_cbm: Dec | null;
   conflicts: ("weight" | "volume")[];
+  /** Effective totals beyond the plausibility bounds (gate: request_too_large). */
+  oversize: ("weight" | "volume")[];
 }
 
 function differsBeyondTolerance(derived: Dec, stated: Dec): boolean {
@@ -72,7 +78,7 @@ export function normalizeCargo(cargo: Cargo): NormalizedCargo {
       Dec.ZERO,
     );
     derivedVolume = Dec.divRound(derivedVolume, CM3_PER_CBM, derivedVolume.scale + 6, "HALF_AWAY_FROM_ZERO");
-    derivedVolume = Dec.parse(derivedVolume.toString()); // canonical (exact: division by 10^6)
+    derivedVolume = derivedVolume.trimmed(); // canonical (exact: division by 10^6)
     derivedWeight = pieces.every((p) => p.weight_kg_each !== null)
       ? pieces.reduce((acc, p) => acc.add(p.weight_kg_each!.mul(Dec.fromInt(p.qty))), Dec.ZERO)
       : null;
@@ -88,11 +94,18 @@ export function normalizeCargo(cargo: Cargo): NormalizedCargo {
   if (derivedWeight && statedWeight && differsBeyondTolerance(derivedWeight, statedWeight)) conflicts.push("weight");
   if (derivedVolume && statedVolume && differsBeyondTolerance(derivedVolume, statedVolume)) conflicts.push("volume");
 
+  const weight = derivedWeight ?? statedWeight;
+  const volume = derivedVolume ?? statedVolume;
+  const oversize: ("weight" | "volume")[] = [];
+  if ([derivedWeight, statedWeight].some((w) => w && w.cmp(MAX_TOTAL_WEIGHT_KG) > 0)) oversize.push("weight");
+  if ([derivedVolume, statedVolume].some((v) => v && v.cmp(MAX_TOTAL_VOLUME_CBM) > 0)) oversize.push("volume");
+
   return {
     containers: cargo.containers.map((c) => ({ raw: c.type_raw, iso: normalizeEquipment(c.type_raw), qty: c.qty })),
     pieces,
-    weight_kg: derivedWeight ?? statedWeight,
-    volume_cbm: derivedVolume ?? statedVolume,
+    weight_kg: weight,
+    volume_cbm: volume,
     conflicts,
+    oversize,
   };
 }

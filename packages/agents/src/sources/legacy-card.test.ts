@@ -31,10 +31,10 @@ function assertParity(card: RateCard, containerType: string, qty: number) {
   expect(opt.totals.quote.minor).toBe(BigInt(legacy.all_in_total) * 100n);
   const legacyLines = [
     [`BASE`, legacy.base_per_container * qty],
-    ...legacy.surcharges.map((s) => [s.code, s.amount_per_container * qty] as const),
-    ...legacy.per_shipment_fees.map((f) => [f.code, f.amount] as const),
+    ...legacy.surcharges.map((s) => [s.code.trim().slice(0, 24), s.amount_per_container * qty] as const),
+    ...legacy.per_shipment_fees.map((f) => [f.code.trim().slice(0, 24), f.amount] as const),
   ].map(([code, eur]) => `${code}:${BigInt(eur) * 100n}`);
-  const newLines = opt.legs[0]!.lines.map((l) => `${l.code.startsWith("BASE_") ? "BASE" : l.code}:${l.sell.minor}`);
+  const newLines = opt.legs[0]!.lines.map((l) => `${l.receipt.charge_id.startsWith("BASE_") ? "BASE" : l.code}:${l.sell.minor}`);
   expect(newLines).toEqual(legacyLines);
   expect(opt.legs[0]!.lines.every((l) => l.buy === null)).toBe(true); // legacy cards are SELL rates
 }
@@ -50,6 +50,19 @@ describe("P1a task 9 — legacy rate cards price identically through the new cor
       for (const ct of Object.keys(card.base_per_container)) for (const qty of [1, 4]) assertParity(card, ct, qty);
     }
   });
+  it("messy real-world cards v1 priced keep pricing identically (pricing review #3)", () => {
+    const messy = (patch: Partial<RateCard>): RateCard => ({ ...RATE_CARD, ...patch });
+    const cards = [
+      messy({ per_shipment_fees: [...RATE_CARD.per_shipment_fees, { code: "ISPS", amount: 15 }] }), // same code as a surcharge
+      messy({ surcharges: [...RATE_CARD.surcharges, { code: "BAF", amount_per_container: 60 }] }), // repeated code (v1 sums)
+      messy({ surcharges: [...RATE_CARD.surcharges, { code: "THC RTM", amount_per_container: 10 }] }), // space in code
+      messy({ per_shipment_fees: [...RATE_CARD.per_shipment_fees, { code: "X".repeat(25), amount: 5 }] }), // 25-char code
+      messy({ surcharges: [...RATE_CARD.surcharges, { code: "BASE_40GP", amount_per_container: 7 }] }), // collides with a base id
+      messy({ base_per_container: { ...RATE_CARD.base_per_container, "20RF": 3000 } as RateCard["base_per_container"] }), // unmapped type
+    ];
+    for (const card of cards) assertParity(card, "40GP", 2);
+  });
+
   it("the converted tariff carries the legacy card's validity and a stable identity", () => {
     const w = legacyCardToTariffWire(RATE_CARD, TENANT);
     expect(w.valid_to).toBe(RATE_CARD.validity_through);

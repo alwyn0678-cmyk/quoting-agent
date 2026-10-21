@@ -83,7 +83,7 @@ class FakeRunStore implements RunStore {
   }
 }
 
-const deps = (llm: LlmClient, tenantId = TENANT): RunDeps => ({ llm, tariffs: legacyStaticSource(tenantId), tenant: legacyTenantConfig(tenantId) });
+const deps = (llm: LlmClient, tenantId = TENANT): RunDeps => ({ llm, tariffs: legacyStaticSource(tenantId), tenant: legacyTenantConfig(tenantId), log: () => {} });
 
 const throwingLlm = (err: Error): LlmClient => ({ callStructured: async () => { throw err; } });
 
@@ -178,6 +178,21 @@ describe("durable agent-run v2 — claim, lease ownership, idempotent persistenc
     c.seed({ id: REQ, tenant_id: TENANT });
     await expect(runAndPersist(TENANT, REQ, OWNER, deps(throwingLlm(new Error("ECONNRESET"))), c, AS_OF)).rejects.toThrow(/ECONNRESET/);
     expect(c.requests.get(REQ)!.status).toBe("processing"); // same owner re-claims on retry
+  });
+
+  it("emits one structured run log line (spec §14) — provenance and counts, never email text or amounts", async () => {
+    const store = new FakeRunStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    const lines: unknown[] = [];
+    await runAndPersist(TENANT, REQ, OWNER, { ...deps(pipelineLlm(SAMPLE_FCL_REQUEST)), log: (l) => lines.push(l) }, store, AS_OF);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({ event: "quote_run", tenant_id: TENANT, request_id: REQ, owner: OWNER, decision: "quote", candidates: 1, presented: 1 });
+    const line = lines[0] as { prompt_version: string; tariff_hashes: string[] };
+    expect(line.prompt_version).toMatch(/^[0-9a-f]{12}$/);
+    expect(line.tariff_hashes).toHaveLength(1);
+    const text = JSON.stringify(lines[0]);
+    expect(text).not.toContain("Rotterdam to New York"); // no email text
+    expect(text).not.toMatch(/minor|"buy"|693000/); // no amounts
   });
 
   it("the validated extraction is persisted with the outcome", async () => {

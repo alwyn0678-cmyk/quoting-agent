@@ -57,6 +57,12 @@ function BreakdownV2({ q }: { q: QuoteV2View }) {
             {o.transit_days !== null ? ` · ${o.transit_days} days transit` : ""} · valid until {o.valid_until}
           </div>
           <div className="brk">
+            {o.lines.length === 0 && o.included.length > 0 ? (
+              <div className="ln">
+                <span className="c">Includes: {o.included.join(", ")}</span>
+                <span />
+              </div>
+            ) : null}
             {o.lines.map((l, j) => (
               <div className="ln" key={`${l.code}-${j}`}>
                 <span className="c">
@@ -76,6 +82,11 @@ function BreakdownV2({ q }: { q: QuoteV2View }) {
               Converted {n.from} → {n.to} at {n.source} as of {n.as_of}
             </div>
           ))}
+        </div>
+      ))}
+      {q.assumptions.map((a) => (
+        <div className="dhdr" key={a}>
+          • {a}
         </div>
       ))}
     </>

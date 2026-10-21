@@ -229,6 +229,7 @@ export function loadTariff(input: unknown): LoadResult {
       if (CONTAINER_MODES.has(l.mode) && LCL_ONLY.has(c.basis)) errors.push(`line '${l.id}' charge '${c.id}': ${c.basis} is not valid for ${l.mode}`);
       if (c.basis === "PCT_OF") {
         if (!c.percent_of || c.percent_of.length === 0) errors.push(`line '${l.id}' charge '${c.id}': PCT_OF needs percent_of`);
+        else if (new Set(c.percent_of).size !== c.percent_of.length) errors.push(`line '${l.id}' charge '${c.id}': duplicate percent_of reference`);
         for (const ref of c.percent_of ?? []) {
           const target = l.charges.find((x) => x.id === ref);
           if (!target) errors.push(`line '${l.id}' charge '${c.id}': unknown charge '${ref}'`);

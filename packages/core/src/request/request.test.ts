@@ -92,11 +92,12 @@ describe("cargo normalisation — code does every conversion, exactly", () => {
 });
 
 describe("Codex review (core 1–4) — request hardening", () => {
-  it("#10 extraction objects are strict (unknown keys rejected) and 'mm' is not an allowed unit", () => {
+  it("#10 extraction objects are strict (unknown keys rejected); units are a closed list", () => {
     const extra = { ...base, cargo: { ...base.cargo, pieces: [{ ...piece(), legacy_length: 12 }] } };
     expect(ShipmentRequestSchema.safeParse(extra).success).toBe(false);
-    const mm = { ...base, cargo: { ...base.cargo, pieces: [piece({ length: { value: "1", unit: "mm" } })] } };
-    expect(ShipmentRequestSchema.safeParse(mm).success).toBe(false);
+    // 'mm' was added after the pricing review (EU pallets are written in mm); unknown units stay rejected.
+    const yd = { ...base, cargo: { ...base.cargo, pieces: [piece({ length: { value: "1", unit: "yd" } })] } };
+    expect(ShipmentRequestSchema.safeParse(yd).success).toBe(false);
   });
   it("#8 ready_date must be a real calendar date", () => {
     expect(ShipmentRequestSchema.safeParse({ ...base, ready_date: "2026-02-31" }).success).toBe(false);
@@ -108,5 +109,13 @@ describe("Codex review (core 1–4) — request hardening", () => {
     });
     expect(n.weight_kg?.toString()).toBe("453.592");
     expect(n.volume_cbm?.toString()).toBe("1.573158");
+  });
+});
+
+describe("pricing review #6 — millimetres", () => {
+  it("1200 × 800 × 1500 mm is 1.44 m³", () => {
+    const mm = (v: string) => ({ value: v, unit: "mm" as const });
+    const n = normalizeCargo({ containers: [], pieces: [{ qty: 1, length: mm("1200"), width: mm("800"), height: mm("1500"), weight_each: null, stackable: null }], stated_total_weight: null, stated_total_volume: null, commodity: null, dangerous_goods: null, temperature_controlled: null });
+    expect(n.volume_cbm?.toString()).toBe("1.44");
   });
 });

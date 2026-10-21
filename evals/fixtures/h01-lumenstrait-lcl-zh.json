@@ -1,0 +1,31 @@
+{
+  "id": "h01-lumenstrait-lcl-zh",
+  "description": "Chinese LCL request with metric totals.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "王伟 <wang.wei@hengda-trade.example>",
+    "subject": "拼箱询价：新加坡至鹿特丹",
+    "body": "您好，\n\n请报新加坡到鹿特丹的拼箱运价（港到港）：总体积 3.6 立方米，总重量 1450 公斤，货物为五金配件，非危险品。\n\n谢谢！\n王伟"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "SGSIN",
+      "destination": "NLRTM",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "1450",
+      "volume_cbm": "3.6"
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "485.60",
+      "options": 1
+    },
+    "language": "zh"
+  }
+}

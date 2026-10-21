@@ -51,3 +51,31 @@ describe("Codex review (task 7) — identity invariant", () => {
     expect(g).toMatchObject({ pass: false, reason: "ambiguous_request" });
   });
 });
+
+describe("pricing review — implausible totals are named, never a crash", () => {
+  const huge = { value: "999999999.999999", unit: "m" as const };
+  it("a schema-valid but absurd piece list → request_too_large (was: Dec.parse length crash)", () => {
+    const r = gateRequest(
+      req({ mode: "LCL" }, { containers: [], pieces: [{ qty: 10_000, length: huge, width: huge, height: huge, weight_each: null, stackable: null }] }),
+    );
+    expect(r).toMatchObject({ pass: false, reason: "request_too_large" });
+  });
+  it("a stated weight above 1,000,000 t → request_too_large", () => {
+    const r = gateRequest(req({ mode: "LCL" }, { containers: [], stated_total_weight: { value: "1000000001", unit: "t" }, stated_total_volume: { value: "5", unit: "cbm" } }));
+    expect(r).toMatchObject({ pass: false, reason: "request_too_large" });
+  });
+});
+
+describe("gate — code ↔ place-text check (architecture review #6)", () => {
+  it("a well-formed but wrong port code escalates as ambiguous, naming the field", () => {
+    const r = gateRequest(req({ destination: { raw: "Antwerp", unlocode: "NLRTM", iata: null, country: "BE", postcode: null } }));
+    expect(r).toMatchObject({ pass: false, reason: "ambiguous_request", missing_fields: ["destination"] });
+  });
+});
+
+describe("gate — a door service is decided before port identity (held-out h09)", () => {
+  it("a door pickup with no origin port escalates out_of_scope_service, not 'ask for the port'", () => {
+    const r = gateRequest(req({ service: "DOOR_TO_PORT", origin: { raw: "Bao'an District, Shenzhen 518101", unlocode: null, iata: null, country: "CN", postcode: "518101" } }));
+    expect(r).toMatchObject({ pass: false, reason: "out_of_scope_service" });
+  });
+});

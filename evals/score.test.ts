@@ -90,6 +90,19 @@ describe("eval gate", () => {
     expect(s.mustPassFailed).toEqual(["f0"]);
   });
 
+  it("pass^k: a fixture that fails any one of k runs fails", () => {
+    const scores = [pass("f0"), pass("f0"), fail("f0"), ...Array.from({ length: 9 }, (_, i) => pass(`f${i + 1}`))];
+    const s = summarize(fx(10), scores);
+    expect(s.total).toBe(10);
+    expect(s.passed).toBe(9);
+  });
+
+  it("replay is exact: one failure fails the gate", () => {
+    const scores = [...Array.from({ length: 19 }, (_, i) => pass(`f${i}`)), fail("f19")];
+    expect(summarize(fx(20), scores).gatePass).toBe(true);
+    expect(summarize(fx(20), scores, { exact: true }).gatePass).toBe(false);
+  });
+
   it("an empty run never passes", () => {
     expect(summarize([], []).gatePass).toBe(false);
   });

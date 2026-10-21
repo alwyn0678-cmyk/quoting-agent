@@ -1,0 +1,32 @@
+{
+  "id": "h03-prairiegate-lcl-mm",
+  "description": "LCL with piece dimensions in millimetres (EU pallet style).",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Tom Becker <tom@becker-audio.example>",
+    "subject": "LCL Shanghai to LA — 4 crates",
+    "body": "Hi,\n\nLCL quote please, Shanghai to Los Angeles port to port: 4 crates, each 1200 x 1000 x 1100 mm, 380 kg each. Audio equipment, not hazardous.\n\nThanks,\nTom"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "USLAX",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "1520",
+      "volume_cbm": "5.28"
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "1250.83",
+      "options": 1
+    },
+    "language": "en",
+    "notes": "4 x 1.2 x 1.0 x 1.1 = 5.28 m³; 4 x 380 = 1520 kg."
+  }
+}

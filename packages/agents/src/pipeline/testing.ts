@@ -1,6 +1,6 @@
 import type { ShipmentRequest } from "../../../core/src/request/schema.js";
 import { RoutingMockLlmClient } from "../mock-llm.js";
-import { toWire } from "./extraction-wire.js";
+import { requestToExtractionWire } from "./extraction-wire.js";
 
 /** Test doubles shared by pipeline consumers (ingest, CLI, evals). Not used by production code. */
 
@@ -37,7 +37,7 @@ export const SAMPLE_DRAFT_CHOICE = { language: "en", formality: "formal", intro:
  *  (a JSON number where a decimal string belongs, too many lines) pass through so the schema sees them. */
 export function asWire(request: unknown): unknown {
   try {
-    return toWire(request as ShipmentRequest);
+    return requestToExtractionWire(request as ShipmentRequest);
   } catch {
     return request;
   }

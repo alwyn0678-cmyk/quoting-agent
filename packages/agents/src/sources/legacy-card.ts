@@ -14,27 +14,33 @@ import type { ChargeWire, RateLineWire, TariffMode, TariffWire } from "../../../
 const ISO: Record<string, string> = { "20GP": "22G1", "40GP": "42G1", "40HC": "45G1", "45HC": "L5G1" };
 export const LEGACY_VALID_FROM = "2000-01-01";
 
+const legacyCode = (code: string): string => code.trim().slice(0, 24) || "OTHER";
+
 export function legacyCardToTariffWire(card: RateCard, tenantId: string): TariffWire {
   const [origin, destination] = card.supported_lane.split("-") as [string, string];
-  const surcharges: ChargeWire[] = card.surcharges.map((s) => ({
-    id: s.code,
-    code: s.code,
+  // Charge ids are positional (S1, F1 …): legacy codes are free text from Excel/Supabase and may repeat
+  // (v1 summed two BAF rows), contain spaces, or collide with a base id — none of which may reject a
+  // card v1 priced. The code is kept for display, capped at the tariff model's 24 characters.
+  const surcharges: ChargeWire[] = card.surcharges.map((s, i) => ({
+    id: `S${i + 1}`,
+    code: legacyCode(s.code),
     description: s.code,
     category: "SURCHARGE",
     basis: "PER_CONTAINER",
     rate: String(s.amount_per_container),
     currency: "EUR",
   }));
-  const fees: ChargeWire[] = card.per_shipment_fees.map((f) => ({
-    id: f.code,
-    code: f.code,
+  const fees: ChargeWire[] = card.per_shipment_fees.map((f, i) => ({
+    id: `F${i + 1}`,
+    code: legacyCode(f.code),
     description: f.code,
     category: f.code === "DOC" ? "DOCUMENT" : "LOCAL",
     basis: "PER_SHIPMENT",
     rate: String(f.amount),
     currency: "EUR",
   }));
-  const lines: RateLineWire[] = Object.entries(card.base_per_container).map(([ct, base]) => ({
+  // Container types without an ISO mapping are skipped, as v1 ignored base rows it could not quote.
+  const lines: RateLineWire[] = Object.entries(card.base_per_container).filter(([ct]) => ISO[ct] !== undefined).map(([ct, base]) => ({
     id: `legacy:${card.mode}:${card.supported_lane}:${card.version}:${ct}`,
     offer_id: "legacy-card",
     mode: card.mode as TariffMode,

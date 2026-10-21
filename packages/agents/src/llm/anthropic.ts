@@ -28,12 +28,20 @@ export interface AnthropicLlmClientOptions {
   /** Optional effort level; omitted means the model's default. */
   effort?: Effort;
   maxTokens?: number;
+  /**
+   * Server-side refusal fallbacks (`fallbacks: "default"`): on a safety decline Anthropic re-runs the
+   * request on another model. OFF by default — a fallback model has not passed this deployment's eval
+   * gate (CLAUDE.md invariant 8); without it a decline escalates as model_refused, which fails closed.
+   * Enable (QUOTEAGENT_ANTHROPIC_FALLBACK=1) only after the fallback models are in the eval matrix.
+   */
+  serverFallbacks?: boolean;
 }
 
 export class AnthropicLlmClient implements LlmClient {
   private readonly messages: AnthropicMessagesApi;
   private readonly effort?: Effort;
   private readonly maxTokens: number;
+  private readonly serverFallbacks: boolean;
 
   constructor(options: AnthropicLlmClientOptions = {}) {
     if (options.messages) {
@@ -46,6 +54,7 @@ export class AnthropicLlmClient implements LlmClient {
     }
     this.effort = options.effort;
     this.maxTokens = options.maxTokens ?? 16_000;
+    this.serverFallbacks = options.serverFallbacks ?? false;
   }
 
   async callStructured(call: StructuredCall): Promise<StructuredResult> {
@@ -63,7 +72,7 @@ export class AnthropicLlmClient implements LlmClient {
         format: { type: "json_schema", schema: toStrictJsonSchema(call.schema) },
         ...(this.effort ? { effort: this.effort } : {}),
       },
-      ...(SERVER_FALLBACK_MODELS.has(modelId) ? { fallbacks: "default" as const, betas: [SERVER_FALLBACK_BETA] } : {}),
+      ...(this.serverFallbacks && SERVER_FALLBACK_MODELS.has(modelId) ? { fallbacks: "default" as const, betas: [SERVER_FALLBACK_BETA] } : {}),
     };
 
     const message = await this.messages.create(params);

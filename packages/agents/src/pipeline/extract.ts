@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ShipmentRequestSchema, type ShipmentRequest } from "../../../core/src/request/schema.js";
-import { ExtractionWireSchema, fromWire } from "./extraction-wire.js";
+import { ExtractionWireSchema, extractionWireToRequest } from "./extraction-wire.js";
 import { SYSTEM_CANARY, EXTRACTION_MODEL } from "../config.js";
 import { LlmOutputError, type LlmClient, type Usage } from "../llm.js";
 
@@ -49,14 +49,14 @@ export function buildExtractionSystemPrompt(): string {
     "  ports with no pickup or delivery address is PORT_TO_PORT.",
     "- containers: one entry per container type. type_raw is the size/type in standard shorthand when",
     "  recognisable in any language (20GP, 40GP, 40HC, 45HC, 20RF, 40RF, 20OT, 40OT, 20FR, 40FR, 20TK;",
-    "  e.g. \"2 x 40' high cube\" or \"2 contêineres de 40 pés HC\" -> type_raw \"40HC\", qty 2); otherwise the",
+    "  e.g. \"4 x 45ft HQ\" -> type_raw \"45HC\", qty 4; \"deux conteneurs de 20 pieds\" -> \"20GP\", qty 2); otherwise the",
     "  text as written (e.g. \"containers\"). Code validates it. qty is the number of containers, or 0",
     "  when the email does not state how many.",
-    "- pieces: packages with dimensions — qty, length, width, height in one dimension_unit (cm|m|in|ft),",
+    "- pieces: packages with dimensions — qty, length, width, height in one dimension_unit (mm|cm|m|in|ft),",
     "  weight_each with weight_unit (kg|lb|t), stackable.",
     "- Every number that measures cargo is a DECIMAL STRING with a dot as the decimal separator and no",
     "  thousands separators, converted from the email's local notation but NOT unit-converted:",
-    "  \"1,200 kg\" -> \"1200\" kg; German \"4,5 cbm\" -> \"4.5\" cbm; \"2.300 kg\" (German/Brazilian) -> \"2300\".",
+    "  \"12,750 kg\" -> \"12750\" kg; French \"7,25 m³\" -> \"7.25\" cbm; \"15.400 kg\" (comma-decimal locales) -> \"15400\".",
     "- total_weight / total_volume (units kg|lb|t and cbm|cft): only totals the email states explicitly.",
     "- dangerous_goods / temperature_controlled: yes or no only when the email says so; else unknown.",
     "- ready_date as YYYY-MM-DD only if a specific date is given.",
@@ -110,7 +110,7 @@ export async function extractShipmentRequest(
 
   const wire = ExtractionWireSchema.safeParse(result.data);
   if (!wire.success) throw schemaFailure(wire.error);
-  const parsed = ShipmentRequestSchema.safeParse(fromWire(wire.data));
+  const parsed = ShipmentRequestSchema.safeParse(extractionWireToRequest(wire.data));
   if (!parsed.success) throw schemaFailure(parsed.error);
   return { request: parsed.data, usage: result.usage, model: result.model ?? model };
 }

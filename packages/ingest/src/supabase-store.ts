@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { LEASE_MINUTES, type IngestStore, type ReceivedRequest } from "./poll.js";
+import { LEASE_MINUTES, type IngestStore, type ReceivedRequest, type RunnableRequest } from "./poll.js";
 import type { RunStore, RequestRow, PersistOutcome } from "./run.js";
 
 /**
@@ -59,17 +59,17 @@ export class SupabaseIngestStore implements IngestStore {
     return first ? (first.id as string) : null;
   }
 
-  async listRunnable(tenantId: string, now: Date = new Date()): Promise<string[]> {
+  async listRunnable(tenantId: string, now: Date = new Date()): Promise<RunnableRequest[]> {
     // 'received', plus 'processing' rows whose lease expired (a crashed run) or that were claimed before
     // leases existed (claimed_at null) — claim_request steals exactly these, so re-enqueuing is safe.
     const cutoff = new Date(now.getTime() - LEASE_MINUTES * 60_000).toISOString();
     const { data, error } = await this.client
       .from("quote_requests")
-      .select("id")
+      .select("id, claimed_at")
       .eq("tenant_id", tenantId)
       .or(`status.eq.received,and(status.eq.processing,claimed_at.lt.${cutoff}),and(status.eq.processing,claimed_at.is.null)`);
     if (error) throw error;
-    return (data ?? []).map((r) => r.id as string);
+    return (data ?? []).map((r) => ({ id: r.id as string, claimed_at: (r.claimed_at as string | null) ?? null }));
   }
 }
 

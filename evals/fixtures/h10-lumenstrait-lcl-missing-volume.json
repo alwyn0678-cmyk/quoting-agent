@@ -1,0 +1,25 @@
+{
+  "id": "h10-lumenstrait-lcl-missing-volume",
+  "description": "LCL with weight but no volume or dimensions — must ask for the volume.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Arjun Mehta <arjun@mehta-spices.example>",
+    "subject": "LCL SIN to RTM",
+    "body": "Hello,\n\nLCL Singapore to Rotterdam please, 2 pallets, total weight 900 kg. Spices.\n\nRegards,\nArjun"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "missing_required_field",
+    "extraction": {
+      "origin": "SGSIN",
+      "destination": "NLRTM",
+      "mode": "LCL"
+    },
+    "missing_fields": [
+      "volume"
+    ]
+  }
+}

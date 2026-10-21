@@ -1,7 +1,7 @@
 {
   "key": "c6a5cf2f95c40faf78e93280",
   "toolName": "submit_draft_choice",
-  "recorded_at": "2026-10-21T18:45:37.183Z",
+  "recorded_at": "2026-10-21T19:21:55.572Z",
   "model": "anthropic/claude-opus-5-5",
   "data": {
     "language": "de",

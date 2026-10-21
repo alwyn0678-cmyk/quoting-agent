@@ -16,7 +16,7 @@ const positiveDecimal = z
   .refine((s) => /[1-9]/.test(s), "must be greater than zero");
 
 export const WeightUnit = z.enum(["kg", "lb", "t"]);
-export const LengthUnit = z.enum(["cm", "m", "in", "ft"]);
+export const LengthUnit = z.enum(["mm", "cm", "m", "in", "ft"]);
 export const VolumeUnit = z.enum(["cbm", "cft"]);
 
 export const WeightSchema = z.object({ value: positiveDecimal, unit: WeightUnit }).strict();

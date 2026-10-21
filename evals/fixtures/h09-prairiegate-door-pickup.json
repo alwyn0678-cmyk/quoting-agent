@@ -1,0 +1,22 @@
+{
+  "id": "h09-prairiegate-door-pickup",
+  "description": "Pickup from a factory (door) is not quoted yet.",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Nina Chen <nina@chen-lighting.example>",
+    "subject": "Pickup Shenzhen factory to LA port",
+    "body": "Hi,\n\nWe need 1 x 40HC picked up at our factory (Bao'an District, Shenzhen 518101) and shipped to the port of Los Angeles. Can you quote?\n\nBest,\nNina"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_service",
+    "extraction": {
+      "destination": "USLAX",
+      "mode": "FCL",
+      "service": "DOOR_TO_PORT"
+    }
+  }
+}

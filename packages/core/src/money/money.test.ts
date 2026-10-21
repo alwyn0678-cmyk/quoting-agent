@@ -145,3 +145,11 @@ describe("Codex review (core 1–4) — money hardening", () => {
     expect(validateFx(fx)).toContain("as_of must be a real calendar date (YYYY-MM-DD)");
   });
 });
+
+describe("Dec.trimmed", () => {
+  it("drops trailing fractional zeros exactly, with no length limit", () => {
+    expect(Dec.parse("4.320000").trimmed().toString()).toBe("4.32");
+    expect(Dec.parse("100").trimmed().toString()).toBe("100");
+    expect(Dec.of(10n ** 60n, 6).trimmed().toString()).toBe(`1${"0".repeat(54)}`);
+  });
+});

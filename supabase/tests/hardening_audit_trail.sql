@@ -19,6 +19,9 @@ insert into public.quote_requests (id, tenant_id, source, status) values
   ('0c000000-0000-4000-8000-0000000000f2','0a000000-0000-4000-8000-0000000000f1','sample','escalated');
 
 -- 1. worker persists a quote outcome with the extraction (runs as the privileged session, like service_role)
+-- 0022: the worker always persists under the lease owner it claimed with
+update public.quote_requests set claim_owner = 'run_T' where status = 'processing';
+
 do $$
 declare v_ok boolean; v_extr jsonb; v_actor uuid; v_n int;
 begin
@@ -29,7 +32,7 @@ begin
                        'all_in_total',100,'breakdown_snapshot','{}'::jsonb,'validity_through','2026-12-31'),
     jsonb_build_object('subject','Re','body','draft'),
     jsonb_build_object('model','anthropic/claude-opus-5-5','input_tokens',10,'output_tokens',5,'est_cost_usd',0.0001),
-    jsonb_build_object('mode','FCL','container_type','40HC'));
+    jsonb_build_object('mode','FCL','container_type','40HC'), p_owner => 'run_T');
   if not v_ok then raise exception 'AUDIT FAIL: persist_run_outcome did not transition'; end if;
 
   select extraction into v_extr from public.quote_requests where id = '0c000000-0000-4000-8000-0000000000f1';

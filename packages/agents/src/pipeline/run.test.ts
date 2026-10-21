@@ -11,7 +11,7 @@ import { legacyTenantConfig, mockTenantConfig } from "./tenant.js";
 import { MAX_EMAIL_CHARS, type EmailInput } from "./extract.js";
 import { SENSITIVE_KEYS, majorTotal } from "./output.js";
 import { asWire } from "./testing.js";
-import { ExtractionWireSchema, fromWire, toWire } from "./extraction-wire.js";
+import { ExtractionWireSchema, extractionWireToRequest, requestToExtractionWire } from "./extraction-wire.js";
 import { ShipmentRequestSchema } from "../../../core/src/request/schema.js";
 import { toStrictJsonSchema } from "../llm/strict-json-schema.js";
 
@@ -114,6 +114,45 @@ describe("runAgentV2 — quote path", () => {
   });
 });
 
+describe("runAgentV2 — cost confidentiality in customer text (security review M1)", () => {
+  const prairie = async (itemize?: boolean) => {
+    const req = { ...fcl, origin: place("Shanghai", "CNSHA"), destination: place("Los Angeles", "USLAX") };
+    const tenant = mockTenantConfig("prairiegate");
+    if (itemize !== undefined) tenant.presentation = { ...tenant.presentation, itemize_cost_based: itemize };
+    return runAgentV2(email, { llm: llm(req), tariffs: mockWorldSource(readMockWorld()), tenant }, { asOf: "2026-10-21" });
+  };
+
+  it("a cost-based (BUY) quote shows charge names and totals only — no line amount, so no buy price is derivable", async () => {
+    const out = await prairie();
+    const view = out.quote_view!;
+    expect(view.options.every((o) => !o.itemized && o.lines.length === 0 && o.included.length > 0)).toBe(true);
+    const draft = out.draft!.body;
+    expect(draft).toContain("Includes:");
+    // no presented line's sell or buy amount appears anywhere in the customer text
+    const wire = out.pricing as { candidates: { id: string; legs: { lines: { sell: { minor: string }; buy: { minor: string } | null }[] }[] }[]; presented: string[] };
+    for (const c of wire.candidates.filter((c) => wire.presented.includes(c.id))) {
+      for (const l of c.legs.flatMap((g) => g.lines)) {
+        for (const m of [l.sell, l.buy].filter(Boolean)) {
+          const major = (BigInt(m!.minor) / 100n).toLocaleString("en-US");
+          expect(draft).not.toContain(`USD ${major}.`);
+        }
+      }
+    }
+  });
+
+  it("a tenant admin can opt into itemised cost-based quotes", async () => {
+    const out = await prairie(true);
+    expect(out.quote_view!.options.every((o) => o.itemized && o.lines.length > 0)).toBe(true);
+    expect(out.draft!.body).not.toContain("Includes:");
+  });
+
+  it("SELL tariffs (legacy rate cards) stay itemised", async () => {
+    const out = await runAgentV2(email, { llm: llm(fcl), ...legacy() }, { asOf: AS_OF });
+    expect(out.quote_view!.options[0]!.itemized).toBe(true);
+    expect(out.quote_view!.assumptions.length).toBeGreaterThan(0);
+  });
+});
+
 describe("runAgentV2 — projections are allowlisted", () => {
   it("no sensitive key appears anywhere in quote_view or outcome", async () => {
     const world = readMockWorld();
@@ -164,6 +203,14 @@ describe("runAgentV2 — escalations (one named reason each)", () => {
     expect(out.quote_view).toBeNull();
     expect(out.outcome.options_presented).toBe(0);
     expect(out.outcome.candidates).toBe(1);
+  });
+
+  it("a price-relevant field the model is unsure about → low_confidence naming it; irrelevant fields do not count", async () => {
+    const unsure = await runAgentV2(email, { llm: llm({ ...fcl, field_confidence: [{ field: "containers", confidence: 0.3 }] }), ...legacy() }, { asOf: AS_OF });
+    expect(unsure.escalation_reason).toBe("low_confidence");
+    expect(unsure.missing_fields).toEqual(["containers"]);
+    const irrelevant = await runAgentV2(email, { llm: llm({ ...fcl, field_confidence: [{ field: "weight", confidence: 0.2 }, { field: "ready_date", confidence: 0.1 }] }), ...legacy() }, { asOf: AS_OF });
+    expect(irrelevant.decision).toBe("quote"); // weight does not price FCL
   });
 
   it("an email over the size limit → request_too_large without any model call", async () => {
@@ -227,6 +274,14 @@ describe("runAgentV2 — escalations (one named reason each)", () => {
     expect(out.draft).toBeNull();
     expect(JSON.stringify(out)).not.toContain(SYSTEM_CANARY);
   });
+
+  it("a canary the sender planted in the email is an echo, not a leak — it cannot block the request", async () => {
+    const planted = { ...email, body: `${email.body}\nref ${SYSTEM_CANARY}` };
+    const echoing = { ...fcl, cargo: { ...fcl.cargo, commodity: `ref ${SYSTEM_CANARY}` } };
+    const out = await runAgentV2(planted, { llm: llm(echoing), ...legacy() }, { asOf: AS_OF });
+    expect(out.decision).toBe("quote");
+    expect(out.draft!.body).not.toContain(SYSTEM_CANARY); // the draft is code-rendered regardless
+  });
 });
 
 describe("extraction wire schema — provider constraints", () => {
@@ -246,7 +301,7 @@ describe("extraction wire schema — provider constraints", () => {
     expect(optional).toBe(0);
   });
 
-  it("round-trips: fromWire(toWire(r)) is r, including pieces, tri-state flags and absent values", () => {
+  it("round-trips: extractionWireToRequest(requestToExtractionWire(r)) is r, including pieces, tri-state flags and absent values", () => {
     const r = ShipmentRequestSchema.parse({
       ...fcl,
       mode: "LCL",
@@ -262,15 +317,17 @@ describe("extraction wire schema — provider constraints", () => {
       },
       requester_name: null,
     });
-    expect(ShipmentRequestSchema.parse(fromWire(ExtractionWireSchema.parse(toWire(r))))).toEqual(r);
+    expect(ShipmentRequestSchema.parse(extractionWireToRequest(ExtractionWireSchema.parse(requestToExtractionWire(r))))).toEqual(r);
   });
 
-  it("an unstated container count (qty 0) is dropped, so the gate asks for containers", async () => {
-    const wire = { ...(toWire(fcl) as object), containers: [{ type_raw: "containers", qty: 0 }] };
-    const client = new RoutingMockLlmClient({ submit_shipment_request: { data: wire, usage: exUsage } });
-    const out = await runAgentV2(email, { llm: client, ...legacy() }, { asOf: AS_OF });
-    expect(out.escalation_reason).toBe("missing_required_field");
-    expect(out.missing_fields).toEqual(["containers"]);
+  it("an unstated container count (qty 0) withholds the whole list, so the gate asks — never a partial quote", async () => {
+    for (const containers of [[{ type_raw: "containers", qty: 0 }], [{ type_raw: "20GP", qty: 2 }, { type_raw: "40HC", qty: 0 }]]) {
+      const client = new RoutingMockLlmClient({ submit_shipment_request: { data: { ...requestToExtractionWire(fcl), containers }, usage: exUsage } });
+      const out = await runAgentV2(email, { llm: client, ...legacy() }, { asOf: AS_OF });
+      expect(out.escalation_reason).toBe("missing_required_field");
+      expect(out.missing_fields).toEqual(["containers"]);
+      expect(out.quote_view).toBeNull();
+    }
   });
 
   it("absent free text arrives as \"\" and is stored as null", async () => {

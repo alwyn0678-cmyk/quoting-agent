@@ -2,7 +2,7 @@ import { gateRequest } from "../../../core/src/gate/gate.js";
 import { price } from "../../../core/src/pricing/engine.js";
 import { toWire } from "../../../core/src/pricing/wire.js";
 import { guardPricing, containsCanary } from "../../../core/src/guard/guard.js";
-import { renderQuoteEmail, type DraftChoice } from "../../../core/src/draft/render.js";
+import { renderQuoteEmail, draftLocale, formatMoney, type DraftChoice } from "../../../core/src/draft/render.js";
 import type { EscalationReason } from "../../../core/src/reasons.js";
 import type { RequestField, ShipmentRequest } from "../../../core/src/request/schema.js";
 import type { PricingResult } from "../../../core/src/pricing/types.js";
@@ -14,9 +14,18 @@ import { extractShipmentRequest, RequestTooLargeError, type EmailInput } from ".
 import { chooseDraftStyle } from "./draft-choice.js";
 import { AgentOutputV2Schema, buildQuoteView, type AgentOutputV2, type QuoteViewV2 } from "./output.js";
 import type { TenantConfig } from "./tenant.js";
+import { PROMPT_VERSION } from "./observability.js";
 
 /** Overall-confidence floor below which a priceable request goes to a human. ASSUMPTIONS.md E1. */
 export const CONFIDENCE_THRESHOLD = 0.75;
+/** Per-field floor for the fields that drive THIS request's price (ASSUMPTIONS.md E4). */
+export const FIELD_CONFIDENCE_FLOOR = 0.5;
+
+/** The fields whose misreading would change the price of a request in this mode. */
+function priceRelevantFields(mode: string): RequestField[] {
+  const base: RequestField[] = ["origin", "destination", "mode", "service"];
+  return mode === "LCL" ? [...base, "weight", "volume"] : [...base, "containers"];
+}
 
 export interface AgentDeps {
   llm: LlmClient;
@@ -118,10 +127,17 @@ export async function runAgentV2(email: EmailInput, deps: AgentDeps, options: Ru
       escalate("low_confidence", `overall confidence ${request.overall_confidence} < ${CONFIDENCE_THRESHOLD}`);
       break outcome;
     }
+    const relevant = priceRelevantFields(request.mode);
+    const unsure = request.field_confidence.filter((f) => relevant.includes(f.field) && f.confidence < FIELD_CONFIDENCE_FLOOR).map((f) => f.field);
+    if (unsure.length > 0) {
+      escalate("low_confidence", `unsure about ${unsure.join(", ")} (< ${FIELD_CONFIDENCE_FLOOR})`, unsure);
+      break outcome;
+    }
 
     // 6. Guard: an independent re-derivation must be byte-identical.
-    if (guardPricing(gate.input, tariffs, ctx, pricing).length > 0) {
-      escalate("guard_violation", "pricing re-derivation mismatch");
+    const violations = guardPricing(gate.input, tariffs, ctx, pricing);
+    if (violations.length > 0) {
+      escalate("guard_violation", `pricing guard: ${violations.join(", ")}`);
       break outcome;
     }
 
@@ -140,7 +156,13 @@ export async function runAgentV2(email: EmailInput, deps: AgentDeps, options: Ru
     }
     try {
       draft = renderQuoteEmail({ choice, tenant: deps.tenant.presentation, request, result: pricing });
-      quoteView = buildQuoteView(pricing, deps.tenant.presentation.carrier_labels);
+      quoteView = buildQuoteView(pricing, deps.tenant.presentation, request);
+      // The customer text must state every presented total exactly as the engine computed it.
+      const locale = draftLocale(deps.tenant.presentation.locale, choice.language);
+      for (const id of pricing.presented) {
+        const o = pricing.candidates.find((c) => c.id === id)!;
+        if (!draft.body.includes(formatMoney(o.totals.quote, locale))) throw new Error(`draft does not state option total ${o.id}`);
+      }
     } catch (err) {
       // The renderer fails closed on malformed presentation data — deterministic, so never retried.
       escalate("guard_violation", `render failed: ${(err as Error).message}`);
@@ -168,11 +190,14 @@ export async function runAgentV2(email: EmailInput, deps: AgentDeps, options: Ru
     },
     draft: reason === null ? draft : null,
     draft_style: style,
+    prompt_version: PROMPT_VERSION,
     usage: usageOf(steps),
   };
 
-  // 8. Final safety net on EVERY path: the system canary must never appear anywhere in the output.
-  if (containsCanary(candidate, SYSTEM_CANARY)) {
+  // 8. Final safety net on EVERY path: the system canary must never appear anywhere in the output —
+  // unless the sender wrote it into the email themselves (an echo of untrusted input, not a prompt leak).
+  const echoed = [email.from, email.subject, email.body].some((t) => t.includes(SYSTEM_CANARY));
+  if (!echoed && containsCanary(candidate, SYSTEM_CANARY)) {
     const redacted = JSON.parse(JSON.stringify(toWire(candidate)).split(SYSTEM_CANARY).join("[REDACTED]"));
     return AgentOutputV2Schema.parse({
       ...candidate,

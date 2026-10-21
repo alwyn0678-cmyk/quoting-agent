@@ -328,3 +328,30 @@ shipment-level charges from first equipment line; margin applies to BUY lines on
    text, tariff free text, or tariff carrier strings. It shows per-line SELL amounts and totals by
    design; it never shows BUY costs or raw per-unit rate fields. Locales are allowlisted (Gregorian,
    Latin digits); malformed presentation data fails closed.
+9. **Extraction wire** (live run, Anthropic strict-output grammar limits): the model returns a FLAT wire
+   form with no unions and no optional fields (absent text/codes/dates as `""`, tri-state flags as
+   yes/no/unknown, measurements as two flat fields). Code maps it to ShipmentRequest, which the core
+   schema validates in full. An unstated container count is `qty 0`; any such line withholds the whole
+   container list, so the gate asks — a partial quote is never produced (pricing review #1).
+10. **Code ↔ place-text check**: the gate cross-checks the model's UN/LOCODE against a multilingual
+    port-name index; a contradiction ("Antwerp" coded NLRTM) is `ambiguous_request`. Unknown names
+    defer to the model.
+11. **Confidence**: besides the overall floor (0.75), any price-relevant field the model rates below 0.5
+    is `low_confidence` naming that field (ASSUMPTIONS E4).
+12. **Cost confidentiality in customer text** (security review M1): options priced from BUY offers show
+    the included charge names and the option total only — per-line amounts would reveal buy prices
+    (pass-through lines at cost, uniform markups). SELL tariffs stay itemised; a tenant admin may opt
+    into itemising cost-based quotes. QuoteViewV2 mirrors the email and carries the assumption lines.
+13. **Guard v2, extended**: besides the byte-identical re-derivation, independent invariants (subtotals =
+    Σ lines, quote total = subtotal + SELL FX receipt outputs, receipts trace to the snapshot's tariff
+    hashes, no sell below buy, presented ⊆ candidates, validity ≥ as_of) and a check that the rendered
+    email states every presented total.
+14. **Plausibility bounds**: effective totals above 1,000,000 t or 10,000,000 m³ are `request_too_large`;
+    `mm` is an accepted length unit; FLAT margin rules may not carry `min_margin`; duplicate
+    `percent_of` references are a tariff error (pricing review #2, #4–#6).
+15. **Observability**: one structured `quote_run` line per run (§14) and a `prompt_version` fingerprint of
+    both prompts and output schemas on every AgentOutput; server-side model fallbacks are off unless the
+    fallback models are eval-gated (invariant 8).
+16. **Gate order** (held-out h09): a stated door service (DOOR_TO_PORT, PORT_TO_DOOR, DOOR_TO_DOOR) is
+    decided before port identity — a door end is an address, so asking for its "port" is the wrong
+    question; it escalates `out_of_scope_service`. Found by the held-out split on its first live run.

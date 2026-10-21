@@ -1,0 +1,32 @@
+{
+  "id": "h06-ventoleste-lcl-imperial",
+  "description": "LCL in pounds and cubic feet — converted exactly by code.",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Jake Morris <jake@morris-leather.example>",
+    "subject": "LCL Santos to Rotterdam",
+    "body": "Hi team,\n\nLCL please, Santos to Rotterdam port to port: total 4,400 lb, 180 cft. Leather goods.\n\nThanks,\nJake"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": "NLRTM",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "1995.806",
+      "volume_cbm": "5.097032"
+    },
+    "quote": {
+      "currency": "BRL",
+      "total": "5837.44",
+      "options": 1
+    },
+    "language": "en",
+    "notes": "4400 × 0.45359237 = 1995.806 kg (3 dp); 180 × 0.028316846592 = 5.097032 m³ (6 dp)."
+  }
+}

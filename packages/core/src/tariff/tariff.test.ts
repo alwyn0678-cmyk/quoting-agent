@@ -50,6 +50,8 @@ describe("tariff validation — fail closed with named errors", () => {
     expect(errs(tariff([line({ charges: [charge({ id: "P", basis: "PCT_OF", rate: "0.1", percent_of: ["X"] })] })])).join()).toMatch(/unknown charge 'X'/);
     const cross = [charge(), charge({ id: "P", basis: "PCT_OF", rate: "0.1", percent_of: ["OF"], currency: "EUR" })];
     expect(errs(tariff([line({ charges: cross })])).join()).toMatch(/same currency/);
+    const dup = [charge(), charge({ id: "P", basis: "PCT_OF", rate: "0.1", percent_of: ["OF", "OF"] })];
+    expect(errs(tariff([line({ charges: dup })])).join()).toMatch(/duplicate percent_of/); // pricing review #5
   });
   it("rejects clamps that the currency cannot represent, and min > max", () => {
     expect(errs(tariff([line({ charges: [charge({ min: "10.005" })] })])).join()).toMatch(/precision/);

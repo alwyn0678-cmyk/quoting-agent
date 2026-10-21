@@ -127,6 +127,7 @@ Derived check (given the invented inputs): NLRTM→DEDUI barge 40HC×1 = €755;
 | E1 | Overall-confidence escalation threshold | 0.75 | INVENTED | Tune on the golden set; justify the chosen band in the eval write-up |
 | E2 | Required fields to quote | origin, destination, mode, container_type, container_qty | STRUCTURAL | Confirm these 5 are sufficient to price an FCL quote with a forwarder |
 | E3 | Token→USD cost constants for the stdout cost log | (pinned config) | VERIFY | Check against current Anthropic pricing at build time |
+| E4 | Per-field confidence floor for the fields that price the request (origin, destination, mode, service; containers for FCL, weight + volume for LCL) | 0.5 | INVENTED | Calibrate on the golden set + real mail: per-field accuracy vs reported confidence |
 
 ## F. Open verification path
 

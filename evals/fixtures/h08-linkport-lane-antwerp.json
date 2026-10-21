@@ -1,0 +1,25 @@
+{
+  "id": "h08-linkport-lane-antwerp",
+  "description": "A destination the forwarder has no tariff for (Antwerp).",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Marc Peeters <marc@peeters-import.example>",
+    "subject": "1x40HC Shanghai - Antwerp",
+    "body": "Hello,\n\nPlease quote 1 x 40HC Shanghai to Antwerp, port to port. Furniture.\n\nThanks,\nMarc"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_lane",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "BEANR",
+      "mode": "FCL",
+      "containers": {
+        "45G1": 1
+      }
+    }
+  }
+}

@@ -79,7 +79,11 @@ export class RoutingLlmClient implements LlmClient {
     let client = this.clients.get(key);
     if (!client) {
       if (provider === "anthropic") {
-        client = new AnthropicLlmClient({ apiKey: this.env.ANTHROPIC_API_KEY, effort: this.env.QUOTEAGENT_EFFORT as Effort | undefined });
+        client = new AnthropicLlmClient({
+          apiKey: this.env.ANTHROPIC_API_KEY,
+          effort: this.env.QUOTEAGENT_EFFORT as Effort | undefined,
+          serverFallbacks: this.env.QUOTEAGENT_ANTHROPIC_FALLBACK === "1",
+        });
       } else if (provider === "demo") {
         client = new ReplayLlmClient(this.cassetteDir);
       } else {

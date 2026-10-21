@@ -1,0 +1,32 @@
+{
+  "id": "h02-elbkai-fcl-es",
+  "description": "Spanish FCL request to a German forwarder.",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Lucía Fernández <lucia@iberotec.example>",
+    "subject": "Cotización Hamburgo - Nueva York",
+    "body": "Buenos días,\n\n¿Podrían cotizar 2 contenedores de 40 pies High Cube de Hamburgo a Nueva York, puerto a puerto? Maquinaria agrícola, FCA Hamburgo.\n\nUn saludo,\nLucía Fernández"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "DEHAM",
+      "destination": "USNYC",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 2
+      }
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "6591.06",
+      "options": 2
+    },
+    "language": "es"
+  }
+}

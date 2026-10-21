@@ -23,10 +23,7 @@ export { AiSdkLlmClient } from "./llm/ai-sdk.js";
 export { ReplayLlmClient, RecordingLlmClient } from "./llm/replay.js";
 export { createLlmFromEnv, resolveLlmFromEnv, DEFAULT_MODEL, DEMO_MODEL } from "./llm/resolve.js";
 export type { CreatedLlm, ResolvedLlm } from "./llm/resolve.js";
-export { EXTRACTION_MODEL, DRAFT_MODEL, FALLBACK_MODEL, LINKPORT_TENANT_ID } from "./config.js";
+export { EXTRACTION_MODEL, DRAFT_MODEL, LINKPORT_TENANT_ID } from "./config.js";
 // The legacy rate engine: the parity oracle for the pricing core (sources/legacy-card.test.ts).
 export { StaticCardRateEngine } from "./rate-engine.js";
 export type { RateEngine, PriceRequest } from "./rate-engine.js";
-// The scoped-RAG retrieval seam (Q3). Not used by the v2 draft (code-rendered); kept for P4 explanations.
-export { EmptyRetriever, createKnowledgeRetrieverFromEnv } from "./knowledge-retriever.js";
-export type { KnowledgeRetriever } from "./knowledge-retriever.js";

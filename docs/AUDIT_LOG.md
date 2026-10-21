@@ -4,6 +4,94 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 1a — multimodal pricing core + the v2 switch · Codex + three independent reviews · 2026-10-21
+
+### Scope
+Spec `docs/specs/2026-10-21-p1a-multimodal-core.md` (3 spec-review rounds, 75 findings — review log
+alongside). Built test-first: the pure core (`packages/core`: exact decimals, money/FX, places, request v2,
+tariff model + matcher, FCL/LCL/barge/rail modes, margin, engine, gate, phrasebook renderer, guard), the
+expand migration 0021, the legacy-card adapter with line-by-line parity, the mock world (6 fictional
+forwarders, 2026 bands), then the switch: `runAgentV2`, owner-checked durable runs, CLI `--tenant`,
+dashboard v1+v2, evals v2. The v1 agent, extraction, draft, gate, injection guard, quote store, Supabase
+rate engine and the RAG stack were removed.
+
+### Codex code reviews (read-only `codex exec -s read-only`) — until its usage ran out
+| Review | Findings | Outcome |
+|---|---|---|
+| Core 1–4 (money, places, request, tariff/matcher) | 11 (4 high) | All fixed: shipment-level consistency across composed lines, line validity intersected with the tariff, snapshot-wide id uniqueness, canonical scales, canonical hash, hard limits, scale validation, real calendar dates, matcher trace, strict request objects, non-negative money |
+| Engine | 8 (4 high) | 7 fixed; #5 (LCL hybrid cargo) rejected with reason → spec §17.1. #2 later revised by the pricing review (below) |
+| Gate / draft guard / renderer | 7 (3 high) | Led to the phrasebook redesign (§17.6): no model prose reaches the customer, so denylists were deleted, not patched |
+| Phrasebook | 10 (1 critical) | All fixed: the live path switched to closed choices + code rendering; trusted-only names and carriers; strict choices; fail-closed rendering; locale allowlist |
+| Tasks 9–10 (legacy adapter, mock world) | — | Not run: Codex usage limit reached (resets 2026-10-22 00:09). Covered by the pricing review below |
+
+### Live findings while switching (Opus 5.5, real API)
+- **Provider grammar limits:** Anthropic strict structured outputs reject >16 union parameters and large
+  compiled grammars; the 19-nullable, nested extraction schema failed every call. Fixed with a flat
+  provider wire (no unions, no optional fields) mapped to the core contract in code; a test pins it.
+- **Unstated container count:** the model writes `qty 0`; first fix dropped that line — which the pricing
+  review showed could quote part of a shipment. Final: any `qty 0` withholds the whole list → the gate asks.
+- **Year-less date** ("ready Nov 10"): the model correctly declined to guess a year; the fixture over-
+  specified and was corrected (ASSUMPTIONS I8).
+
+### Independent agent reviews (read-only, in parallel)
+**Pricing maths** — core arithmetic exact against a big.js oracle over ~50k random cases (add/mul/round/
+divRound/HALF_EVEN, FX cross rates incl. JPY, both margin formulas). Findings, all fixed:
+| # | Sev | Finding | Fix |
+|---|---|---|---|
+| 1 | High | `qty 0` line dropped → partial quote | whole container list withheld; test with mixed lines |
+| 2 | Med | schema-valid extreme piece list crashed normalisation (retry loop) | exact `Dec.trimmed()` (no string round trip) + plausibility bounds → `request_too_large` |
+| 3 | Med | messy legacy cards (dup/space/long/colliding codes, unmapped base type) failed the lane | positional charge ids, capped codes, unmapped bases skipped; parity test over 6 messy cards |
+| 4 | Med | FLAT + `min_margin` always charged both | combination rejected (revises Codex engine #2) |
+| 5 | Med | duplicate `percent_of` doubled a charge | rejected at load |
+| 6 | Med | millimetres unrepresentable | `mm` unit (reverses an earlier Codex-review test, with reason) |
+| L | Low | quote row mixed two options' fields; locale followed tenant not language; mock FX staleness; THC realism | first option summarised; draft locale follows language; staleness + realism logged |
+
+**Security** — no critical/high: injection cannot change a price, total, recipient or customer text;
+`quote_internals` closed to browser roles; lease probes, grants, regexes, React escaping all sound.
+| # | Sev | Finding | Fix |
+|---|---|---|---|
+| M1 | Med | per-line amounts on BUY offers reveal buy prices (pass-through at cost; uniform markup) | cost-based options show charge names + total only (tenant opt-in to itemise); end-to-end test that no presented line amount appears |
+| M2 | Med | inbound mail drives unbounded LLM spend; poll re-triggers every received row | idempotent enqueue per (request, lease) + one global queue cap; **per-tenant spend budget deferred to P3** (needs a tenant-settings home) |
+| L1 | Low | any production tenant signed as Linkport | unconfigured tenants refused until P3 |
+| L2 | Low | null owner accepted; approval needed only a draft | 0022: owner required; approval needs a readable quote (DB-enforced) |
+| L3 | Low | anon DML, TRUNCATE for authenticated, UPDATE on internals | 0022: anon has no table privileges, no TRUNCATE, internals append-only |
+| L4 | Low | public canary constant | per-deployment `QUOTEAGENT_CANARY`; a canary planted in the email is an echo, not a leak |
+
+**Architecture / evals** — accepted:
+| # | Finding | Fix |
+|---|---|---|
+| 1 | §14 run log line missing; no prompt version | `quote_run` structured line per run (Trigger logger) + `prompt_version` fingerprint on every output |
+| 2 | eval leakage: prompt examples copied from fixtures | examples replaced; prompt frozen; 12-email held-out split written after the freeze, reported separately |
+| 3 | weak gate: 90% on deterministic replay; cassette miss = model error; no pass^k | replay must pass 100%; `CassetteMissError` aborts; live gate is pass^k |
+| 4 | static, scannable canary | see L4 |
+| 5 | guard only re-ran itself | independent invariants (sums, FX receipts, provenance hashes, sell ≥ buy, presented ⊆ candidates, validity) + "email states every total"; mutation tests |
+| 6 | model's port code trusted on format alone; field confidence unused | multilingual code ↔ place-text check (`ambiguous_request`); per-field confidence floor (E4) |
+| 7 | poll duplicates; per-request queues | see M2 |
+| 8 | RAG kept but unused | removed (code-rendered drafts leave no prose to ground); ROADMAP/README corrected |
+| 9 | AI SDK path untested with the real schema | MockLanguageModel test: strict-portable schema emitted, full round trip |
+| 10 | server-side fallback answers with an un-evaluated model | fallbacks off by default (`QUOTEAGENT_ANTHROPIC_FALLBACK=1` to opt in) |
+| 11 | view lacked the assumption line | `assumptions` on QuoteViewV2, rendered in the dashboard |
+| L | naming, dead constants, owner default, coverage | renamed wire mappers; dead routing constants removed; owner required (0022); held-out split widens language/unit/reason coverage |
+
+### Verification
+- Offline: **383/383** unit tests (hermetic), root + worker + web typechecks clean, dashboard production
+  build passes, **17/17 SQL proofs** on a fresh local Supabase (incl. `p1a_hardening.sql` for 0022).
+- **Live golden set, Opus 5.5, pass^3** (every fixture run 3×, all 3 must pass): **45/46** — dev **34/34**,
+  held-out **11/12**; all 4 must-pass injection fixtures pass 3/3; $3.53. The one held-out miss failed
+  identically 3/3: the model correctly read a factory pickup as DOOR_TO_PORT with no origin port, and the
+  gate asked for the port before checking the service. Fixed in deterministic code (gate order, spec
+  §17.16), not in the prompt; replay of the same recorded model outputs then passes **46/46**.
+- Replay gate (CI): exact, **46/46**; a missing recording aborts instead of passing as a model error.
+- Local Supabase integration: live stores (owner-checked lease, v2 rows, internals, outcome detail) PASS;
+  Supabase rate-card source vs static card: canonical pricing byte-identical + legacy golden 8/8.
+
+### Sign-off
+Phase 1a is operational end to end; awaiting Alwyn's phase review. Deferred with reason: per-tenant
+spend budget and tenant settings (P3); applying 0016–0022 to the live Supabase project (needs the owner's
+token).
+
+---
+
 ## Phase 0 (production platform) · self-review + Codex review · 2026-10-21
 
 ### Scope

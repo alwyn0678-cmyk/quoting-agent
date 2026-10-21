@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { LlmOutputError, type LlmClient, type StructuredCall, type StructuredResult } from "../llm.js";
+import { type LlmClient, type StructuredCall, type StructuredResult } from "../llm.js";
 
 /**
  * Record/replay ("cassettes") for the no-key demo and deterministic e2e tests. A cassette is keyed by
@@ -28,6 +28,18 @@ export function cassetteKey(call: Pick<StructuredCall, "toolName" | "system" | "
   return createHash("sha256").update(`${call.toolName}\n${schema}\n${call.system}\n${call.userContent}`).digest("hex").slice(0, 24);
 }
 
+/**
+ * No recording exists for this request. Deliberately NOT an LlmOutputError: a missing cassette is a
+ * harness fault (stale recordings after a prompt/schema change), never a model failure, so it must not
+ * escalate as model_output_invalid and quietly pass an eval — it aborts the run.
+ */
+export class CassetteMissError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CassetteMissError";
+  }
+}
+
 const fileFor = (dir: string, call: StructuredCall) => join(dir, `${call.toolName}-${cassetteKey(call)}.json`);
 
 export class ReplayLlmClient implements LlmClient {
@@ -36,7 +48,7 @@ export class ReplayLlmClient implements LlmClient {
   async callStructured(call: StructuredCall): Promise<StructuredResult> {
     const file = fileFor(this.dir, call);
     if (!existsSync(file)) {
-      throw new LlmOutputError(
+      throw new CassetteMissError(
         `demo mode: no recorded response for this ${call.toolName} request. The demo replays recorded model ` +
           `output for the bundled example emails only — set ANTHROPIC_API_KEY (or QUOTEAGENT_MODEL for another ` +
           `provider) to process new emails.`,

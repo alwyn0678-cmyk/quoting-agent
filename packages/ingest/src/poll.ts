@@ -35,8 +35,23 @@ export interface IngestStore {
   /** Insert a received request; dedup on the UNIQUE graph_message_id. Returns the new request id, or
    *  null if a request for that graph_message_id already existed (the dedup hit — AC-1). */
   insertReceived(row: ReceivedRequest): Promise<string | null>;
-  /** Request ids to (re-)run for THIS tenant: 'received', or 'processing' with an expired lease. */
-  listRunnable(tenantId: string): Promise<string[]>;
+  /** Requests to (re-)run for THIS tenant: 'received', or 'processing' with an expired lease. */
+  listRunnable(tenantId: string): Promise<RunnableRequest[]>;
+}
+
+export interface RunnableRequest {
+  id: string;
+  /** The current lease's claim time (null for a never-claimed or requeued request). */
+  claimed_at: string | null;
+}
+
+/**
+ * Enqueue idempotency key for one run attempt: the request plus its current lease. A re-poll while a
+ * run is queued or in flight reuses the key (deduplicated by Trigger.dev within its TTL), while a
+ * crashed run's expired lease yields a new key, so recovery is never blocked.
+ */
+export function enqueueKey(r: RunnableRequest): string {
+  return `run-request:${r.id}:${r.claimed_at ?? "unclaimed"}`;
 }
 
 /** Just the read half of OutlookMailbox the poll uses (structural — real wrapper + fakes satisfy it). */
@@ -50,6 +65,8 @@ export interface PollResult {
   cursor: string; // advanced cursor
   reEnqueued: string[]; // pre-existing stranded request ids (W5 + expired leases)
   toRun: string[]; // the set to trigger an agent-run for: new ∪ stranded
+  /** One idempotency key per id in toRun (enqueueKey). */
+  enqueueKeys: Record<string, string>;
 }
 
 export async function pollMailbox(
@@ -87,8 +104,11 @@ export async function pollMailbox(
 
   // Stranded = runnable requests that aren't the ones we just inserted: 'received' whose run never
   // started, or 'processing' whose lease expired (the run crashed mid-flight).
-  const received = await store.listRunnable(tenantId);
-  const reEnqueued = received.filter((id) => !insertedIds.includes(id));
+  const runnable = await store.listRunnable(tenantId);
+  const reEnqueued = runnable.map((r) => r.id).filter((id) => !insertedIds.includes(id));
+  const enqueueKeys: Record<string, string> = {};
+  for (const id of insertedIds) enqueueKeys[id] = enqueueKey({ id, claimed_at: null });
+  for (const r of runnable) if (!insertedIds.includes(r.id)) enqueueKeys[r.id] = enqueueKey(r);
 
-  return { insertedIds, duplicates, cursor: next, reEnqueued, toRun: [...insertedIds, ...reEnqueued] };
+  return { insertedIds, duplicates, cursor: next, reEnqueued, toRun: [...insertedIds, ...reEnqueued], enqueueKeys };
 }

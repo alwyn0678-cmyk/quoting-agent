@@ -4,6 +4,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isUnlocode, isIata, countryOf, laneEndScore, laneEndMatches } from "./places.js";
 import { normalizeEquipment, EQUIPMENT, teuOf } from "./equipment.js";
+import { checkPlace, namedPorts } from "./resolve.js";
 
 describe("places — codes and lane-end matching", () => {
   it("validates UN/LOCODE (digits 2–9 only) and IATA codes", () => {
@@ -72,5 +73,26 @@ describe("architecture — packages/core is pure (no SDKs, no I/O layers)", () =
       }
     }
     expect(violations).toEqual([]);
+  });
+});
+
+describe("place cross-check (architecture review #6)", () => {
+  it("agrees when the text names the coded port, in any of the indexed languages", () => {
+    expect(checkPlace("Rotterdam", "NLRTM")).toBe("consistent");
+    expect(checkPlace("Roterdã", "NLRTM")).toBe("consistent");
+    expect(checkPlace("上海港", "CNSHA")).toBe("consistent");
+    expect(checkPlace("Port of Shanghai, China", "CNSHA")).toBe("consistent");
+    expect(checkPlace("Rotterdam or Antwerp", "BEANR")).toBe("consistent");
+  });
+  it("contradicts a well-formed but wrong code", () => {
+    expect(checkPlace("Antwerp", "NLRTM")).toBe("contradicts");
+    expect(checkPlace("Hamburgo", "NLRTM")).toBe("contradicts");
+  });
+  it("defers to the model for places it cannot check", () => {
+    expect(checkPlace("Yantian", "CNYTN")).toBe("unrecognised"); // code not in the index
+    expect(checkPlace("our warehouse", "NLRTM")).toBe("unrecognised"); // no known name in the text
+  });
+  it("does not match a name inside another word", () => {
+    expect(namedPorts("Antwerpse Haven")).toEqual([]);
   });
 });

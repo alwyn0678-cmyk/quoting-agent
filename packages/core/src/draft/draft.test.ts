@@ -4,7 +4,7 @@ import { loadTariff, type TariffWire } from "../tariff/model.js";
 import { normalizeCargo } from "../request/normalize.js";
 import type { ShipmentRequest } from "../request/schema.js";
 import { price, type PricingContext } from "../pricing/engine.js";
-import { renderQuoteEmail, safeName, sanitizeLine, DraftChoiceSchema, type DraftChoice, type TenantPresentation } from "./render.js";
+import { renderQuoteEmail, safeName, sanitizeLine, draftLocale, DraftChoiceSchema, type DraftChoice, type TenantPresentation } from "./render.js";
 import { LANGUAGES, PHRASES } from "./phrasebook.js";
 
 const tw: TariffWire = {
@@ -96,5 +96,14 @@ describe("sanitising policy", () => {
   });
   it("normalises (NFKC) and strips every control and format character", () => {
     expect(sanitizeLine("Ｒotterdam​؜‎\n x")).toBe("Rotterdam x");
+  });
+});
+
+describe("pricing review — numbers and dates follow the draft's language", () => {
+  it("draftLocale keeps the tenant locale only when it is in the draft's language", () => {
+    expect(draftLocale("nl-NL", "nl")).toBe("nl-NL");
+    expect(draftLocale("nl-NL", "en")).toBe("en-GB");
+    expect(draftLocale("en-US", "en")).toBe("en-US");
+    expect(draftLocale("pt-BR", "es")).toBe("es-ES");
   });
 });

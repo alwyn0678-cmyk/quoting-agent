@@ -35,7 +35,7 @@ class FakeStore implements IngestStore {
     const expired = (r: { claimed_at: number | null }) => r.claimed_at === null || r.claimed_at < this.now - LEASE_MINUTES * 60_000;
     return [...this.rows.values()]
       .filter((r) => r.tenant_id === t && (r.status === "received" || (r.status === "processing" && expired(r))))
-      .map((r) => r.id);
+      .map((r) => ({ id: r.id, claimed_at: r.claimed_at === null ? null : new Date(r.claimed_at).toISOString() }));
   }
   claim(graphId: string, minutesAgo: number) {
     const r = this.rows.get(graphId)!;
@@ -130,7 +130,7 @@ describe("1C.1 — scheduled poll (cursor + dedup + re-enqueue)", () => {
     expect(rA.insertedIds).toHaveLength(1);
     expect(rA.toRun).not.toContain(bId); // A never enqueues B's request
     expect(rA.reEnqueued).not.toContain(bId);
-    expect(await store.listRunnable(TA)).not.toContain(bId);
+    expect((await store.listRunnable(TA)).map((r) => r.id)).not.toContain(bId);
   });
 
   it("recovery: a 'processing' row whose lease expired is re-enqueued; a live lease is not", async () => {
@@ -140,5 +140,16 @@ describe("1C.1 — scheduled poll (cursor + dedup + re-enqueue)", () => {
     store.claim("m2", 5); // in flight
     const r = await pollMailbox(TA, MB, new FakeMailbox([[]]), store);
     expect(r.reEnqueued).toEqual([store.rows.get("m1")!.id]);
+  });
+
+  it("enqueue keys: stable across re-polls of the same lease, new for a recovered (expired) lease", async () => {
+    const store = new FakeStore();
+    const first = await pollMailbox(TA, MB, new FakeMailbox([[msg("m1")]]), store);
+    const id = first.insertedIds[0]!;
+    const again = await pollMailbox(TA, MB, new FakeMailbox([[]]), store);
+    expect(again.enqueueKeys[id]).toBe(first.enqueueKeys[id]); // still received → same key → deduplicated
+    store.claim("m1", LEASE_MINUTES + 1);
+    const recovered = await pollMailbox(TA, MB, new FakeMailbox([[]]), store);
+    expect(recovered.enqueueKeys[id]).not.toBe(first.enqueueKeys[id]); // crashed lease → fresh key
   });
 });

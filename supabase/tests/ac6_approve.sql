@@ -31,6 +31,10 @@ insert into public.quote_requests (id, tenant_id, source, status) values
 insert into public.drafts (request_id, tenant_id, subject, body) values
   ('0c000000-0000-4000-8000-0000000000a1','0a000000-0000-4000-8000-0000000000a1','Re','draft A'),
   ('0c000000-0000-4000-8000-0000000000b1','0b000000-0000-4000-8000-0000000000b1','Re','draft B');
+-- 0022: an approvable request needs a readable quote, not just a draft
+insert into public.quotes (request_id, tenant_id, rate_card_version, container_type, container_qty, all_in_total, breakdown_snapshot, validity_through) values
+  ('0c000000-0000-4000-8000-0000000000a1','0a000000-0000-4000-8000-0000000000a1','t','40HC',1,100,'{}'::jsonb,'2026-12-31'),
+  ('0c000000-0000-4000-8000-0000000000b1','0b000000-0000-4000-8000-0000000000b1','t','40HC',1,100,'{}'::jsonb,'2026-12-31');
 
 -- Trigger (0006): the privileged session role bypasses RLS and holds DML, yet a DIRECT update to
 -- 'sent' must STILL be blocked — only approve_request() (which sets a one-shot flag) may set it.

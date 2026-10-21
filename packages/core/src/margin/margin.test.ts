@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Dec } from "../money/dec.js";
+import { fromMajor } from "../money/money.js";
 import { money } from "../money/money.js";
 import { selectMarginRule, validateMarginRule, lineSell, type MarginRule } from "./margin.js";
 
@@ -27,6 +28,10 @@ describe("margin rules — selection by specificity, never a silent pick", () =>
     expect(validateMarginRule(rule({ kind: "FLAT", value: Dec.parse("50") }))).toHaveLength(1);
     expect(validateMarginRule(rule({ kind: "FLAT", value: Dec.parse("50.005"), currency: "EUR" }))).toHaveLength(1);
     expect(selectMarginRule([rule({ kind: "GROSS_MARGIN", value: Dec.parse("0.99") })], q).kind).toBe("invalid");
+  });
+  it("a FLAT rule cannot carry min_margin (it would always add a second charge — pricing review #4)", () => {
+    const flat = rule({ kind: "FLAT", value: Dec.parse("50"), currency: "EUR", min_margin: fromMajor("40", "EUR") });
+    expect(validateMarginRule(flat).join()).toMatch(/cannot carry min_margin/);
   });
 });
 

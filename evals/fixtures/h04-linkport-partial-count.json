@@ -1,0 +1,25 @@
+{
+  "id": "h04-linkport-partial-count",
+  "description": "One container line has no count — never quote part of the shipment.",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "split": "holdout",
+  "input": {
+    "from": "Ivo Jansen <ivo@jansen-tegels.example>",
+    "subject": "Shanghai - Rotterdam containers",
+    "body": "Hallo,\n\nWe have 2 x 20' and a few 40' HC containers of tiles from Shanghai to Rotterdam, port to port. Can you quote?\n\nRegards,\nIvo"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "missing_required_field",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "NLRTM",
+      "mode": "FCL"
+    },
+    "missing_fields": [
+      "containers"
+    ]
+  }
+}

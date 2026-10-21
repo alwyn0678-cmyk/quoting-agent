@@ -16,10 +16,10 @@ import {
  * (Anthropic: ≤ 16 union-typed parameters, ≤ 24 optional parameters, plus an internal grammar-size cap
  * that nesting and optional fields inflate). So the wire is FLAT, has NO unions and NO optional fields:
  *   - absent text/code/date → ""; tri-state flags → "yes" | "no" | "unknown"; an unstated container
- *     count → qty 0 (dropped in code, so the gate asks for it);
+ *     count → qty 0 (the whole container list is then withheld, so the gate asks for it);
  *   - each measurement is two flat fields (value as a decimal string, "" if absent; unit);
  *   - piece dimensions are flat with one dimension unit.
- * fromWire maps it to ShipmentRequest; the core ShipmentRequestSchema then validates everything
+ * extractionWireToRequest maps it to ShipmentRequest; the core ShipmentRequestSchema then validates everything
  * (regexes, decimal strings, limits) — the wire schema carries structure only.
  */
 
@@ -75,7 +75,7 @@ const tri = (t: z.infer<typeof TriState>): boolean | null => (t === "unknown" ? 
 const fromTri = (b: boolean | null): z.infer<typeof TriState> => (b === null ? "unknown" : b ? "yes" : "no");
 
 /** Wire → ShipmentRequest shape (unvalidated: the caller parses it with ShipmentRequestSchema). */
-export function fromWire(w: ExtractionWire): unknown {
+export function extractionWireToRequest(w: ExtractionWire): unknown {
   const place = (p: ExtractionWire["origin"]) => ({
     raw: p.raw,
     unlocode: text(p.unlocode)?.toUpperCase() ?? null,
@@ -89,9 +89,10 @@ export function fromWire(w: ExtractionWire): unknown {
     origin: place(w.origin),
     destination: place(w.destination),
     cargo: {
-      // qty 0 = "count not stated": the line carries no priceable quantity, so it is dropped and the
-      // gate asks for the containers (missing_required_field) instead of failing the schema.
-      containers: w.containers.filter((c) => c.qty !== 0),
+      // qty 0 = "count not stated". Any such line makes the container list incomplete, so the WHOLE list
+      // is withheld and the gate asks for containers — pricing the stated lines alone would quote part
+      // of the shipment as if it were all of it.
+      containers: w.containers.some((c) => c.qty === 0) ? [] : w.containers,
       pieces: w.pieces.map((p) => ({
         qty: p.qty,
         length: { value: p.length, unit: p.dimension_unit },
@@ -113,13 +114,16 @@ export function fromWire(w: ExtractionWire): unknown {
     field_confidence: w.field_confidence,
     overall_confidence: w.overall_confidence,
     injection_detected: w.injection_detected,
-    model_notes: { missing: w.missing_notes, conflicting: w.conflicting_notes },
+    model_notes: {
+      missing: w.containers.some((c) => c.qty === 0) ? [...w.missing_notes, "container count not stated"].slice(0, 20) : w.missing_notes,
+      conflicting: w.conflicting_notes,
+    },
   };
 }
 
 /** ShipmentRequest → wire (test doubles and fixtures speak the wire, as a model would). A piece's three
  *  dimensions must share one unit on the wire. */
-export function toWire(r: ShipmentRequest): ExtractionWire {
+export function requestToExtractionWire(r: ShipmentRequest): ExtractionWire {
   const place = (p: ShipmentRequest["origin"]) => ({
     raw: p.raw,
     unlocode: p.unlocode ?? "",
@@ -134,7 +138,7 @@ export function toWire(r: ShipmentRequest): ExtractionWire {
     destination: place(r.destination),
     containers: r.cargo.containers,
     pieces: r.cargo.pieces.map((p) => {
-      if (p.width.unit !== p.length.unit || p.height.unit !== p.length.unit) throw new Error("toWire: mixed dimension units");
+      if (p.width.unit !== p.length.unit || p.height.unit !== p.length.unit) throw new Error("requestToExtractionWire: mixed dimension units");
       return {
         qty: p.qty,
         length: p.length.value,

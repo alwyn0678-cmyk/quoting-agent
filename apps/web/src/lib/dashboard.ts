@@ -33,7 +33,7 @@ interface QuoteSummaryBase {
   headline: string;
   /** Display total with currency, exact from minor units (v2: the first/lowest option); null if unreadable. */
   total: string | null;
-  /** Earliest validity date across presented options; null if unreadable. */
+  /** Validity of the summarised (first, lowest-total) option; null if unreadable. */
   validity: string | null;
   option_count: number;
 }
@@ -48,11 +48,14 @@ export interface QuoteOptionView {
   route: string;
   transit_days: number | null;
   valid_until: string;
+  /** Per-line amounts; empty for a cost-based option shown as total-only (no buy prices revealed). */
   lines: { code: string; label: string; quantity: string; sell: string }[];
+  /** Names of the charges an option includes (always present; the only detail when not itemised). */
+  included: string[];
   total: string;
   fx_notes: { from: string; to: string; source: string; as_of: string }[];
 }
-export type QuoteV2View = QuoteSummaryBase & { version: 2; currency: string; options: QuoteOptionView[] };
+export type QuoteV2View = QuoteSummaryBase & { version: 2; currency: string; options: QuoteOptionView[]; assumptions: string[] };
 
 /** A quote row exists but its snapshot matches neither shape — render a safe notice, never crash. */
 export type QuoteUnreadableView = QuoteSummaryBase & { version: "unreadable" };
@@ -133,6 +136,8 @@ function wireMoney(m: unknown): string | null {
 function parseOptionV2(o: unknown): QuoteOptionView | null {
   if (!isObj(o)) return null;
   const { option_id, carrier_label, mode, route, transit_days, valid_until, lines, fx_notes } = o;
+  const included = o.included ?? [];
+  if (!Array.isArray(included) || !included.every(isStr)) return null;
   if (!isStr(option_id) || !isStr(mode) || !isStr(route) || !isStr(valid_until)) return null;
   if (carrier_label !== null && !isStr(carrier_label)) return null;
   if (transit_days !== null && !isNum(transit_days)) return null;
@@ -153,6 +158,7 @@ function parseOptionV2(o: unknown): QuoteOptionView | null {
     transit_days,
     valid_until,
     lines: lineViews,
+    included: included as string[],
     total,
     fx_notes: (fx_notes as QuoteOptionView["fx_notes"]).map(({ from, to, source, as_of }) => ({ from, to, source, as_of })),
   };
@@ -163,6 +169,8 @@ function parseOptionV2(o: unknown): QuoteOptionView | null {
 function parseV2(x: unknown): QuoteV2View | null {
   if (!isObj(x) || x.quote_version !== 2 || !isStr(x.quote_currency)) return null;
   if (!Array.isArray(x.options) || x.options.length === 0) return null;
+  const assumptions = x.assumptions ?? [];
+  if (!Array.isArray(assumptions) || !assumptions.every(isStr)) return null;
   const options: QuoteOptionView[] = [];
   for (const raw of x.options) {
     const o = parseOptionV2(raw);
@@ -175,10 +183,11 @@ function parseV2(x: unknown): QuoteV2View | null {
     version: 2,
     headline: `${first.route} · ${first.mode}${n > 1 ? ` · ${n} options` : ""}`,
     total: first.total,
-    validity: options.map((o) => o.valid_until).reduce((a, b) => (b < a ? b : a)),
+    validity: first.valid_until,
     option_count: n,
     currency: x.quote_currency,
     options,
+    assumptions: assumptions as string[],
   };
 }
 
