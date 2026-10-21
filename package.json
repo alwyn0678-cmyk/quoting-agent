@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22.9"
   },
-  "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
+  "description": "QuoteAgent \u2014 Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -39,7 +39,10 @@
     "db:test:persist": "bash scripts/db.sh supabase/tests/persist_run_outcome.sql",
     "db:test:ac4": "bash scripts/db.sh supabase/tests/ac4_snapshot.sql",
     "db:migrate:hardening": "bash scripts/db.sh supabase/migrations/0015_audit_hardening.sql",
-    "db:test:hardening": "bash scripts/db.sh supabase/tests/hardening_dml_denial.sql && bash scripts/db.sh supabase/tests/hardening_persist_orphan.sql && bash scripts/db.sh supabase/tests/hardening_sent_gate_insert.sql && bash scripts/db.sh supabase/tests/hardening_requeue_lease.sql && bash scripts/db.sh supabase/tests/hardening_active_card_unique.sql"
+    "db:test:hardening": "bash scripts/db.sh supabase/tests/hardening_dml_denial.sql && bash scripts/db.sh supabase/tests/hardening_persist_orphan.sql && bash scripts/db.sh supabase/tests/hardening_sent_gate_insert.sql && bash scripts/db.sh supabase/tests/hardening_requeue_lease.sql && bash scripts/db.sh supabase/tests/hardening_active_card_unique.sql",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "bash scripts/db-test-local.sh"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
