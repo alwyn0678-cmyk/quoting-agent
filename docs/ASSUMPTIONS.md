@@ -163,3 +163,4 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | H7 | Dangerous goods / temperature control not stated = quoted as general cargo, with a visible assumption line | INVENTED policy | Forwarder practice; legal review |
 | H8 | Margin applies to BUY lines only; SELL (all-in) tariffs pass through unchanged | STRUCTURAL | Forwarder pricing desk |
 | H9 | Mixed-equipment offers charge shipment-level fees once and require them to be identical across lines | STRUCTURAL | Carrier contract structure |
+| H10 | A 45' container counts as 2 TEU (some carriers count 2.25) | STRUCTURAL | Carrier tariff TEU rules for PER_TEU charges |
