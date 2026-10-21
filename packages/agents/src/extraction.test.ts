@@ -28,7 +28,7 @@ const validExtraction: ExtractionResult = {
   weight_kg: null,
   requester_name: "Maria Jansen",
   requester_company: "Apex Coffee Importers",
-  field_confidence: { origin: 0.99, destination: 0.99, mode: 0.98, container_type: 0.97, container_qty: 0.99 },
+  field_confidence: [{ field: "origin", confidence: 0.99 }, { field: "destination", confidence: 0.99 }, { field: "mode", confidence: 0.98 }, { field: "container_type", confidence: 0.97 }, { field: "container_qty", confidence: 0.99 }],
   overall_confidence: 0.97,
   injection_detected: false,
 };
@@ -90,7 +90,7 @@ describe("AC-B4 — barge mode is extractable", () => {
     weight_kg: null,
     requester_name: null,
     requester_company: null,
-    field_confidence: {},
+    field_confidence: [],
     overall_confidence: 0.9,
     injection_detected: false,
   };

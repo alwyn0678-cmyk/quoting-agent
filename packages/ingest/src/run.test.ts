@@ -16,7 +16,7 @@ const baseExtraction: ExtractionResult = {
   weight_kg: null,
   requester_name: "Maria",
   requester_company: "Apex",
-  field_confidence: {},
+  field_confidence: [],
   overall_confidence: 0.95,
   injection_detected: false,
 };
@@ -169,5 +169,29 @@ describe("P0.3 — the production run path grounds the draft (RAG wired, not CLI
     // the grounding reached the draft prompt
     const draftCall = client.calls.find((c) => c.toolName === "submit_draft");
     expect(draftCall?.userContent).toContain("Bunker adjustment factor explained.");
+  });
+});
+
+describe("Codex review #4 — a model refusal or invalid output escalates to a human (no retry storm)", () => {
+  const throwingClient = (err: Error) => ({ calls: [] as unknown[], callStructured: async () => { throw err; } });
+  it("LlmRefusalError → escalated as model_refused, persisted, not thrown", async () => {
+    const { LlmRefusalError } = await import("../../agents/src/llm.js");
+    const store = new FakeRunStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    const summary = await runAndPersist(TENANT, REQ, { client: throwingClient(new LlmRefusalError("no", "cyber")), engine: new StaticCardRateEngine() }, store);
+    expect(summary).toMatchObject({ ran: true, status: "escalated", escalation_reason: "model_refused" });
+    expect(store.requests.get(REQ)?.reason).toBe("model_refused");
+  });
+  it("LlmOutputError → escalated as model_output_invalid", async () => {
+    const { LlmOutputError } = await import("../../agents/src/llm.js");
+    const store = new FakeRunStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    const summary = await runAndPersist(TENANT, REQ, { client: throwingClient(new LlmOutputError("bad")), engine: new StaticCardRateEngine() }, store);
+    expect(summary).toMatchObject({ ran: true, status: "escalated", escalation_reason: "model_output_invalid" });
+  });
+  it("an infrastructure error still throws (so the durable job retries)", async () => {
+    const store = new FakeRunStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    await expect(runAndPersist(TENANT, REQ, { client: throwingClient(new Error("ECONNRESET")), engine: new StaticCardRateEngine() }, store)).rejects.toThrow(/ECONNRESET/);
   });
 });

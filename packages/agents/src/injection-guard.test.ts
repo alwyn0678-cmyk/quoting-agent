@@ -18,7 +18,7 @@ const extraction: ExtractionResult = {
   weight_kg: null,
   requester_name: null,
   requester_company: null,
-  field_confidence: {},
+  field_confidence: [],
   overall_confidence: 0.9,
   injection_detected: true,
 };

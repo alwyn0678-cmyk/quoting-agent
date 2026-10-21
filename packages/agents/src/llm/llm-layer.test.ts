@@ -225,3 +225,44 @@ describe("P0.2 resolve from env — pick provider, routing and mode", () => {
     expect(out.data).toEqual({ ok: true });
   });
 });
+
+describe("Codex review fixes — P0 hardening of the LLM layer", () => {
+  it("#1 an open record is not portable: the converter refuses it instead of silently closing it", () => {
+    expect(() => toStrictJsonSchema(z.object({ m: z.record(z.string(), z.number()) }))).toThrow(/open record/i);
+  });
+  it("#1 the extraction schema converts (per-field confidence is a closed list, not a record)", () => {
+    expect(() => toStrictJsonSchema(ExtractionResultSchema)).not.toThrow();
+  });
+  it("#3 Anthropic: any stop reason other than end_turn is rejected", async () => {
+    for (const stop_reason of ["pause_turn", "model_context_window_exceeded", "stop_sequence", "tool_use"]) {
+      const { api } = fakeMessages({ ...okMessage('{"subject":"s","body":"b"}'), stop_reason });
+      await expect(new AnthropicLlmClient({ messages: api }).callStructured(call())).rejects.toBeInstanceOf(LlmOutputError);
+    }
+  });
+  const finishing = (unified: "length" | "content-filter") =>
+    new AiSdkLlmClient(async () =>
+      new MockLanguageModelV4({
+        doGenerate: {
+          content: [{ type: "text", text: '{"subject":"s","body":"b"}' }],
+          finishReason: { unified, raw: unified },
+          usage: { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } },
+          warnings: [],
+        },
+      }),
+    );
+  it("#3 AI SDK: a length-limited response is rejected even if it parses", async () => {
+    await expect(finishing("length").callStructured(call({ model: "openai/gpt-5.1" }))).rejects.toBeInstanceOf(LlmOutputError);
+  });
+  it("#3 AI SDK: a content-filtered response is a refusal", async () => {
+    await expect(finishing("content-filter").callStructured(call({ model: "openai/gpt-5.1" }))).rejects.toBeInstanceOf(LlmRefusalError);
+  });
+  it("#2 demo replay cannot be mixed with live models", () => {
+    expect(() => resolveLlmFromEnv({ QUOTEAGENT_EXTRACT_MODEL: "demo/replay", QUOTEAGENT_DRAFT_MODEL: "anthropic/claude-opus-5-5", ANTHROPIC_API_KEY: "k" })).toThrow(/demo/i);
+  });
+  it("#6 the cassette key changes when the output schema changes", async () => {
+    const { cassetteKey } = await import("./replay.js");
+    const a = cassetteKey(call({ schema: z.object({ a: z.string() }) }));
+    const b = cassetteKey(call({ schema: z.object({ a: z.string(), b: z.string() }) }));
+    expect(a).not.toBe(b);
+  });
+});

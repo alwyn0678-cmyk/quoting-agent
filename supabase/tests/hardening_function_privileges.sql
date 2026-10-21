@@ -50,6 +50,30 @@ begin
     end if;
   end loop;
 
+  -- Every application function must be owned by postgres (the migration role whose default
+  -- privileges 0017/0018 harden) — a function created by another role would inherit that role's
+  -- defaults, which may grant anon/authenticated.
+  for r in
+    select p.proname, pg_get_userbyid(p.proowner) as owner
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
+       and pg_get_userbyid(p.proowner) <> 'postgres'
+  loop
+    v_fail := v_fail || format(E'\n  %s: owned by %s (expected postgres)', r.proname, r.owner);
+  end loop;
+
+  -- postgres's default privileges in public must grant EXECUTE to no API role.
+  if exists (
+    select 1 from pg_default_acl d join pg_namespace n on n.oid = d.defaclnamespace,
+           aclexplode(d.defaclacl) a
+     where d.defaclrole = 'postgres'::regrole and n.nspname = 'public' and d.defaclobjtype = 'f'
+       and a.privilege_type = 'EXECUTE'
+       and a.grantee in (0, 'anon'::regrole, 'authenticated'::regrole, 'service_role'::regrole)
+  ) then
+    v_fail := v_fail || E'\n  default privileges: postgres still grants EXECUTE on new public functions to an API role';
+  end if;
+
   if v_fail <> '' then
     raise exception 'FUNCTION-PRIVILEGES FAIL:%', v_fail;
   end if;

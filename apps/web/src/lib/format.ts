@@ -16,6 +16,8 @@ export const REASON_LABELS: Record<string, string> = {
   out_of_scope_mode: "Transport mode not priced yet",
   out_of_scope_container: "Container type not priced on this lane",
   rate_expired: "Rate card has expired",
+  model_refused: "Model declined the request",
+  model_output_invalid: "Model output unusable",
   ambiguous_request: "Ambiguous request",
   low_confidence: "Low extraction confidence",
   guard_violation: "Safety guard tripped — failed closed",

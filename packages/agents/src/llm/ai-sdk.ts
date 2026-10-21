@@ -1,5 +1,5 @@
 import { generateText, Output, NoObjectGeneratedError, type LanguageModel } from "ai";
-import { LlmOutputError, type LlmClient, type StructuredCall, type StructuredResult } from "../llm.js";
+import { LlmOutputError, LlmRefusalError, type LlmClient, type StructuredCall, type StructuredResult } from "../llm.js";
 import { parseModelRef, type ModelRef } from "./model-ref.js";
 
 /**
@@ -24,6 +24,12 @@ export class AiSdkLlmClient implements LlmClient {
         output: Output.object({ schema: call.schema, name: call.toolName, description: call.toolDescription }),
         maxRetries: 2,
       });
+      if (result.finishReason === "content-filter") {
+        throw new LlmRefusalError(`${call.toolName}: ${ref.provider} content filter stopped the response`);
+      }
+      if (result.finishReason !== "stop") {
+        throw new LlmOutputError(`${call.toolName}: incomplete response (finishReason=${result.finishReason})`);
+      }
       return {
         data: result.output,
         usage: {

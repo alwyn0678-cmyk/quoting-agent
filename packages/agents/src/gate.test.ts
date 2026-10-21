@@ -15,7 +15,7 @@ const complete: ExtractionResult = {
   weight_kg: 21000,
   requester_name: "Maria Jansen",
   requester_company: "Apex Coffee Importers",
-  field_confidence: {},
+  field_confidence: [],
   overall_confidence: 0.95,
   injection_detected: false,
 };

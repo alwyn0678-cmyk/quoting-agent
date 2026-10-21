@@ -99,7 +99,7 @@ ExtractionResult {
   weight_kg:        number | null          // optional
   requester_name:   string | null
   requester_company:string | null
-  field_confidence: Record<field, number>  // 0..1 per required field
+  field_confidence: { field: RequiredField; confidence: number }[]  // 0..1 per required field (closed list — portable to strict structured outputs)
   overall_confidence: number               // 0..1
   injection_detected: boolean              // model's own flag; corroborated by a code-side guard
 }

@@ -1,6 +1,6 @@
 import { runAgent } from "../../agents/src/agent.js";
 import type { RateEngine } from "../../agents/src/rate-engine.js";
-import type { LlmClient } from "../../agents/src/llm.js";
+import { LlmOutputError, LlmRefusalError, type LlmClient } from "../../agents/src/llm.js";
 import { PER_STEP_ROUTING, type ModelRouting } from "../../agents/src/config.js";
 import type { RateQuote } from "../../agents/src/schemas.js";
 import type { KnowledgeRetriever } from "../../agents/src/knowledge-retriever.js";
@@ -94,13 +94,34 @@ export async function runAndPersist(
   const request = await store.claim(tenantId, requestId);
   if (!request) return { ran: false, reason: "not_claimable" };
 
-  const out = await runAgent(
-    { from: request.from_email ?? "", subject: request.subject ?? "", body: request.body ?? "" },
-    deps.client,
-    deps.engine,
-    deps.routing ?? PER_STEP_ROUTING,
-    deps.retriever,
-  );
+  const routing = deps.routing ?? PER_STEP_ROUTING;
+  let out;
+  try {
+    out = await runAgent(
+      { from: request.from_email ?? "", subject: request.subject ?? "", body: request.body ?? "" },
+      deps.client,
+      deps.engine,
+      routing,
+      deps.retriever,
+    );
+  } catch (err) {
+    // A refusal or unusable model output is terminal for THIS request, not an infrastructure fault:
+    // retrying would repeat it. Escalate to a human with a named reason (fail closed) instead of
+    // letting the durable job retry and end in 'error'. Anything else still throws, so it retries.
+    const reason =
+      err instanceof LlmRefusalError ? "model_refused" : err instanceof LlmOutputError ? "model_output_invalid" : null;
+    if (!reason) throw err;
+    const transitioned = await store.persistOutcome(requestId, tenantId, {
+      status: "escalated",
+      escalationReason: reason,
+      injectionFlag: false,
+      quote: null,
+      draft: null,
+      // Tokens spent on the failed call are not reported by the adapter; record the attempt honestly.
+      usage: { model: `${routing.extraction} (extract)`, input_tokens: 0, output_tokens: 0, est_cost_usd: null },
+    });
+    return { ran: true, decision: "escalate", status: "escalated", escalation_reason: reason, injection_flag: false, transitioned };
+  }
 
   const status = out.decision === "quote" ? "awaiting_review" : "escalated";
   const transitioned = await store.persistOutcome(requestId, tenantId, {

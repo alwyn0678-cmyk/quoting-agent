@@ -48,8 +48,14 @@ export const ExtractionResultSchema = z.object({
   weight_kg: z.number().positive().nullable(),
   requester_name: z.string().nullable(),
   requester_company: z.string().nullable(),
-  /** 0..1 confidence per required field. Open record — keys are field names. */
-  field_confidence: z.record(z.string(), confidence),
+  /** 0..1 confidence per required field, as a closed list (portable to every strict structured-
+   *  output mode — an open record is not). Advisory only: no decision reads it. */
+  field_confidence: z.array(
+    z.object({
+      field: z.enum(["origin", "destination", "mode", "container_type", "container_qty"]),
+      confidence,
+    }),
+  ),
   overall_confidence: confidence,
   /** The model's own injection flag; corroborated by a code-side guard (Task 6). */
   injection_detected: z.boolean(),
@@ -83,6 +89,8 @@ export const escalationReasonSchema = z.enum([
   "out_of_scope_mode",
   "out_of_scope_container",
   "rate_expired",
+  "model_refused",
+  "model_output_invalid",
   "ambiguous_request",
   "low_confidence",
   "guard_violation",

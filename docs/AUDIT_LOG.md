@@ -4,6 +4,38 @@ Per-phase audit trail (self-review + codex second-opinion + reconciliation). New
 
 ---
 
+## Phase 0 (production platform) · self-review + Codex review · 2026-10-21
+
+### Scope
+First phase of the re-scope from portfolio demo to production platform (docs/ROADMAP.md). Commits
+d600082..HEAD: expired-rate gate, function-privilege hardening, provider-agnostic LLM layer, keyless
+demo (recorded cassettes), RAG on the production path, CI expansion.
+
+### Found by running the SQL suite on a fresh local Supabase (CRITICAL)
+Supabase default privileges grant EXECUTE on new `public` functions directly to `anon` and
+`authenticated`; the migrations only revoked from `PUBLIC`. On any fresh install the SECURITY DEFINER
+worker RPCs (`persist_run_outcome`, `finalize_send`, `claim_for_send`, `advance_poll_cursor`) were
+callable with the browser's public key. AC-6 failed locally; it had only ever run against the live
+project. Fixed in 0017 (explicit matrix) with a lint test over every public function. **The live
+project still needs 0016–0018 applied** (the `.env` access token had expired, so it could not be
+checked — action for the owner).
+
+### Codex review (gpt-5.6-sol, read-only `codex exec -s read-only`) — 6 findings, all accepted
+| # | Sev | Finding | Resolution |
+|---|---|---|---|
+| 1 | High | `field_confidence` was an open `z.record`: OpenAI strict mode rejects it; my converter silently emptied it for Anthropic | Now a closed list of `{field, confidence}`; the converter throws on any open record instead of changing its meaning. Live re-record shows real per-field confidences |
+| 2 | High | Mixed demo/live routing (`EXTRACT=demo/replay`, live draft) reported `live`, bypassing the production guard | Demo is all-or-nothing; a mixed route throws at resolve time |
+| 3 | Med | Only `refusal`/`max_tokens` rejected; AI SDK finish reason never checked | Allowlist: Anthropic `end_turn`, AI SDK `stop`; content-filter → refusal; anything else → `LlmOutputError` |
+| 4 | Med | Refusals/invalid output escaped `runAgent`; Trigger retried them into `error` | Durable run boundary escalates them as `model_refused` / `model_output_invalid` (0018 widens the reason constraint); infrastructure errors still throw and retry |
+| 5 | Med | Default privileges are per creator; 0017 only covered `postgres` | 0018 revokes the `service_role` default too (explicit grants only); the lint now asserts every app function is owned by `postgres` and that `postgres`'s defaults grant no API role. `supabase_admin` defaults are platform-managed (postgres cannot alter them) and only extension functions use them |
+| 6 | Low | Cassette key omitted the output schema | Key now includes the JSON schema; cassettes re-recorded |
+
+### Evidence
+255 unit tests, 14 SQL proofs on a fresh local Supabase, root + worker typechecks clean; live golden
+set on `anthropic/claude-opus-5-5`: 8/8 (injection must-pass included); keyless replay: 8/8.
+
+---
+
 ## Full-repo audit + hardening sweep · 2026-07-07
 
 ### Scope

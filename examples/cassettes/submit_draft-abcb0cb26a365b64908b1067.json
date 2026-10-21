@@ -1,0 +1,15 @@
+{
+  "key": "abcb0cb26a365b64908b1067",
+  "toolName": "submit_draft",
+  "recorded_at": "2026-10-21T17:14:10.684Z",
+  "model": "anthropic/claude-opus-5-5",
+  "data": {
+    "subject": "Your FCL Quote: Rotterdam to New York, 1 x 20GP (Ceramic Tiles)",
+    "body": "Dear Tom de Vries,\n\nThank you for your quote request. Please find our offer for your shipment below.\n\nLane: Rotterdam -> New York\nContainer: 1 x 20GP\nCommodity: Ceramic tiles\n\nAll-in total: EUR 2770\n\nThis all-in total includes:\n- Base ocean freight: EUR 1800 per container\n- BAF: EUR 320 per container\n- Terminal handling Rotterdam (THC): EUR 225 per container\n- Terminal handling New York (THC): EUR 290 per container\n- ISPS: EUR 25 per container\n- Documentation: EUR 65 per shipment\n- Export customs clearance: EUR 45 per shipment\n\nValidity: This quote is valid through 2026-12-31.\n\nIf you would like to proceed, please reply to confirm and send us your preferred cargo ready date along with the shipper and consignee details. We will then arrange the booking. If you have any questions or need a quote for other container types or volumes, please let us know.\n\nKind regards,\n\nLinkport Forwarders BV"
+  },
+  "usage": {
+    "input_tokens": 875,
+    "output_tokens": 502
+  },
+  "request_excerpt": "Draft the reply using EXACTLY these figures (do not change any number):\n\n<customer_fields>\nRequester: Tom de Vries\nLane: Rotterdam -> New York\nCommodity: ceramic tiles\n</customer_fields>\n\nContainer: 1 x 20GP\nAll-in total: EUR 2770\nValidity: through 2026-12-31\n\nBreakdown (reference only; quote the all-in total above):\n  - Base per container: EUR 1800\n  - BAF: EUR 320 per container\n  - THC_RTM: EUR "
+}

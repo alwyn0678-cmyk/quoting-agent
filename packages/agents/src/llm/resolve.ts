@@ -51,8 +51,13 @@ export function resolveLlmFromEnv(env: Env): ResolvedLlm {
       throw new Error(`model '${ref}' needs ${keys.join(" or ")} to be set`);
     }
   }
-  const allDemo = [routing.extraction, routing.draft].every((r) => parseModelRef(r).provider === "demo");
-  return { mode: allDemo ? "demo" : "live", routing };
+  // Demo replay is all-or-nothing: a mixed route would let recorded extractions reach live drafting
+  // (and real mail), and would bill historical cassette usage as if it were consumed now.
+  const demoSteps = [routing.extraction, routing.draft].filter((r) => parseModelRef(r).provider === "demo");
+  if (demoSteps.length === 1) {
+    throw new Error("demo/replay cannot be mixed with live models — use demo for every step or for none");
+  }
+  return { mode: demoSteps.length === 2 ? "demo" : "live", routing };
 }
 
 /** Default cassette directory: <repo>/examples/cassettes (override with QUOTEAGENT_CASSETTES). */

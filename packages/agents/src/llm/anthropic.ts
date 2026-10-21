@@ -72,8 +72,10 @@ export class AnthropicLlmClient implements LlmClient {
       const details = (message as { stop_details?: { category?: string | null } }).stop_details;
       throw new LlmRefusalError(`model refused the ${call.toolName} request`, details?.category ?? null);
     }
-    if (message.stop_reason === "max_tokens") {
-      throw new LlmOutputError(`${call.toolName}: output truncated at max_tokens (${this.maxTokens})`);
+    if (message.stop_reason !== "end_turn") {
+      // Allowlist: only a normal completion is trusted. max_tokens, context-window exhaustion,
+      // pause_turn, stop_sequence, tool_use or anything new may carry partial-but-parseable JSON.
+      throw new LlmOutputError(`${call.toolName}: incomplete response (stop_reason=${message.stop_reason})`);
     }
 
     const text = message.content

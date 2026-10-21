@@ -51,7 +51,7 @@ const baseExtraction: ExtractionResult = {
   weight_kg: null,
   requester_name: "Maria",
   requester_company: "Apex",
-  field_confidence: {},
+  field_confidence: [],
   overall_confidence: 0.95,
   injection_detected: false,
 };

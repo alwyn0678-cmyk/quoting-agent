@@ -20,7 +20,7 @@ const extraction: ExtractionResult = {
   weight_kg: null,
   requester_name: "Maria",
   requester_company: "Apex Coffee Importers",
-  field_confidence: {},
+  field_confidence: [],
   overall_confidence: 0.97,
   injection_detected: false,
 };

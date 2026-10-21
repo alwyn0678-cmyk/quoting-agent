@@ -20,7 +20,7 @@ const validExtraction: ExtractionResult = {
   weight_kg: 21000,
   requester_name: "Maria Jansen",
   requester_company: "Apex Coffee Importers",
-  field_confidence: { origin: 0.99, destination: 0.99, mode: 0.98, container_type: 0.97, container_qty: 0.99 },
+  field_confidence: [{ field: "origin", confidence: 0.99 }, { field: "destination", confidence: 0.99 }, { field: "mode", confidence: 0.98 }, { field: "container_type", confidence: 0.97 }, { field: "container_qty", confidence: 0.99 }],
   overall_confidence: 0.97,
   injection_detected: false,
 };

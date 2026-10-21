@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { LlmOutputError, type LlmClient, type StructuredCall, type StructuredResult } from "../llm.js";
 
 /**
  * Record/replay ("cassettes") for the no-key demo and deterministic e2e tests. A cassette is keyed by
- * the request content (output name + system prompt + user content) — not the model — so a response
+ * the request content (output name + output schema + system prompt + user content) — not the model — so a response
  * recorded once from a real model can be replayed by anyone, offline, with no API key. Replayed
  * results keep the model that originally produced them, so the demo never misreports its source.
  */
@@ -21,8 +22,10 @@ export interface Cassette {
   request_excerpt: string;
 }
 
-export function cassetteKey(call: Pick<StructuredCall, "toolName" | "system" | "userContent">): string {
-  return createHash("sha256").update(`${call.toolName}\n${call.system}\n${call.userContent}`).digest("hex").slice(0, 24);
+/** Keyed by request content AND output schema: a contract change invalidates old recordings. */
+export function cassetteKey(call: Pick<StructuredCall, "toolName" | "system" | "userContent" | "schema">): string {
+  const schema = JSON.stringify(zodToJsonSchema(call.schema, { $refStrategy: "none" }));
+  return createHash("sha256").update(`${call.toolName}\n${schema}\n${call.system}\n${call.userContent}`).digest("hex").slice(0, 24);
 }
 
 const fileFor = (dir: string, call: StructuredCall) => join(dir, `${call.toolName}-${cassetteKey(call)}.json`);
