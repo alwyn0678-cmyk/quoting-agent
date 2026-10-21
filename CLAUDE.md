@@ -1,45 +1,76 @@
 # CLAUDE.md — Working norms for QuoteAgent
 
 ## What this is
-Portfolio + learning project. An AI agent for a fictional Dutch freight
-forwarder (Linkport Forwarders BV): reads an inbound FCL Rotterdam→NY quote
-email, extracts the request, looks up a rate, drafts a reply. Success = I can
-explain every component to a senior AI hiring manager without hand-waving.
-Not revenue, not users, not feature count.
+An open-source, production-grade, multi-tenant AI quoting platform for freight
+forwarders worldwide. It reads inbound quote requests (email, portal, API),
+extracts the shipment, prices it deterministically from the forwarder's OWN
+rate data (Excel, SQL, TMS, …) for every mode (ocean FCL/LCL, air, express,
+road FTL/LTL/groupage/drayage, rail, barge, multimodal door-to-door), and
+drafts a reply a human approves. It must be plug-and-play: someone clones the
+repo and gets a first quote in minutes. Works with any LLM provider.
+
+The plan lives in `docs/ROADMAP.md`; per-phase task plans live in
+`docs/superpowers/plans/`. The design record is the plan artifact
+https://claude.ai/artifact/YQv3VhLe1mkGpsqujfHbtS.
 
 ## How you work here
-- You are a supervised execution engine, not an oracle. One task at a time,
-  smallest safe change, run its test, stop. I review between every task.
-- This is Ralph *principles applied manually* (one task, fresh focus,
-  spec-as-state) — NOT an autonomous loop. Describe it that way; never claim
-  it ran unattended.
+- Work in phases (see ROADMAP). Every phase ends as an OPERATIONAL,
+  production-ready pipeline that runs end to end with tests — never plumbing
+  that only becomes useful later. If a task only adds unused scaffolding,
+  it is in the wrong phase.
+- Inside a phase: one task at a time, test first (red → green), smallest safe
+  change, run the full suite, commit. Stop for review at the end of each
+  phase and whenever a decision is genuinely the owner's.
+- Supervised, not autonomous: describe the process honestly; never claim work
+  ran unattended or was verified when it wasn't.
 - Specs and tests carry the weight, not process docs. Ceremony is earned.
-  Do not create a doc until there is something real to put in it.
+
+## Architecture invariants (non-negotiable)
+1. The LLM handles language only. Deterministic code owns every number,
+   decision, and outbound action. The model never computes or restates a
+   price; drafts use slots that code fills.
+2. Every quote line has a receipt: the rate row, snapshot/version, mapping
+   version, FX rate and who confirmed it.
+3. Untrusted input (email, attachments, tenant files, MCP tool output) is
+   fenced to quarantined extraction steps. Outbound messages are built from
+   templates + verified values; untrusted text never reaches an outbound
+   channel or a later prompt as instructions.
+4. Fail closed: any guard, policy or validation failure resolves to a named
+   escalation reason, never a guess or a partial output.
+5. Tenant identity comes from authentication and is enforced by the
+   database (RLS) and tenant-scoped tool factories — never by prompt text or
+   a client-supplied header.
+6. Every side effect is idempotent and goes through policy; irreversible
+   actions require a human until a lane has earned autonomy by measurement.
+7. Provider-agnostic: all model access goes through the `LlmClient` port.
+   No business logic may depend on a specific vendor.
+8. Version everything that changes behaviour (prompts, models, rate
+   snapshots, mappings, policies); any such change re-runs the eval gate.
 
 ## Tests
 - Every acceptance criterion maps to exactly one pass/fail test. If a
-  behavior can't be a test, it's not a criterion — drop it or rewrite it.
+  behaviour can't be a test, it's not a criterion — drop it or rewrite it.
 - LLM steps are nondeterministic. Never assert exact-string equality on model
-  output. Test at temperature 0 with structured/JSON output, and assert on a
-  normalized schema or a defined pass band. How we handle nondeterminism is a
-  deliberate, documented choice.
+  output. Use structured output and assert on a normalized schema, a defined
+  pass band, or predicates. Release gates use pass^k (all k runs pass), and
+  safety fixtures must always pass.
+- The offline suite is hermetic (no keys, no network) and gates every commit.
 
 ## Domain humility (enforced every phase)
-- I am NOT a freight-pricing expert. Any rate, surcharge, incoterm rule, or
-  "what a typical email looks like" claim you generate is an ASSUMPTION, not a
-  fact. Log every one in ASSUMPTIONS.md: claim · source (or "invented") · how
-  to verify. Never state a domain claim as established fact anywhere.
+- Nobody here is a freight-pricing authority. Any rate, surcharge, formula,
+  incoterm rule, or "what a typical email looks like" claim is an ASSUMPTION
+  until checked against a primary source or a real tariff. Log every one in
+  docs/ASSUMPTIONS.md: claim · source (or "invented") · how to verify.
+- Mock data is clearly fictional and generated, never copied from real
+  tariffs. Respect source licences (attribution in NOTICE).
 
 ## What to protect under time pressure
-Priority order is fixed:
-- PROTECT: a working end-to-end demo of the core; the three learning-goal docs
-  (agent design, evals, observability); AUDIT_LOG.md; ASSUMPTIONS.md.
-- CUTTABLE: peripheral docs (RELEASE_PLAN, full RISK_REGISTER, CHANGELOG depth)
-  AND peripheral integrations (MS Graph depth, dashboard polish).
-- Never cut or thin the working demo to preserve a peripheral doc.
+- PROTECT: a working end-to-end pipeline for each shipped phase; the
+  invariants above; the test suite and eval gate; ASSUMPTIONS.md; AUDIT_LOG.md.
+- CUTTABLE: peripheral docs and polish. Never thin a working pipeline to
+  preserve a doc.
 
-## Phase boundaries
-- Phase 0 (now): CLI slice only — email in → extraction → rate lookup →
-  drafted reply. Nothing else.
-- Phase 1+ (later): MS Graph, Outlook, Excel Online, dashboard, auth,
-  Trigger.dev, monitoring. Do not pull any of this into Phase 0.
+## Owner context
+- Owner: Alwyn. Supabase + Vercel + Trigger.dev accounts exist. Docker runs
+  via Colima on this machine.
+- Never commit secrets. `.env` stays gitignored.
