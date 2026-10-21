@@ -37,6 +37,9 @@ async function main(): Promise<void> {
   // The engine keeps its default; the knowledge retriever is env-gated (ungrounded if unset).
   const output = await runAgent(email, llm.client, undefined, llm.routing, createKnowledgeRetrieverFromEnv());
   console.log(formatAgentOutput(output));
+  if (llm.mode === "demo") {
+    console.log("[demo] usage above is from the recorded run — no tokens were spent now.");
+  }
 }
 
 main().catch((err: unknown) => {

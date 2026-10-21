@@ -1,10 +1,10 @@
 # QuoteAgent
 
 [![CI](https://github.com/alwyn0678-cmyk/quoting-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/alwyn0678-cmyk/quoting-agent/actions/workflows/ci.yml)
-![tests](https://img.shields.io/badge/tests-215%20passing-2ea44f?style=flat-square)
+![tests](https://img.shields.io/badge/tests-261%20unit%20%2B%2015%20SQL-2ea44f?style=flat-square)
 ![vulnerabilities](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-2ea44f?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict%20ESM-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![Claude](https://img.shields.io/badge/Claude-Sonnet%20%2B%20Haiku-d97757?style=flat-square)
+![LLM](https://img.shields.io/badge/LLM-any%20provider%20%C2%B7%20Claude%20Opus%205.5%20default-d97757?style=flat-square)
 ![Supabase](https://img.shields.io/badge/Supabase-pgvector%20%2B%20RLS-3ecf8e?style=flat-square&logo=supabase&logoColor=white)
 ![Next.js](https://img.shields.io/badge/dashboard-Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 [![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -62,12 +62,21 @@ flowchart LR
 
 <sub>🟣 **LLM** reads/writes language · 🔵 **deterministic code** makes every decision that must be correct · 🔴 untrusted input · 🟢 verified data. The point is *where it refuses to call the model*.</sub>
 
-## Quickstart (the Phase 0 CLI slice)
+## Quickstart
 
 ```bash
+git clone https://github.com/alwyn0678-cmyk/quoting-agent.git && cd quoting-agent
 npm install
-export ANTHROPIC_API_KEY=sk-ant-...           # the only key the core demo needs
-npm start -- evals/fixtures/01-complete-40hc-x2.json
+npm start -- evals/fixtures/01-complete-40hc-x2.json    # no API key needed (demo mode)
+```
+
+With no key set, QuoteAgent runs in **demo mode**: it replays recorded Claude Opus 5.5 responses for
+the bundled example emails, while pricing, the gate and every guard run live. Add a key to process any
+email, with any provider:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...                      # default: anthropic/claude-opus-5-5
+# or any provider:  QUOTEAGENT_MODEL=openai/gpt-5.1 | google/gemini-… | ollama/qwen2.5:7b | openrouter/…
 ```
 
 You'll get a drafted reply with an exact, auditable all-in total — plus a `[usage]` cost line. Try
@@ -75,8 +84,10 @@ You'll get a drafted reply with an exact, auditable all-in total — plus a `[us
 the *real* price and flags the attack — it does not obey the injected instruction).
 
 ```bash
-npm test          # 215 offline tests — no keys, no network
-npm run eval      # golden-set outcome eval — needs ANTHROPIC_API_KEY
+npm test             # 261 offline tests — no keys, no network
+npm run eval:replay  # full pipeline over the golden set, replaying recorded responses (what CI runs)
+npm run eval         # live golden-set eval on your configured model
+supabase start && npm run db:test   # every SQL proof on a fresh local database (Docker)
 ```
 
 ## Design judgments worth noticing
@@ -112,8 +123,9 @@ npm run eval      # golden-set outcome eval — needs ANTHROPIC_API_KEY
 
 ## Architecture & stack
 
-TypeScript (ESM, strict) · Zod for schemas/validation · Anthropic SDK (Sonnet for extraction, Haiku for
-drafting) · Supabase Postgres + RLS + **pgvector** · Gemini Embedding 2 (768-dim) · Next.js dashboard
+TypeScript (ESM, strict) · Zod for schemas/validation · any LLM via the `LlmClient` port (native Anthropic
+structured outputs; OpenAI, Google, Azure, Bedrock, Ollama, OpenRouter via the Vercel AI SDK) ·
+Supabase Postgres + RLS + **pgvector** · Gemini Embedding 2 (768-dim) · Next.js dashboard
 (`apps/web`) · Trigger.dev + MS Graph for the autonomous mail path. Tests with Vitest; scripts via `tsx`;
 CI runs the hermetic suite + all typecheck roots on every push.
 
