@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { FLASH_COOKIE } from "../../src/lib/flash";
+import { FlashNote } from "./FlashNote";
 import type { ReactNode } from "react";
 import { LiveRefresh } from "./LiveRefresh";
 
@@ -70,11 +71,7 @@ export async function AppShell({
           </div>
         </header>
         <div className="pane">
-          {flash ? (
-            <div className="flashnote" role="status">
-              {flash}
-            </div>
-          ) : null}
+          {flash ? <FlashNote message={flash} /> : null}
           {children}
         </div>
       </main>

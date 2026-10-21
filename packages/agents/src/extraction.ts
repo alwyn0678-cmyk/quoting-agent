@@ -1,6 +1,6 @@
 import { ExtractionResultSchema, type ExtractionResult } from "./schemas.js";
 import { SYSTEM_CANARY, EXTRACTION_MODEL } from "./config.js";
-import type { LlmClient, Usage } from "./llm.js";
+import { LlmOutputError, type LlmClient, type Usage } from "./llm.js";
 
 /**
  * Extraction step (first LLM boundary). Reads ONE untrusted email and returns a structured
@@ -76,6 +76,11 @@ export async function extractRequest(
     schema: ExtractionResultSchema,
   });
 
-  const extraction = ExtractionResultSchema.parse(result.data);
-  return { extraction, usage: result.usage, model: result.model ?? model };
+  const parsed = ExtractionResultSchema.safeParse(result.data);
+  if (!parsed.success) {
+    // Schema-invalid model output is a model failure, not an infrastructure fault: typed so the run
+    // boundary escalates it instead of retrying (the field path is kept, never the raw values).
+    throw new LlmOutputError(`submit_extraction: output failed the schema at ${parsed.error.issues[0]?.path.join(".") || "(root)"}`);
+  }
+  return { extraction: parsed.data, usage: result.usage, model: result.model ?? model };
 }

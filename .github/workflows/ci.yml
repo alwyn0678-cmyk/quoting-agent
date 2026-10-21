@@ -49,7 +49,7 @@ jobs:
       - run: bash scripts/db-test-local.sh
 
   web:
-    name: Web — typecheck (Next.js dashboard)
+    name: Web — typecheck + production build (Next.js dashboard)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,3 +63,9 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      # A real production build (catches server/client component errors typecheck cannot). The
+      # public Supabase URL/key are placeholders: nothing is fetched at build time.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key

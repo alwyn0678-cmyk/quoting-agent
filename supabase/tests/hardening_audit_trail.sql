@@ -77,5 +77,41 @@ begin
   if v_n <> 1 then raise exception 'AUDIT FAIL: archive not attributed (n=%)', v_n; end if;
 end $$;
 
+-- 5. (Codex review 2) attribution survives account deletion; per-run extraction is immutable in the
+--    run's audit row; a requeue clears the request's CURRENT extraction.
+do $$
+declare v_n int; v_extr jsonb;
+begin
+  select count(*) into v_n from public.audit_log
+   where request_id = '0c000000-0000-4000-8000-0000000000f1' and event = 'transition'
+     and detail->>'to' = 'sending' and actor_type = 'user';
+  if v_n <> 1 then raise exception 'AUDIT FAIL: human transition lacks actor_type=user'; end if;
+
+  select count(*) into v_n from public.audit_log
+   where request_id = '0c000000-0000-4000-8000-0000000000f1' and event = 'transition'
+     and detail->>'to' = 'awaiting_review' and actor_type = 'system';
+  if v_n <> 1 then raise exception 'AUDIT FAIL: worker transition lacks actor_type=system'; end if;
+
+  delete from auth.users where id = '1a000000-0000-4000-8000-0000000000f1';
+  select count(*) into v_n from public.audit_log
+   where request_id = '0c000000-0000-4000-8000-0000000000f1' and detail->>'to' = 'sending'
+     and actor_id is null and actor_type = 'user';
+  if v_n <> 1 then raise exception 'AUDIT FAIL: deleting the reviewer rewrote a human action as system'; end if;
+
+  select detail->'extraction' into v_extr from public.audit_log
+   where request_id = '0c000000-0000-4000-8000-0000000000f1' and event = 'quote';
+  if v_extr->>'mode' is distinct from 'FCL' then
+    raise exception 'AUDIT FAIL: the run''s extraction is not kept in its audit row (got %)', v_extr;
+  end if;
+
+  -- the remaining updates are system actions (the deleted reviewer's claims must not linger)
+  perform set_config('request.jwt.claims', '', true);
+  update public.quote_requests set status = 'escalated', extraction = '{"mode":"FCL"}'::jsonb
+   where id = '0c000000-0000-4000-8000-0000000000f2';
+  update public.quote_requests set status = 'received' where id = '0c000000-0000-4000-8000-0000000000f2';
+  select extraction into v_extr from public.quote_requests where id = '0c000000-0000-4000-8000-0000000000f2';
+  if v_extr is not null then raise exception 'AUDIT FAIL: requeue left a stale extraction on the request'; end if;
+end $$;
+
 rollback;
 select 'PASS: audit trail attributes every transition and persists the extraction' as result;

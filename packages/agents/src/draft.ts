@@ -1,7 +1,7 @@
 import { DraftSchema, type Draft, type RateQuote } from "./schemas.js";
 import { SYSTEM_CANARY, DRAFT_MODEL } from "./config.js";
 import { escapeForTag } from "./extraction.js";
-import type { LlmClient, Usage } from "./llm.js";
+import { LlmOutputError, type LlmClient, type Usage } from "./llm.js";
 import type { KnowledgeChunk } from "./chunk-corpus.js";
 
 /**
@@ -118,8 +118,11 @@ export async function generateDraft(
     schema: DraftSchema,
   });
 
-  const draft = DraftSchema.parse(result.data);
-  return { draft, usage: result.usage, model: result.model ?? model };
+  const parsed = DraftSchema.safeParse(result.data);
+  if (!parsed.success) {
+    throw new LlmOutputError(`submit_draft: output failed the schema at ${parsed.error.issues[0]?.path.join(".") || "(root)"}`);
+  }
+  return { draft: parsed.data, usage: result.usage, model: result.model ?? model };
 }
 
 /**

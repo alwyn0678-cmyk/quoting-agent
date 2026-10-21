@@ -31,6 +31,8 @@ async function runMutation(
   try {
     const supabase = await createSupabaseServerClient();
     await mutate(supabase, requestId);
+    // A later success must never sit under an earlier failure's message.
+    (await cookies()).delete(FLASH_COOKIE);
   } catch (error) {
     console.error(`${action}: RPC failed for request ${requestId}`, error);
     (await cookies()).set(FLASH_COOKIE, describeMutationError(action, error), {
@@ -41,6 +43,11 @@ async function runMutation(
     });
   }
   revalidateAll();
+}
+
+/** Consume the one-time reviewer message once it has been displayed (called by FlashNote). */
+export async function clearFlashAction(): Promise<void> {
+  (await cookies()).delete(FLASH_COOKIE);
 }
 
 /**

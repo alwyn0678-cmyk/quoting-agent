@@ -30,8 +30,19 @@ checked — action for the owner).
 | 5 | Med | Default privileges are per creator; 0017 only covered `postgres` | 0018 revokes the `service_role` default too (explicit grants only); the lint now asserts every app function is owned by `postgres` and that `postgres`'s defaults grant no API role. `supabase_admin` defaults are platform-managed (postgres cannot alter them) and only extension functions use them |
 | 6 | Low | Cassette key omitted the output schema | Key now includes the JSON schema; cassettes re-recorded |
 
+### Codex review 2 (audit trail + dashboard commits) — 6 findings, 5 fixed, 1 deferred with reason
+| # | Sev | Finding | Resolution |
+|---|---|---|---|
+| 1 | High | Valid-JSON-but-schema-invalid model output threw a raw ZodError → retried into `error` (my test only injected a pre-wrapped error) | `extractRequest`/`generateDraft` safeParse and rethrow `LlmOutputError` (field path only, never values); tests drive the real boundary |
+| 2 | Med | A draft-stage refusal discarded the valid extraction + usage | `runAgent` escalates draft failures itself (`model_refused` / `model_output_invalid`), keeping extraction and extraction usage |
+| 3 | Med | `actor_id ON DELETE SET NULL` turned deleted reviewers' actions into "system" | 0020 snapshots `actor_type` ('user' \| 'system') on every audit row; proved by deleting the reviewer in the SQL test |
+| 4 | Med | Extraction was mutable current state; stale after requeue | Each run's usage row carries `detail.extraction` (immutable per-run evidence); a requeue clears the request's current extraction (BEFORE UPDATE trigger) |
+| 5 | Med | Extraction JSON adds PII with no retention boundary | **Deferred to P3/P7 (tenant settings + governance):** the raw email body with the same PII is already readable by the same tenant members, so no new audience; retention/redaction policy is logged in ROADMAP |
+| 6 | Low | Flash message neither consumed nor cleared by a later success | Client `FlashNote` consumes it on first display; a successful action clears it |
+
 ### Evidence
-255 unit tests, 14 SQL proofs on a fresh local Supabase, root + worker typechecks clean; live golden
+264 unit tests, 15 SQL proofs on a fresh local Supabase, root + worker + web typechecks and a web
+production build clean; GitHub CI green on all jobs (core incl. replay e2e, database, web); live golden
 set on `anthropic/claude-opus-5-5`: 8/8 (injection must-pass included); keyless replay: 8/8.
 
 ---

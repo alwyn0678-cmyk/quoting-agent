@@ -16,6 +16,7 @@ begin
     -- trigger function: never called directly.
     ('enforce_sent_via_approve', false, false, false),
     ('log_request_transition',   false, false, false),
+    ('clear_extraction_on_requeue', false, false, false),
     -- human reviewer actions: authenticated users only (a worker must never approve or requeue).
     ('approve_request',          false, true,  false),
     ('archive_request',          false, true,  false),

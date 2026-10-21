@@ -13,7 +13,7 @@ import {
   type Draft,
   type EscalationReason,
 } from "./schemas.js";
-import type { LlmClient, Usage } from "./llm.js";
+import { LlmOutputError, LlmRefusalError, type LlmClient, type Usage } from "./llm.js";
 
 export interface RunOptions {
   /** The date rate validity is checked against (YYYY-MM-DD). Defaults to today (UTC). */
@@ -85,32 +85,46 @@ export async function runAgent(
       console.error("[agent] knowledge retrieval failed; drafting ungrounded:", err);
     }
 
-    const drafted = await generateDraft(
-      {
-        requester_name: extraction.requester_name,
-        requester_company: extraction.requester_company,
-        origin_text: extraction.origin.raw,
-        destination_text: extraction.destination.raw,
-        commodity: extraction.commodity,
-        quote,
-        groundingContext,
-      },
-      client,
-      routing.draft,
-    );
-    draftCalled = true;
-    draft = drafted.draft;
-    draftUsage = drafted.usage;
-    draftModel = drafted.model;
-
-    // Fail closed on any injection-outcome violation (leak / price tampering). The guard
-    // re-derives the price against the SAME gate-validated card the engine priced on.
-    const guard = injectionGuard({ extraction, quote, draft, card });
-    if (!guard.safe) {
+    let drafted: Awaited<ReturnType<typeof generateDraft>> | null = null;
+    try {
+      drafted = await generateDraft(
+        {
+          requester_name: extraction.requester_name,
+          requester_company: extraction.requester_company,
+          origin_text: extraction.origin.raw,
+          destination_text: extraction.destination.raw,
+          commodity: extraction.commodity,
+          quote,
+          groundingContext,
+        },
+        client,
+        routing.draft,
+      );
+    } catch (err) {
+      // A drafting refusal or unusable draft escalates HERE, so the validated extraction and the
+      // extraction usage survive into the outcome (reviewers see what the agent read). Anything
+      // else is an infrastructure fault and propagates (the durable job retries).
+      if (!(err instanceof LlmRefusalError || err instanceof LlmOutputError)) throw err;
       decision = "escalate";
-      escalationReason = "guard_violation";
+      escalationReason = err instanceof LlmRefusalError ? "model_refused" : "model_output_invalid";
       quote = null;
-      draft = null;
+    }
+
+    if (drafted) {
+      draftCalled = true;
+      draft = drafted.draft;
+      draftUsage = drafted.usage;
+      draftModel = drafted.model;
+
+      // Fail closed on any injection-outcome violation (leak / price tampering). The guard
+      // re-derives the price against the SAME gate-validated card the engine priced on.
+      const guard = injectionGuard({ extraction, quote: quote!, draft, card });
+      if (!guard.safe) {
+        decision = "escalate";
+        escalationReason = "guard_violation";
+        quote = null;
+        draft = null;
+      }
     }
   }
 

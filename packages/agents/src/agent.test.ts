@@ -202,3 +202,39 @@ describe("P0.1 — expired rates escalate end to end", () => {
     expect(client.calls.map((c) => c.toolName)).toEqual(["submit_extraction"]);
   });
 });
+
+describe("Codex review 2 — model failures at the real boundary", () => {
+  it("#1 schema-invalid extraction output becomes LlmOutputError (not a raw ZodError)", async () => {
+    const { LlmOutputError } = await import("./llm.js");
+    const client = new RoutingMockLlmClient({
+      submit_extraction: { data: { origin: "not-an-object" }, usage: exUsage },
+    });
+    await expect(runAgent(email, client)).rejects.toBeInstanceOf(LlmOutputError);
+  });
+  it("#2 a draft-stage refusal escalates, keeping the extraction and the extraction usage", async () => {
+    const { LlmRefusalError } = await import("./llm.js");
+    const client = {
+      calls: [] as string[],
+      async callStructured(call: { toolName: string }) {
+        this.calls.push(call.toolName);
+        if (call.toolName === "submit_draft") throw new LlmRefusalError("declined", null);
+        return { data: baseExtraction, usage: exUsage };
+      },
+    };
+    const out = await runAgent(email, client as never);
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("model_refused");
+    expect(out.extraction.container_type).toBe("40HC");
+    expect(out.quote).toBeNull();
+    expect(out.usage.input_tokens).toBe(exUsage.input_tokens);
+  });
+  it("#2 schema-invalid draft output escalates as model_output_invalid", async () => {
+    const client = new RoutingMockLlmClient({
+      submit_extraction: { data: baseExtraction, usage: exUsage },
+      submit_draft: { data: { subject: 42 }, usage: drUsage },
+    });
+    const out = await runAgent(email, client);
+    expect(out.escalation_reason).toBe("model_output_invalid");
+    expect(out.draft).toBeNull();
+  });
+});
