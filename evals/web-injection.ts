@@ -107,14 +107,15 @@ async function main(): Promise<void> {
   const injOk =
     injV?.injection_flag === true &&
     injV?.escalation_reason == null &&
-    injV?.quote?.all_in_total === 3520 &&
+    injV?.quote?.version === 1 && // seeded as a legacy (v1) row: proves back-compat rendering
+    injV.quote.all_in_total === 3520 &&
     injV?.draft != null;
 
   console.log(
     `escalated surfaced: status=${escV?.status}, reason=${escV?.escalation_reason}, quote=${escV?.quote ? "present" : "none"} -> ${escOk ? "PASS" : "FAIL"} (reason shown, no send)`,
   );
   console.log(
-    `injection quote-and-flag: flag=${injV?.injection_flag}, reason=${injV?.escalation_reason ?? "null"}, total=${injV?.quote?.all_in_total} -> ${injOk ? "PASS" : "FAIL"} (real price, reviewable)`,
+    `injection quote-and-flag: flag=${injV?.injection_flag}, reason=${injV?.escalation_reason ?? "null"}, total=${injV?.quote?.total} -> ${injOk ? "PASS" : "FAIL"} (real price, reviewable)`,
   );
 
   await cleanup();

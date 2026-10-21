@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { listRequestsForTenant, quotationsOnly, activeOnly, navCounts } from "../../src/lib/dashboard";
-import { eur } from "../../src/lib/format";
 import { AppShell } from "../components/AppShell";
 import { RequestList, type RowItem } from "../components/RequestList";
 import { QuoteDetail } from "../components/QuoteDetail";
@@ -27,9 +26,9 @@ export default async function QuotesPage({
   const rows: RowItem[] = quotes.map((r) => ({
     id: r.id,
     title: r.from_email ?? "(unknown sender)",
-    subtitle: r.quote ? `${r.quote.lane} · ${r.quote.container_qty}×${r.quote.container_type}` : "",
+    subtitle: r.quote?.headline ?? "",
     status: r.status,
-    amount: r.quote ? eur(r.quote.all_in_total) : undefined,
+    amount: r.quote?.total ?? undefined,
     flag: r.injection_flag,
   }));
   const awaiting = quotes.filter((r) => r.status === "awaiting_review").length;

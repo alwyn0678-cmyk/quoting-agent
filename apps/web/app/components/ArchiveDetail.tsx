@@ -1,5 +1,5 @@
 import type { RequestView } from "../../src/lib/dashboard";
-import { eur, utc, reasonLabel } from "../../src/lib/format";
+import { utc, reasonLabel } from "../../src/lib/format";
 import { StatusBadge } from "./StatusBadge";
 import { SubmitButton } from "./SubmitButton";
 import { unarchiveAction, requeueAction } from "../actions";
@@ -19,12 +19,16 @@ export function ArchiveDetail({ r }: { r: RequestView }) {
 
       {r.quote ? (
         <div className="outcome" style={{ cursor: "default" }}>
-          <span>✅ Quoted — all-in {eur(r.quote.all_in_total)}</span>
-          <span className="go">{r.quote.lane}</span>
+          <span>
+            ✅ Quoted
+            {r.quote.total ? ` — ${r.quote.option_count > 1 ? "from" : "all-in"} ${r.quote.total}` : ""}
+          </span>
+          <span className="go">{r.quote.headline}</span>
         </div>
       ) : (
         <div className="escalation">
           <strong>Escalated{r.escalation_reason ? ` — ${reasonLabel(r.escalation_reason)}` : ""}.</strong>{" "}
+          {r.missing_fields.length > 0 ? `Missing: ${r.missing_fields.join(", ")}. ` : ""}
           Archived without a sent reply.
         </div>
       )}

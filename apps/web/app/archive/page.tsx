@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { listRequestsForTenant, archivedOnly, navCounts } from "../../src/lib/dashboard";
-import { eur } from "../../src/lib/format";
 import { AppShell } from "../components/AppShell";
 import { RequestList, type RowItem } from "../components/RequestList";
 import { ArchiveDetail } from "../components/ArchiveDetail";
@@ -27,11 +26,9 @@ export default async function ArchivePage({
   const rows: RowItem[] = archived.map((r) => ({
     id: r.id,
     title: r.from_email ?? "(unknown sender)",
-    subtitle: r.quote
-      ? `${r.quote.lane} · ${r.quote.container_qty}×${r.quote.container_type}`
-      : r.subject ?? "(no subject)",
+    subtitle: r.quote ? r.quote.headline : r.subject ?? "(no subject)",
     status: r.status,
-    amount: r.quote ? eur(r.quote.all_in_total) : undefined,
+    amount: r.quote?.total ?? undefined,
     flag: r.injection_flag,
     archived: true,
   }));

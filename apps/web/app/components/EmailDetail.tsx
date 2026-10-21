@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { RequestView } from "../../src/lib/dashboard";
-import { eur, reasonLabel } from "../../src/lib/format";
+import { reasonLabel } from "../../src/lib/format";
 import { StatusBadge } from "./StatusBadge";
 import { SubmitButton } from "./SubmitButton";
 import { archiveAction, requeueAction } from "../actions";
@@ -28,7 +28,10 @@ export function EmailDetail({ r }: { r: RequestView }) {
 
       {r.quote ? (
         <Link className="outcome" href={`/quotes?sel=${r.id}`}>
-          <span>✅ Agent priced this — all-in {eur(r.quote.all_in_total)}</span>
+          <span>
+            ✅ Agent priced this
+            {r.quote.total ? ` — ${r.quote.option_count > 1 ? "from" : "all-in"} ${r.quote.total}` : ""}
+          </span>
           <span className="go">View quotation →</span>
         </Link>
       ) : r.status === "received" || r.status === "processing" ? (
@@ -44,6 +47,7 @@ export function EmailDetail({ r }: { r: RequestView }) {
             Escalated
             {r.escalation_reason ? ` — ${reasonLabel(r.escalation_reason)}` : ""}.
           </strong>{" "}
+          {r.missing_fields.length > 0 ? `Missing: ${r.missing_fields.join(", ")}. ` : ""}
           Needs a human; no reply can be sent automatically.
         </div>
       )}

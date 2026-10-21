@@ -1,14 +1,12 @@
-import type { RequestView } from "../../src/lib/dashboard";
+import type { RequestView, QuoteV1View, QuoteV2View } from "../../src/lib/dashboard";
 import { eur, utc } from "../../src/lib/format";
 import { SubmitButton } from "./SubmitButton";
 import { approveAction, archiveAction } from "../actions";
 
-export function QuoteDetail({ r }: { r: RequestView }) {
-  const q = r.quote;
-  if (!q) return null; // the Quotations page only passes quoted requests
-
+/** v1 (legacy RateQuote) breakdown — rendered exactly as before the v2 switch. */
+function BreakdownV1({ q }: { q: QuoteV1View }) {
   return (
-    <div className="detail">
+    <>
       <div className="dhdr">
         {q.lane} · {q.container_qty} × {q.container_type} · card {q.rate_card_version} · valid through{" "}
         {q.validity_through}
@@ -37,6 +35,67 @@ export function QuoteDetail({ r }: { r: RequestView }) {
           <span>{eur(q.all_in_total)}</span>
         </div>
       </div>
+    </>
+  );
+}
+
+/** v2 (QuoteViewV2) — one sell-only breakdown per presented option. */
+function BreakdownV2({ q }: { q: QuoteV2View }) {
+  return (
+    <>
+      <div className="dhdr">
+        {q.headline} · valid through {q.validity}
+      </div>
+      <h2 className="dsubj">
+        {q.option_count > 1 ? `${q.option_count} options — from` : "All-in quote —"} {q.total}
+      </h2>
+      {q.options.map((o, i) => (
+        <div key={o.option_id}>
+          <div className="sectlabel">
+            Option {i + 1}
+            {o.carrier_label ? ` · ${o.carrier_label}` : ""} · {o.mode} · {o.route}
+            {o.transit_days !== null ? ` · ${o.transit_days} days transit` : ""} · valid until {o.valid_until}
+          </div>
+          <div className="brk">
+            {o.lines.map((l, j) => (
+              <div className="ln" key={`${l.code}-${j}`}>
+                <span className="c">
+                  {l.label}
+                  {l.quantity ? ` (${l.quantity})` : ""}
+                </span>
+                <span>{l.sell}</span>
+              </div>
+            ))}
+            <div className="ln tot">
+              <span className="c">All-in total</span>
+              <span>{o.total}</span>
+            </div>
+          </div>
+          {o.fx_notes.map((n) => (
+            <div className="dhdr" key={`${n.from}-${n.to}-${n.as_of}`}>
+              Converted {n.from} → {n.to} at {n.source} as of {n.as_of}
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+export function QuoteDetail({ r }: { r: RequestView }) {
+  const q = r.quote;
+  if (!q) return null; // the Quotations page only passes quoted requests
+
+  return (
+    <div className="detail">
+      {q.version === 1 ? <BreakdownV1 q={q} /> : null}
+      {q.version === 2 ? <BreakdownV2 q={q} /> : null}
+      {q.version === "unreadable" ? (
+        <div className="escalation">
+          <strong>{q.headline}.</strong> The stored quote snapshot could not be read, so this reply
+          cannot be approved here — re-run the request or price it manually.
+        </div>
+      ) : null}
 
       {r.draft ? (
         <>
@@ -56,7 +115,7 @@ export function QuoteDetail({ r }: { r: RequestView }) {
         </div>
       ) : null}
 
-      {r.status === "awaiting_review" ? (
+      {r.status === "awaiting_review" && q.version !== "unreadable" ? (
         <div className="actions">
           <form action={approveAction}>
             <input type="hidden" name="requestId" value={r.id} />
