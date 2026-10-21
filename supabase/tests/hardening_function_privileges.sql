@@ -15,6 +15,7 @@ begin
     ('auth_tenant_id',           true,  true,  true),
     -- trigger function: never called directly.
     ('enforce_sent_via_approve', false, false, false),
+    ('log_request_transition',   false, false, false),
     -- human reviewer actions: authenticated users only (a worker must never approve or requeue).
     ('approve_request',          false, true,  false),
     ('archive_request',          false, true,  false),

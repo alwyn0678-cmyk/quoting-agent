@@ -40,7 +40,7 @@ begin
   if n <> 1 then raise exception 'FAIL: % quote rows (expected 1)', n; end if;
   select count(*) into n from public.drafts where request_id='0c000000-0000-4000-8000-0000000000f1';
   if n <> 1 then raise exception 'FAIL: % draft rows (expected 1)', n; end if;
-  select count(*) into v_audit from public.audit_log where request_id='0c000000-0000-4000-8000-0000000000f1';
+  select count(*) into v_audit from public.audit_log where request_id='0c000000-0000-4000-8000-0000000000f1' and event in ('quote','escalate'); -- usage rows (0019 adds transition rows)
   if v_audit <> 1 then raise exception 'FAIL: % audit rows (expected 1 — logged once, on the winning transition)', v_audit; end if;
 
   -- originals + status reflect the FIRST (winning) call, never the second

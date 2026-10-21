@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { describeMutationError, FLASH_COOKIE, type ReviewerAction } from "../src/lib/flash";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { approveRequest, archiveRequest, unarchiveRequest, requeueRequest, type RpcCaller } from "../src/lib/approve";
 
@@ -13,12 +15,12 @@ function revalidateAll(): void {
 
 /**
  * Run one reviewer mutation without letting an RPC error crash the page. The SECURITY DEFINER RPCs
- * RAISE on a state conflict (double-approve, double-archive, …) — expected under racing reviewers —
- * so we log the error and still revalidate: the losing racer simply re-renders the true DB state
- * (already approved/archived) instead of hitting the error boundary.
+ * RAISE on a state conflict (double-approve, double-archive, …) — expected under racing reviewers.
+ * The error is logged AND shown to the reviewer once (flash cookie), and the views revalidate so the
+ * true DB state renders — a failed approve is never silent.
  */
 async function runMutation(
-  action: string,
+  action: ReviewerAction,
   requestId: string,
   mutate: (client: RpcCaller, requestId: string) => Promise<void>,
 ): Promise<void> {
@@ -31,6 +33,12 @@ async function runMutation(
     await mutate(supabase, requestId);
   } catch (error) {
     console.error(`${action}: RPC failed for request ${requestId}`, error);
+    (await cookies()).set(FLASH_COOKIE, describeMutationError(action, error), {
+      maxAge: 15,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
   }
   revalidateAll();
 }
@@ -42,20 +50,20 @@ async function runMutation(
  * then sends the reply and finalizes to 'sent' (recording the real, non-forgeable drafts.sent_at).
  */
 export async function approveAction(formData: FormData): Promise<void> {
-  await runMutation("approveAction", String(formData.get("requestId") ?? ""), approveRequest);
+  await runMutation("approve", String(formData.get("requestId") ?? ""), approveRequest);
 }
 
 /** Soft-archive a terminal request (sent / escalated / error). */
 export async function archiveAction(formData: FormData): Promise<void> {
-  await runMutation("archiveAction", String(formData.get("requestId") ?? ""), archiveRequest);
+  await runMutation("archive", String(formData.get("requestId") ?? ""), archiveRequest);
 }
 
 /** Restore an archived request to its active lists. */
 export async function unarchiveAction(formData: FormData): Promise<void> {
-  await runMutation("unarchiveAction", String(formData.get("requestId") ?? ""), unarchiveRequest);
+  await runMutation("unarchive", String(formData.get("requestId") ?? ""), unarchiveRequest);
 }
 
 /** Re-run an escalated/errored request: reset it to 'received' so the autonomous agent re-processes it. */
 export async function requeueAction(formData: FormData): Promise<void> {
-  await runMutation("requeueAction", String(formData.get("requestId") ?? ""), requeueRequest);
+  await runMutation("requeue", String(formData.get("requestId") ?? ""), requeueRequest);
 }

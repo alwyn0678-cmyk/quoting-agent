@@ -56,3 +56,15 @@ describe("P-1C.6 — usage view (observability)", () => {
     expect(view.totals.runs).toBe(1);
   });
 });
+
+describe("P0 audit trail — attributed transition rows never count as model runs", () => {
+  it("excludes transition/archived rows (no model) from usage rows and totals", () => {
+    const view = buildUsageView([
+      { id: "u1", request_id: "r", event: "quote", model: "anthropic/claude-opus-5-5 (extract)", input_tokens: 10, output_tokens: 5, est_cost_usd: 0.001, created_at: "2026-10-21T10:00:00Z" },
+      { id: "t1", request_id: "r", event: "transition", model: null, input_tokens: null, output_tokens: null, est_cost_usd: null, created_at: "2026-10-21T10:00:01Z" },
+      { id: "a1", request_id: "r", event: "archived", model: null, input_tokens: null, output_tokens: null, est_cost_usd: null, created_at: "2026-10-21T10:00:02Z" },
+    ]);
+    expect(view.rows.map((r) => r.id)).toEqual(["u1"]);
+    expect(view.totals.runs).toBe(1);
+  });
+});

@@ -275,6 +275,12 @@ a { color: var(--teal-300); text-decoration: none; }
   -webkit-backdrop-filter: blur(var(--blur)); backdrop-filter: blur(var(--blur));
 }
 
+.flashnote {
+  margin: 0 0 14px; background: rgba(199, 154, 75, 0.14); border: 1px solid var(--esc-bd);
+  border-left: 4px solid var(--esc); border-radius: var(--radius); padding: 10px 14px;
+  font-size: 13px; color: var(--text); line-height: 1.5;
+}
+
 /* ------------------------------------------------------------ Quote breakdown */
 .brk { overflow: hidden; }
 .brk .ln { display: flex; justify-content: space-between; padding: 10px 16px; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); font-variant-numeric: tabular-nums; color: var(--text); }

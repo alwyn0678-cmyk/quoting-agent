@@ -47,6 +47,8 @@ export interface PersistOutcome {
   quote: RateQuote | null;
   draft: { subject: string; body: string } | null;
   usage: UsageRecord;
+  /** What the model extracted (persisted for reviewers/auditors); null when extraction failed. */
+  extraction: unknown | null;
 }
 
 export interface RunStore {
@@ -119,6 +121,7 @@ export async function runAndPersist(
       draft: null,
       // Tokens spent on the failed call are not reported by the adapter; record the attempt honestly.
       usage: { model: `${routing.extraction} (extract)`, input_tokens: 0, output_tokens: 0, est_cost_usd: null },
+      extraction: null,
     });
     return { ran: true, decision: "escalate", status: "escalated", escalation_reason: reason, injection_flag: false, transitioned };
   }
@@ -131,6 +134,7 @@ export async function runAndPersist(
     quote: out.decision === "quote" ? out.quote : null,
     draft: out.decision === "quote" && out.draft ? { subject: out.draft.subject, body: out.draft.body } : null,
     usage: out.usage,
+    extraction: out.extraction,
   });
 
   return { ran: true, decision: out.decision, status, escalation_reason: out.escalation_reason, injection_flag: out.injection_flag, transitioned };

@@ -115,6 +115,7 @@ export class SupabaseRunStore implements RunStore {
         output_tokens: o.usage.output_tokens,
         est_cost_usd: o.usage.est_cost_usd,
       },
+      p_extraction: o.extraction,
     });
     if (error) throw error;
     return Boolean(data);

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { FLASH_COOKIE } from "../../src/lib/flash";
 import type { ReactNode } from "react";
 import { LiveRefresh } from "./LiveRefresh";
 
@@ -10,7 +12,7 @@ const NAV: { tab: Tab; href: string; label: string }[] = [
   { tab: "usage", href: "/usage", label: "Usage" },
 ];
 
-export function AppShell({
+export async function AppShell({
   active,
   userEmail,
   title,
@@ -25,6 +27,7 @@ export function AppShell({
   counts?: Partial<Record<Tab, number>>;
   children: ReactNode;
 }) {
+  const flash = (await cookies()).get(FLASH_COOKIE)?.value ?? null;
   return (
     <div className="shell">
       <LiveRefresh />
@@ -66,7 +69,14 @@ export function AppShell({
             {subtitle ? <p>{subtitle}</p> : null}
           </div>
         </header>
-        <div className="pane">{children}</div>
+        <div className="pane">
+          {flash ? (
+            <div className="flashnote" role="status">
+              {flash}
+            </div>
+          ) : null}
+          {children}
+        </div>
       </main>
     </div>
   );

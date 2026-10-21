@@ -43,7 +43,7 @@ begin
   -- the winning outcome is untouched
   select status into v_status from public.quote_requests where id='0f200000-0000-4000-8000-0000000000f1';
   if v_status <> 'escalated' then raise exception 'FAIL: status flipped by the losing retry (status=%, expected escalated)', v_status; end if;
-  select count(*) into n from public.audit_log where request_id='0f200000-0000-4000-8000-0000000000f1';
+  select count(*) into n from public.audit_log where request_id='0f200000-0000-4000-8000-0000000000f1' and event in ('quote','escalate'); -- usage rows (0019 adds transition rows)
   if n <> 1 then raise exception 'FAIL: % audit rows (expected 1 — the winner''s only)', n; end if;
 end $$;
 

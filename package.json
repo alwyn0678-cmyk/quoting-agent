@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22.9"
   },
-  "description": "QuoteAgent \u2014 Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
+  "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -52,7 +52,8 @@
     "exceljs": "^4.4.0",
     "tsx": "^4.22.3",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.3",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@ai-sdk/google": "4.0.89",

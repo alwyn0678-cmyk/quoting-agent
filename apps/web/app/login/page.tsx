@@ -21,7 +21,9 @@ export default function LoginPage({
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      // Invite-only: never create an account from the login form. Users are provisioned with a
+      // tenant profile by an admin; an unknown address gets an error instead of a dangling account.
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
     });
     if (error) {
       setStatus("error");

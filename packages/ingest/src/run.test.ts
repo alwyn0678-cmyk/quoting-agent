@@ -195,3 +195,19 @@ describe("Codex review #4 — a model refusal or invalid output escalates to a h
     await expect(runAndPersist(TENANT, REQ, { client: throwingClient(new Error("ECONNRESET")), engine: new StaticCardRateEngine() }, store)).rejects.toThrow(/ECONNRESET/);
   });
 });
+
+describe("P0 audit trail — the extraction is persisted with the outcome", () => {
+  it("passes the validated extraction to persistOutcome on both paths", async () => {
+    const seen: unknown[] = [];
+    class SpyStore extends FakeRunStore {
+      override async persistOutcome(requestId: string, tenantId: string, o: PersistOutcome) {
+        seen.push(o.extraction);
+        return super.persistOutcome(requestId, tenantId, o);
+      }
+    }
+    const store = new SpyStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    await runAndPersist(TENANT, REQ, deps(routed(baseExtraction)), store);
+    expect(seen[0]).toMatchObject({ mode: "FCL", container_type: "40HC" });
+  });
+});
