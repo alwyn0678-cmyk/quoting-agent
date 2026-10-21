@@ -170,3 +170,24 @@ describe("Gate-4 hardening — the gate never trusts a non-matching card (quote 
     expect(decide(ex, bargeCard)).toEqual({ decision: "escalate", reason: "out_of_scope_container" });
   });
 });
+
+describe("P0.1 — a rate card past its validity date never quotes", () => {
+  const card: RateCard = {
+    mode: "FCL",
+    version: "t-v1",
+    validity_through: "2026-06-30",
+    supported_lane: "NLRTM-USNYC",
+    base_per_container: { "40HC": 2550 },
+    surcharges: [],
+    per_shipment_fees: [],
+  };
+  it("expired card (as-of after validity) -> rate_expired", () => {
+    expect(decide(complete, card, "2026-10-21")).toEqual({ decision: "escalate", reason: "rate_expired" });
+  });
+  it("last valid day still quotes", () => {
+    expect(decide(complete, card, "2026-06-30")).toEqual({ decision: "quote", reason: null });
+  });
+  it("defaults the as-of date to today (suite clock is pinned to 2026-06-01)", () => {
+    expect(decide(complete, card)).toEqual({ decision: "quote", reason: null });
+  });
+});

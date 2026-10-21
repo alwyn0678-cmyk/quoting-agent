@@ -189,3 +189,16 @@ describe("P-1A.3 — per-step model routing (D-07)", () => {
     expect(client.calls.every((c) => c.model === FALLBACK_MODEL)).toBe(true);
   });
 });
+
+describe("P0.1 — expired rates escalate end to end", () => {
+  it("an expired card escalates as rate_expired and never drafts", async () => {
+    const client = routed(baseExtraction);
+    const out = await runAgent(email, client, new StaticCardRateEngine(), undefined, undefined, {
+      asOf: "2026-10-21",
+    });
+    expect(out.decision).toBe("escalate");
+    expect(out.escalation_reason).toBe("rate_expired");
+    expect(out.quote).toBeNull();
+    expect(client.calls.map((c) => c.toolName)).toEqual(["submit_extraction"]);
+  });
+});

@@ -9,7 +9,8 @@ import type { ExtractionResult, EscalationReason } from "./schemas.js";
  * cannot disagree and priceQuote() will not throw downstream.
  *
  * Precedence (first failing check wins): identity (origin/destination) -> mode -> lane (card exists
- * AND matches) -> container type (present AND priced on the card) -> quantity -> confidence floor.
+ * AND matches) -> card validity (as-of date within validity) -> container type (present AND priced
+ * on the card) -> quantity -> confidence floor.
  * This ordering is what makes the golden-set escalation reasons come out as specified — e.g. an LCL
  * request with no container details reports out_of_scope_mode, not missing_required_field.
  *
@@ -26,7 +27,16 @@ export interface GateDecision {
   reason: EscalationReason | null;
 }
 
-export function decide(x: ExtractionResult, card: RateCard | null = RATE_CARD): GateDecision {
+/** Today's date as YYYY-MM-DD in UTC — the default "as of" date for rate validity (ASSUMPTIONS.md A10). */
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function decide(
+  x: ExtractionResult,
+  card: RateCard | null = RATE_CARD,
+  asOf: string = todayIso(),
+): GateDecision {
   const escalate = (reason: EscalationReason): GateDecision => ({ decision: "escalate", reason });
 
   // 1. Identity fields needed to locate a lane at all.
@@ -46,6 +56,9 @@ export function decide(x: ExtractionResult, card: RateCard | null = RATE_CARD): 
   if (card.mode !== x.mode) return escalate("out_of_scope_mode");
   const lane = `${x.origin.port_code}-${x.destination.port_code}`;
   if (card.supported_lane !== lane) return escalate("out_of_scope_lane");
+
+  // 3c. Never quote from a card past its validity date. ISO dates compare correctly as strings.
+  if (card.validity_through < asOf) return escalate("rate_expired");
 
   // 4. Container type must be present and priced on THIS card (priceQuote rejects an unpriced type).
   if (x.container_type === null || x.container_type === "UNKNOWN") {

@@ -82,6 +82,7 @@ export const escalationReasonSchema = z.enum([
   "out_of_scope_lane",
   "out_of_scope_mode",
   "out_of_scope_container",
+  "rate_expired",
   "ambiguous_request",
   "low_confidence",
   "guard_violation",

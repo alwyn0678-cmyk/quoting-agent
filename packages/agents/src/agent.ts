@@ -1,5 +1,5 @@
 import { extractRequest, type EmailInput } from "./extraction.js";
-import { decide } from "./gate.js";
+import { decide, todayIso } from "./gate.js";
 import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
@@ -14,6 +14,11 @@ import {
 } from "./schemas.js";
 import type { LlmClient, Usage } from "./llm.js";
 
+export interface RunOptions {
+  /** The date rate validity is checked against (YYYY-MM-DD). Defaults to today (UTC). */
+  asOf?: string;
+}
+
 /**
  * The full Phase 0 pipeline for ONE email: extract (LLM) -> gate (code) -> price (code) ->
  * draft (LLM) -> injection guard (code). Pure orchestration, no IO — the CLI handles input and
@@ -26,7 +31,9 @@ export async function runAgent(
   engine: RateEngine = new StaticCardRateEngine(),
   routing: ModelRouting = PER_STEP_ROUTING,
   retriever: KnowledgeRetriever = new EmptyRetriever(),
+  options: RunOptions = {},
 ): Promise<AgentOutput> {
+  const asOf = options.asOf ?? todayIso();
   const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
 
   // Build the price request once, resolve the active card for its (mode, lane), and gate against
@@ -40,7 +47,7 @@ export async function runAgent(
     container_qty: extraction.container_qty,
   };
   const card = await engine.cardFor(priceReq);
-  const gate = decide(extraction, card);
+  const gate = decide(extraction, card, asOf);
 
   // Track which LLM steps actually ran, so usage.model reports the truth (drafting fires only on
   // the quote path; on a gate-escalation only extraction runs).

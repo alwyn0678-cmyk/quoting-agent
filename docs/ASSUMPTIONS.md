@@ -99,6 +99,7 @@ Derived check (given the invented inputs): NLRTM→DEDUI barge 40HC×1 = €755;
 | B3 | All amounts are whole EUR (no cents, no FX) | STRUCTURAL/INVENTED | Real quotes may carry cents and currency conversion; Phase 0 ignores FX deliberately |
 | B4 | A rate card has a single flat validity window | STRUCTURAL | Real rates vary by sailing date, carrier, contract vs spot |
 | B5 | No margin/markup modelled — the "rate" is the customer-facing price | STRUCTURAL | Forwarders add margin; out of Phase 0 scope |
+| B6 | A card is usable through its `validity_through` date inclusive, checked against the quote date in **UTC**; the cargo-ready date is not yet considered | STRUCTURAL | Confirm whether forwarders price on quote date, cargo-ready date or sailing date, and which timezone governs validity (P1 adds valid_from/valid_to per line) |
 
 ## C. Lane / scope / mapping (STRUCTURAL + VERIFY)
 
