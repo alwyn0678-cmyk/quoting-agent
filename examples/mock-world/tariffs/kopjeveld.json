@@ -1,0 +1,834 @@
+[
+  {
+    "id": "kopjeveld-2026Q4",
+    "tenant_id": "kopjeveld",
+    "version": "2026-Q4-v1",
+    "source": {
+      "kind": "mock-world",
+      "ref": "examples/mock-world/tariffs/kopjeveld.json"
+    },
+    "valid_from": "2026-10-01",
+    "valid_to": "2026-12-31",
+    "port_groups": {},
+    "lines": [
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:CAPE_MERIDIAN_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 24,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "1690",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5920",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "576",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1125",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Cape Meridian Shipping!22G1"
+      },
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:CAPE_MERIDIAN_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 24,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2350",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5920",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "576",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1125",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Cape Meridian Shipping!42G1"
+      },
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:CAPE_MERIDIAN_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 24,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2420",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5920",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "576",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1125",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Cape Meridian Shipping!45G1"
+      },
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 21,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "1730",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5890",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "505",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1110",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Northwind Lines!22G1"
+      },
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 21,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2400",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5890",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "505",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1110",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Northwind Lines!42G1"
+      },
+      {
+        "id": "kopjeveld:ZADUR-NLRTM:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "ZADUR"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 21,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2470",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5890",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "505",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1110",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!ZADUR-NLRTM!Northwind Lines!45G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:CAPE_MERIDIAN_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 27,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2250",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5465",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "413",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1055",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Cape Meridian Shipping!22G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:CAPE_MERIDIAN_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 27,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3125",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5465",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "413",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1055",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Cape Meridian Shipping!42G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:CAPE_MERIDIAN_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 27,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3220",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "5465",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "413",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1055",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Cape Meridian Shipping!45G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 22,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "1565",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "4300",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "563",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "980",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Northwind Lines!22G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 22,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2175",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "4300",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "563",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "980",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Northwind Lines!42G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 22,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2240",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "4300",
+            "currency": "ZAR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "563",
+            "currency": "ZAR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "980",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-fcl-q4.xlsx!CNSHA-ZADUR!Northwind Lines!45G1"
+      },
+      {
+        "id": "kopjeveld:CNSHA-ZADUR:CAPE_MERIDIAN_SHIPPING-LCL-Q4",
+        "offer_id": "CAPE_MERIDIAN_SHIPPING-LCL-Q4",
+        "mode": "LCL",
+        "carrier": "Cape Meridian Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "ZADUR"
+        },
+        "priority": 0,
+        "transit_days": 28,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_WM",
+            "rate": "132",
+            "currency": "USD",
+            "min": "132"
+          },
+          {
+            "id": "CFS",
+            "code": "CFS",
+            "description": "CFS handling",
+            "category": "LOCAL",
+            "basis": "PER_WM",
+            "rate": "523",
+            "currency": "ZAR",
+            "min": "523"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "1230",
+            "currency": "ZAR"
+          }
+        ],
+        "source_ref": "kopjeveld-lcl-q4.xlsx!CNSHA-ZADUR!Cape Meridian Shipping"
+      }
+    ]
+  }
+]

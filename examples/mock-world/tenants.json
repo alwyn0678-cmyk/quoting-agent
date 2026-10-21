@@ -1,0 +1,290 @@
+[
+  {
+    "id": "linkport",
+    "name": "Linkport Forwarders BV",
+    "city": "Rotterdam",
+    "country": "NL",
+    "quote_currency": "EUR",
+    "locale": "nl-NL",
+    "languages": [
+      "nl",
+      "en",
+      "de"
+    ],
+    "terms_ref": "Dutch Forwarding Conditions (FENEX-style)",
+    "signature": "Linkport Forwarders BV\nPricing desk · Rotterdam\nquotes@linkport.example",
+    "carrier_labels": {
+      "Northwind Lines": "Northwind Lines",
+      "Aurora Shipping": "Aurora Shipping",
+      "Meridian Container Line": "Meridian Container Line"
+    },
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "linkport-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "linkport-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "75",
+          "currency": "EUR"
+        }
+      }
+    ]
+  },
+  {
+    "id": "elbkai",
+    "name": "Elbkai Spedition GmbH",
+    "city": "Hamburg",
+    "country": "DE",
+    "quote_currency": "EUR",
+    "locale": "de-DE",
+    "languages": [
+      "de",
+      "en"
+    ],
+    "terms_ref": "German Forwarders' Standard Terms (ADSp-style)",
+    "signature": "Elbkai Spedition GmbH\nPricing desk · Hamburg\nquotes@elbkai.example",
+    "carrier_labels": {},
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "elbkai-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "elbkai-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "75",
+          "currency": "EUR"
+        }
+      }
+    ]
+  },
+  {
+    "id": "prairiegate",
+    "name": "Prairiegate Freight LLC",
+    "city": "Chicago",
+    "country": "US",
+    "quote_currency": "USD",
+    "locale": "en-US",
+    "languages": [
+      "en",
+      "es"
+    ],
+    "terms_ref": "Terms and Conditions of Service (NCBFAA-style)",
+    "signature": "Prairiegate Freight LLC\nPricing desk · Chicago\nquotes@prairiegate.example",
+    "carrier_labels": {
+      "Pacific Crest Lines": "Pacific Crest Lines",
+      "Aurora Shipping": "Aurora Shipping",
+      "Northwind Lines": "Northwind Lines"
+    },
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "prairiegate-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "prairiegate-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "85",
+          "currency": "USD"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lumenstrait",
+    "name": "Lumenstrait Cargo Pte Ltd",
+    "city": "Singapore",
+    "country": "SG",
+    "quote_currency": "USD",
+    "locale": "en-SG",
+    "languages": [
+      "en",
+      "zh"
+    ],
+    "terms_ref": "Standard Trading Conditions (SLA-style)",
+    "signature": "Lumenstrait Cargo Pte Ltd\nPricing desk · Singapore\nquotes@lumenstrait.example",
+    "carrier_labels": {},
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "lumenstrait-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "lumenstrait-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "85",
+          "currency": "USD"
+        }
+      }
+    ]
+  },
+  {
+    "id": "kopjeveld",
+    "name": "Kopjeveld Freight (Pty) Ltd",
+    "city": "Johannesburg",
+    "country": "ZA",
+    "quote_currency": "ZAR",
+    "locale": "en-ZA",
+    "languages": [
+      "en"
+    ],
+    "terms_ref": "Standard Trading Terms (SAAFF-style)",
+    "signature": "Kopjeveld Freight (Pty) Ltd\nPricing desk · Johannesburg\nquotes@kopjeveld.example",
+    "carrier_labels": {
+      "Cape Meridian Shipping": "Cape Meridian Shipping",
+      "Northwind Lines": "Northwind Lines"
+    },
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "kopjeveld-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "kopjeveld-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "1500",
+          "currency": "ZAR"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ventoleste",
+    "name": "Ventoleste Logística Internacional Ltda",
+    "city": "São Paulo",
+    "country": "BR",
+    "quote_currency": "BRL",
+    "locale": "pt-BR",
+    "languages": [
+      "pt",
+      "en",
+      "es"
+    ],
+    "terms_ref": "Condições Gerais de Prestação de Serviços",
+    "signature": "Ventoleste Logística Internacional Ltda\nPricing desk · São Paulo\nquotes@ventoleste.example",
+    "carrier_labels": {},
+    "max_options": 3,
+    "quote_validity_days": 14,
+    "margin_rules": [
+      {
+        "id": "ventoleste-fcl-default",
+        "match": {
+          "mode": "FCL"
+        },
+        "kind": "MARKUP_ON_BUY",
+        "value": "0.10",
+        "applies_to": [
+          "FREIGHT",
+          "SURCHARGE"
+        ],
+        "priority": 0
+      },
+      {
+        "id": "ventoleste-lcl-default",
+        "match": {
+          "mode": "LCL"
+        },
+        "kind": "GROSS_MARGIN",
+        "value": "0.15",
+        "applies_to": "ALL",
+        "priority": 0,
+        "min_margin": {
+          "amount": "450",
+          "currency": "BRL"
+        }
+      }
+    ]
+  }
+]

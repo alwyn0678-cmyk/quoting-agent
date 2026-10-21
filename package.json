@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22.9"
   },
-  "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
+  "description": "QuoteAgent \u2014 Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -45,7 +45,8 @@
     "db:test": "bash scripts/db-test-local.sh",
     "eval:replay": "QUOTEAGENT_MODEL=demo/replay node --import tsx evals/run.ts",
     "eval:record": "QUOTEAGENT_RECORD=1 node --env-file-if-exists=.env --import tsx evals/run.ts",
-    "typecheck:trigger": "tsc --noEmit -p packages/trigger"
+    "typecheck:trigger": "tsc --noEmit -p packages/trigger",
+    "mockworld:gen": "node --import tsx scripts/gen-mock-world.ts"
   },
   "devDependencies": {
     "@types/big.js": "7.0.0",

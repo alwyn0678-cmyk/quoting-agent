@@ -1,0 +1,1794 @@
+[
+  {
+    "id": "prairiegate-2026Q4",
+    "tenant_id": "prairiegate",
+    "version": "2026-Q4-v1",
+    "source": {
+      "kind": "mock-world",
+      "ref": "examples/mock-world/tariffs/prairiegate.json"
+    },
+    "valid_from": "2026-10-01",
+    "valid_to": "2026-12-31",
+    "port_groups": {},
+    "lines": [
+      {
+        "id": "prairiegate:CNSHA-USLAX:PACIFIC_CREST_LINES-FAK-Q4:22G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "5600",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Pacific Crest Lines!22G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:PACIFIC_CREST_LINES-FAK-Q4:42G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7775",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Pacific Crest Lines!42G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:PACIFIC_CREST_LINES-FAK-Q4:45G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "8010",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Pacific Crest Lines!45G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "5420",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "310",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Aurora Shipping!22G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7525",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "310",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Aurora Shipping!42G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7750",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "310",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Aurora Shipping!45G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 18,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4465",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Northwind Lines!22G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 18,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "6200",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Northwind Lines!42G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 18,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "6385",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSHA-USLAX!Northwind Lines!45G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:PACIFIC_CREST_LINES-FAK-Q4:22G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4500",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Pacific Crest Lines!22G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:PACIFIC_CREST_LINES-FAK-Q4:42G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "6250",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Pacific Crest Lines!42G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:PACIFIC_CREST_LINES-FAK-Q4:45G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 17,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "6440",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "25",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Pacific Crest Lines!45G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "5130",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Aurora Shipping!22G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7125",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Aurora Shipping!42G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 15,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7340",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Aurora Shipping!45G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 19,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "5510",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Northwind Lines!22G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 19,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7650",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Northwind Lines!42G1"
+      },
+      {
+        "id": "prairiegate:CNSZX-USLAX:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSZX"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 19,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "7880",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!CNSZX-USLAX!Northwind Lines!45G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:PACIFIC_CREST_LINES-FAK-Q4:22G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2105",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "26",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Pacific Crest Lines!22G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:PACIFIC_CREST_LINES-FAK-Q4:42G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2925",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "26",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Pacific Crest Lines!42G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:PACIFIC_CREST_LINES-FAK-Q4:45G1",
+        "offer_id": "PACIFIC_CREST_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3015",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "26",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Pacific Crest Lines!45G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2000",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "360",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "75",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!22G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2775",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "360",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "75",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!42G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2860",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "360",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "75",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!45G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 11,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2215",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "29",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!22G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 11,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3075",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "29",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!42G1"
+      },
+      {
+        "id": "prairiegate:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 11,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3165",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "USD"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "29",
+            "currency": "USD"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!45G1"
+      },
+      {
+        "id": "prairiegate:CNSHA-USLAX:PACIFIC_CREST_LINES-LCL-Q4",
+        "offer_id": "PACIFIC_CREST_LINES-LCL-Q4",
+        "mode": "LCL",
+        "carrier": "Pacific Crest Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "USLAX"
+        },
+        "priority": 0,
+        "transit_days": 21,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_WM",
+            "rate": "157",
+            "currency": "USD",
+            "min": "157"
+          },
+          {
+            "id": "CFS",
+            "code": "CFS",
+            "description": "CFS handling",
+            "category": "LOCAL",
+            "basis": "PER_WM",
+            "rate": "33",
+            "currency": "USD",
+            "min": "33"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "USD"
+          }
+        ],
+        "source_ref": "prairiegate-lcl-q4.xlsx!CNSHA-USLAX!Pacific Crest Lines"
+      }
+    ]
+  }
+]

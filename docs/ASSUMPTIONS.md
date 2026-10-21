@@ -166,3 +166,15 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | H10 | A 45' container counts as 2 TEU (some carriers count 2.25) | STRUCTURAL | Carrier tariff TEU rules for PER_TEU charges |
 | H11 | Phrasebook translations (NL, DE, ES, PT, ZH) are correct, natural and commercially appropriate | INVENTED (written without native review) | Native-speaker review per language before customer use |
 | H12 | Legacy rate cards have no start date; they are treated as valid from 2000-01-01 through their validity_through | STRUCTURAL | Confirm forwarders' cards have no meaningful start date, or add valid_from to the legacy schema |
+
+## I. Mock world (P1a) — INVENTED, informed by public 2026 market bands
+
+| # | Claim | Source | How to verify |
+|---|---|---|---|
+| I1 | Ocean FCL bands per 40' (e.g. FE→N Europe $2,800–4,600; FE→USWC $5,000–8,500; N Europe→USEC $2,400–3,300) | Secondary: Drewry WCI 2026-10-15, Xeneta 2026-10-07 (docs/research/mock-world-spec.md) | Compare with a forwarder's Q4 2026 buy rates |
+| I2 | 20' = 0.72 × 40'; 40HC = 1.03 × 40' | INVENTED within researched ratio ranges | Carrier FAK sheets |
+| I3 | Emergency bunker surcharge USD 400/40', 200/20' | Secondary (2026 Hormuz-related carrier notices) | Carrier surcharge notices |
+| I4 | Local charge levels per currency (THC, ISPS, DOC, CFS) | Secondary (public forwarder tariff, carrier THC sheets) for EUR/USD; INVENTED for ZAR/BRL | Local tariffs per port |
+| I5 | LCL bands per W/M and minimum = 1 W/M | Low-confidence secondary / INVENTED | Co-loader LCL tariffs |
+| I6 | Margin policies: FCL markup 10% on freight + surcharges; LCL gross margin 15% with a minimum (EUR 75 / USD 85 / ZAR 1,500 / BRL 450) | INVENTED | Forwarder pricing policy |
+| I7 | Six fictional companies and carriers do not collide with real registered names | Web search only | Company registries (KvK, Handelsregister, state SOS, ACRA, CIPC, CNPJ) |

@@ -1,0 +1,2946 @@
+[
+  {
+    "id": "linkport-2026Q4",
+    "tenant_id": "linkport",
+    "version": "2026-Q4-v1",
+    "source": {
+      "kind": "mock-world",
+      "ref": "examples/mock-world/tariffs/linkport.json"
+    },
+    "valid_from": "2026-10-01",
+    "valid_to": "2026-12-31",
+    "port_groups": {},
+    "lines": [
+      {
+        "id": "linkport:CNSHA-NLRTM:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 33,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2990",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Northwind Lines!22G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 33,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4150",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Northwind Lines!42G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 33,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4275",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Northwind Lines!45G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 36,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2050",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Aurora Shipping!22G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 36,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2850",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Aurora Shipping!42G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "valid_to": "2026-11-15",
+        "transit_days": 36,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2935",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "290",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Aurora Shipping!45G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:22G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3310",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Meridian Container Line!22G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:42G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4600",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Meridian Container Line!42G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:45G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4740",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "33",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNSHA-NLRTM!Meridian Container Line!45G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 31,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2790",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Northwind Lines!22G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 31,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3875",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Northwind Lines!42G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 31,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3990",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Northwind Lines!45G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2230",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "20",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Aurora Shipping!22G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3100",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "20",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Aurora Shipping!42G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3195",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "20",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Aurora Shipping!45G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:22G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2880",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "34",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Meridian Container Line!22G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:42G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4000",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "34",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Meridian Container Line!42G1"
+      },
+      {
+        "id": "linkport:CNNGB-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:45G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "CNNGB"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 34,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "4120",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "280",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "34",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!CNNGB-NLRTM!Meridian Container Line!45G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 29,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2485",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "275",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Northwind Lines!22G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 29,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3450",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "275",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Northwind Lines!42G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 29,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3555",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "275",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "23",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Northwind Lines!45G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 26,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2720",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Aurora Shipping!22G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 26,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3775",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Aurora Shipping!42G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 26,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3890",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "260",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Aurora Shipping!45G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:22G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 25,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2575",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Meridian Container Line!22G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:42G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 25,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3575",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Meridian Container Line!42G1"
+      },
+      {
+        "id": "linkport:SGSIN-NLRTM:MERIDIAN_CONTAINER_LINE-FAK-Q4:45G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "SGSIN"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 25,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3680",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "300",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "70",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!SGSIN-NLRTM!Meridian Container Line!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 10,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "1980",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 10,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2750",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 10,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2835",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "305",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "27",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Northwind Lines!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2160",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "295",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3000",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "295",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3090",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "295",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "32",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Aurora Shipping!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:MERIDIAN_CONTAINER_LINE-FAK-Q4:22G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "1910",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Meridian Container Line!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:MERIDIAN_CONTAINER_LINE-FAK-Q4:42G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2650",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Meridian Container Line!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USNYC:MERIDIAN_CONTAINER_LINE-FAK-Q4:45G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USNYC"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2730",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "285",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "60",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USNYC!Meridian Container Line!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:NORTHWIND_LINES-FAK-Q4:22G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 16,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2270",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Northwind Lines!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:NORTHWIND_LINES-FAK-Q4:42G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 16,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3150",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Northwind Lines!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:NORTHWIND_LINES-FAK-Q4:45G1",
+        "offer_id": "NORTHWIND_LINES-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 16,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3245",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "325",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "21",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "50",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Northwind Lines!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:AURORA_SHIPPING-FAK-Q4:22G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2320",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "315",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Aurora Shipping!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:AURORA_SHIPPING-FAK-Q4:42G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3225",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "315",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Aurora Shipping!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:AURORA_SHIPPING-FAK-Q4:45G1",
+        "offer_id": "AURORA_SHIPPING-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Aurora Shipping",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 13,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3320",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "315",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "24",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Aurora Shipping!45G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:MERIDIAN_CONTAINER_LINE-FAK-Q4:22G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "22G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2140",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "200",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Meridian Container Line!22G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:MERIDIAN_CONTAINER_LINE-FAK-Q4:42G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "42G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "2975",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Meridian Container Line!42G1"
+      },
+      {
+        "id": "linkport:NLRTM-USSAV:MERIDIAN_CONTAINER_LINE-FAK-Q4:45G1",
+        "offer_id": "MERIDIAN_CONTAINER_LINE-FAK-Q4",
+        "mode": "FCL",
+        "carrier": "Meridian Container Line",
+        "origin": {
+          "unlocode": "NLRTM"
+        },
+        "destination": {
+          "unlocode": "USSAV"
+        },
+        "equipment": "45G1",
+        "priority": 0,
+        "transit_days": 12,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_CONTAINER",
+            "rate": "3065",
+            "currency": "USD"
+          },
+          {
+            "id": "EBS",
+            "code": "EBS",
+            "description": "Emergency bunker surcharge",
+            "category": "SURCHARGE",
+            "basis": "PER_CONTAINER",
+            "rate": "400",
+            "currency": "USD"
+          },
+          {
+            "id": "THC_O",
+            "code": "THC_O",
+            "description": "Origin terminal handling",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "255",
+            "currency": "EUR"
+          },
+          {
+            "id": "ISPS",
+            "code": "ISPS",
+            "description": "Port security",
+            "category": "LOCAL",
+            "basis": "PER_CONTAINER",
+            "rate": "30",
+            "currency": "EUR"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "65",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-fcl-q4.xlsx!NLRTM-USSAV!Meridian Container Line!45G1"
+      },
+      {
+        "id": "linkport:CNSHA-NLRTM:NORTHWIND_LINES-LCL-Q4",
+        "offer_id": "NORTHWIND_LINES-LCL-Q4",
+        "mode": "LCL",
+        "carrier": "Northwind Lines",
+        "origin": {
+          "unlocode": "CNSHA"
+        },
+        "destination": {
+          "unlocode": "NLRTM"
+        },
+        "priority": 0,
+        "transit_days": 38,
+        "price_kind": "BUY",
+        "charges": [
+          {
+            "id": "OF",
+            "code": "OF",
+            "description": "Ocean freight",
+            "category": "FREIGHT",
+            "basis": "PER_WM",
+            "rate": "115",
+            "currency": "USD",
+            "min": "115"
+          },
+          {
+            "id": "CFS",
+            "code": "CFS",
+            "description": "CFS handling",
+            "category": "LOCAL",
+            "basis": "PER_WM",
+            "rate": "34",
+            "currency": "EUR",
+            "min": "34"
+          },
+          {
+            "id": "DOC",
+            "code": "DOC",
+            "description": "Documentation",
+            "category": "DOCUMENT",
+            "basis": "PER_BL",
+            "rate": "55",
+            "currency": "EUR"
+          }
+        ],
+        "source_ref": "linkport-lcl-q4.xlsx!CNSHA-NLRTM!Northwind Lines"
+      }
+    ]
+  }
+]

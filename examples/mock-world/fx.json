@@ -1,0 +1,16 @@
+{
+  "base": "EUR",
+  "rates": {
+    "EUR": "1",
+    "USD": "1.1234",
+    "GBP": "0.83825",
+    "CNY": "7.4999",
+    "SGD": "1.4348",
+    "ZAR": "18.393",
+    "BRL": "5.6432",
+    "HKD": "8.8155",
+    "INR": "106.1265"
+  },
+  "source": "ECB euro foreign exchange reference rates",
+  "as_of": "2026-10-21"
+}
