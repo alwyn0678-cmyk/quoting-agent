@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { Dec } from "../money/dec.js";
-import { chargeAmount, exponentOf, fromMajor, money, toDec, type Currency, type Money } from "../money/money.js";
-import { convert, fxFreshness, validateFx, type FxReceipt, type FxSnapshot } from "../money/fx.js";
+import { AmountBoundError, chargeAmount, exponentOf, fromMajor, money, toDec, type Currency, type Money } from "../money/money.js";
+import { convert, fxFreshness, FxMissingRateError, validateFx, type FxReceipt, type FxSnapshot } from "../money/fx.js";
 import { teuOf, type IsoType } from "../places/equipment.js";
 import type { NormalizedCargo } from "../request/normalize.js";
 import { addDays, dayNumber, maxDate, minDate } from "../time/dates.js";
-import { canonicalJson, SHIPMENT_LEVEL, type ChargeDef, type Tariff, type TariffMode } from "../tariff/model.js";
+import { SHIPMENT_LEVEL, type ChargeDef, type Tariff, type TariffMode } from "../tariff/model.js";
+import { toWire } from "./wire.js";
 import { matchOffers, type MatchedLine, type Offer } from "../tariff/matcher.js";
 import { modeModule, type Quantities } from "../modes/modes.js";
 import { appliesTo, lineSell, selectMarginRule, type MarginRule } from "../margin/margin.js";
@@ -197,15 +198,19 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
       if (r.receipt) receipts.push(r.receipt);
       return r.money.minor;
     } catch (e) {
-      if (e instanceof Unpriceable) throw e;
-      throw new Unpriceable("fx_missing_rate", (e as Error).message);
+      // Only a genuinely absent rate is fx_missing_rate; bound overflows surface as AmountBoundError.
+      if (e instanceof FxMissingRateError) throw new Unpriceable("fx_missing_rate", e.message);
+      throw e;
     }
   };
+  const sumConverted = (lines: readonly ChargeLine[], pick: (l: ChargeLine) => Money | null, kind: "BUY" | "SELL", receipts: FxReceipt[]) =>
+    [...subtotals(lines, pick)].reduce((acc, [ccy, minor]) => acc + convertSubtotal(minor, ccy, kind, receipts), 0n);
 
   const candidates: RouteOption[] = [];
   const marginRuleIds = new Set<string>();
   try {
     for (const offer of match.offers) {
+      try {
       let raw: RawLine[];
       try {
         raw = evaluateOffer(offer, quantities);
@@ -235,6 +240,7 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
         }
         rule = sel.rule;
         marginRuleIds.add(rule.id);
+        trace.margin_rule_ids = [...marginRuleIds].sort(cmpStr);
       }
 
       const lines: ChargeLine[] = raw.map((r) => {
@@ -276,17 +282,18 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
 
       const fx_conversions: FxReceipt[] = [];
       const all = () => [...lines, ...adjustments];
-      let quoteMinor = 0n;
-      for (const [ccy, minor] of subtotals(all(), (l) => l.sell)) quoteMinor += convertSubtotal(minor, ccy, "SELL", fx_conversions);
+      // Charge lines and FLAT are converted separately so the minimum margin can be measured on the
+      // BUY-derived lines only (spec §16.2) — a FLAT fee never counts towards it.
+      const linesSellQuote = sumConverted(lines, (l) => l.sell, "SELL", fx_conversions);
+      let quoteMinor = linesSellQuote + sumConverted(adjustments, (l) => l.sell, "SELL", fx_conversions);
 
       if (rule?.min_margin) {
         if (rule.min_margin.currency !== ctx.quote_currency) {
           trace.excluded.push({ key: offer.key, reason: "min_margin_currency_mismatch" });
           continue;
         }
-        let buyQuote = 0n;
-        for (const [ccy, minor] of subtotals(lines, (l) => l.buy)) buyQuote += convertSubtotal(minor, ccy, "BUY", fx_conversions);
-        const shortfall = rule.min_margin.minor - (quoteMinor - buyQuote);
+        const buyQuote = sumConverted(lines, (l) => l.buy, "BUY", fx_conversions);
+        const shortfall = rule.min_margin.minor - (linesSellQuote - buyQuote);
         if (shortfall > 0n) {
           adjustments.push(marginLine("MARGIN_ADJ", "Minimum service charge", money(shortfall, ctx.quote_currency)));
           quoteMinor += shortfall;
@@ -298,13 +305,7 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
       const valid_until = ends.reduce(minDate, addDays(ctx.as_of, ctx.quote_validity_days));
       const transits = offer.lines.map((ml) => ml.line.transit_days);
       const transit_days = transits.every((t) => t !== null) ? Math.max(...(transits as number[])) : null;
-      const id = createHash("sha256")
-        .update(canonicalJson({ offer: offer.key, lines: offer.lines.map((ml) => ml.line.id).sort(cmpStr) }))
-        .digest("hex")
-        .slice(0, 16);
-
-      candidates.push({
-        id,
+      const option: Omit<RouteOption, "id"> = {
         offer_key: offer.key,
         carrier: offer.carrier,
         tariff_id: offer.tariff.id,
@@ -315,7 +316,18 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
         fx_conversions,
         transit_days,
         valid_until,
-      });
+      };
+      // The id hashes the whole commercial option (tariff hash, quantities, lines, totals, FX, validity).
+      const id = createHash("sha256").update(JSON.stringify(toWire({ tariff_hash: offer.tariff.content_hash, option }))).digest("hex");
+      candidates.push({ id, ...option });
+      } catch (e) {
+        if (e instanceof AmountBoundError) {
+          trace.excluded.push({ key: offer.key, reason: "amount_out_of_bound" });
+          continue;
+        }
+        if (e instanceof Unpriceable) trace.excluded.push({ key: offer.key, reason: e.reason });
+        throw e;
+      }
     }
   } catch (e) {
     if (e instanceof Unpriceable) return fail(e.reason, e.message);
@@ -323,6 +335,9 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
   }
 
   trace.margin_rule_ids = [...marginRuleIds].sort(cmpStr);
+  if (candidates.length === 0 && trace.excluded.some((x) => x.reason === "amount_out_of_bound")) {
+    return fail("pricing_capacity_exceeded", "an amount exceeds the supported maximum");
+  }
   if (candidates.length === 0) {
     return fail("tariff_config_error", `rates matched but every offer was invalid: ${trace.excluded.map((x) => `${x.key}=${x.reason}`).join(", ")}`);
   }

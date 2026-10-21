@@ -19,7 +19,8 @@ export function toWire(v: unknown): Wire {
   if (Array.isArray(v)) return v.map(toWire);
   if (typeof v === "object") {
     const out: { [k: string]: Wire } = {};
-    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+    const entries = Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    for (const [k, x] of entries) {
       if (x !== undefined) out[k] = toWire(x);
     }
     return out;

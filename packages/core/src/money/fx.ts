@@ -33,6 +33,13 @@ export interface FxReceipt {
   rounding: "HALF_AWAY_FROM_ZERO";
 }
 
+export class FxMissingRateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FxMissingRateError";
+  }
+}
+
 /** Maximum snapshot age in days before a conversion is refused (ASSUMPTIONS.md H5). */
 export const FX_MAX_AGE_DAYS = 7;
 
@@ -68,7 +75,7 @@ export function convert(
   const rFrom = fx.rates[m.currency];
   const rTo = fx.rates[to];
   if (!rFrom || !rTo) {
-    throw new Error(`fx_missing_rate: no ${!rFrom ? m.currency : to} rate in the ${fx.source} snapshot of ${fx.as_of}`);
+    throw new FxMissingRateError(`fx_missing_rate: no ${!rFrom ? m.currency : to} rate in the ${fx.source} snapshot of ${fx.as_of}`);
   }
   const eFrom = exponentOf(m.currency);
   const eTo = exponentOf(to);

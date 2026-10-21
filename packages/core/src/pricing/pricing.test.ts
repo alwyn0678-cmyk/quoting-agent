@@ -172,3 +172,62 @@ describe("pricing engine — PCT_OF and options", () => {
     expect(r.presented[0]).toBe(r.candidates[0]!.id);
   });
 });
+
+describe("Codex review (engine) — fixes", () => {
+  const usdCtx = (rules: MarginRule[], over: Partial<PricingContext> = {}) => ctx(rules, { quote_currency: "USD", fx: null, ...over });
+  const lcl = (charges: ChargeWire[]): RateLineWire => ({ ...lclLine, charges });
+  it("#1 PER_TON / PER_CBM use exact quantities; only W/M rounds up", () => {
+    const t = load(tariff([lcl([c({ id: "T", basis: "PER_TON", rate: "1000" }), c({ id: "V", code: "V", basis: "PER_CBM", rate: "1000" })])]));
+    const cg = cargo({ stated_total_weight: { value: "1000.001", unit: "kg" }, stated_total_volume: { value: "1.000001", unit: "cbm" } });
+    const r = price(input("LCL", cg), [t], usdCtx([grossAll()].map((x) => ({ ...x, kind: "MARKUP_ON_BUY" as const, value: Dec.parse("0") }))));
+    if (r.kind !== "priced") throw new Error(JSON.stringify(r));
+    const lines = r.candidates[0]!.legs[0]!.lines;
+    expect(lines.find((l) => l.code === "OF")!.buy).toEqual(money(100000n, "USD")); // 1.000001 t × 1000 = 1000.001 → 1000.00
+    expect(lines.find((l) => l.code === "V")!.buy).toEqual(money(100000n, "USD"));
+    expect(r.candidates[0]!.legs[0]!.quantities.revenue_tons!.toString()).toBe("1.001");
+  });
+  it("#2 a FLAT fee does not count towards the minimum margin", () => {
+    const t = load(tariff([fclLine("N45", "45G1", "100", "0", { charges: [c({ rate: "100", currency: "EUR" })] })]));
+    const flat: MarginRule = { id: "F", match: {}, kind: "FLAT", value: Dec.parse("50"), currency: "EUR", applies_to: "ALL", priority: 0, min_margin: money(10000n, "EUR") };
+    const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 1 }] })), [t], ctx([flat]));
+    if (r.kind !== "priced") throw new Error(JSON.stringify(r));
+    const o = r.candidates[0]!;
+    expect(o.adjustments.map((a) => `${a.code}:${a.sell.minor}`)).toEqual(["MARGIN_FLAT:5000", "MARGIN_ADJ:10000"]);
+    expect(o.totals.quote).toEqual(money(25000n, "EUR"));
+  });
+  it("#3 amounts beyond the money bound are a named result, never a raw exception", () => {
+    const t = load(tariff([fclLine("N45", "45G1", "999999999999", "999999999999")]));
+    const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 6 }] })), [t], usdCtx([markupFreight]));
+    expect(r.kind === "unpriceable" && r.reason).toBe("pricing_capacity_exceeded");
+  });
+  it("#4 option ids hash the whole commercial option (quantities change the id)", () => {
+    const t = load(tariff([fclLine("N45", "45G1", "2950", "400")]));
+    const one = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 1 }] })), [t], usdCtx([markupFreight]));
+    const two = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 2 }] })), [t], usdCtx([markupFreight]));
+    if (one.kind !== "priced" || two.kind !== "priced") throw new Error("not priced");
+    expect(one.candidates[0]!.id).toMatch(/^[0-9a-f]{64}$/);
+    expect(one.candidates[0]!.id).not.toBe(two.candidates[0]!.id);
+  });
+  it("#6 an FX overflow is not reported as a missing rate", () => {
+    // USD 990,000,000,000.00 sell ÷ 0.01 USD/EUR = EUR 99 trillion → beyond the 10^15 minor bound
+    const t = load(tariff([fclLine("N45", "45G1", "900000000000", "0")]));
+    const tinyRate: FxSnapshot = { ...fx, rates: { EUR: Dec.ONE, USD: Dec.parse("0.01") } };
+    const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 1 }] })), [t], ctx([markupFreight], { fx: tinyRate }));
+    expect(r.kind === "unpriceable" && r.reason).toBe("pricing_capacity_exceeded");
+  });
+  it("#7 the wire form is canonical over object key order", () => {
+    expect(JSON.stringify(toWire({ b: 1, a: { d: 2, c: 3 } }))).toBe(JSON.stringify(toWire({ a: { c: 3, d: 2 }, b: 1 })));
+  });
+  it("#8 an FX failure still reports the selected margin rule and the affected offer", () => {
+    const t = load(tariff([fclLine("N45", "45G1", "2950", "400")]));
+    const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 1 }] })), [t], ctx([markupFreight], { fx: { ...fx, rates: { EUR: Dec.ONE } } }));
+    expect(r.kind).toBe("unpriceable");
+    expect(r.trace.margin_rule_ids).toEqual(["M-FCL"]);
+    expect(r.trace.excluded).toContainEqual({ key: "T1/Northwind Lines/O1", reason: "fx_missing_rate" });
+  });
+  it("(Codex #5 rejected, spec amended) LCL accepts piece dimensions plus a stated total weight — the common real-world phrasing", () => {
+    const t = load(tariff([lclLine]));
+    const cg = cargo({ pieces: [{ qty: 3, length: { value: "120", unit: "cm" }, width: { value: "80", unit: "cm" }, height: { value: "150", unit: "cm" }, weight_each: null, stackable: false }], stated_total_weight: { value: "1200", unit: "kg" } });
+    expect(price(input("LCL", cg), [t], ctx([grossAll()])).kind).toBe("priced");
+  });
+});

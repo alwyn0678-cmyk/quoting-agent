@@ -299,3 +299,17 @@ shipment-level charges from first equipment line; margin applies to BUY lines on
    ambiguous_request, tariff_config_error (all matched offers invalid / invalid tariff),
    pricing_capacity_exceeded, fx_invalid (stale or future snapshot), fx_missing_rate, model_refused,
    model_output_invalid, low_confidence, guard_violation`.
+
+## 17. Implementation amendments (recorded during build)
+1. **LCL cargo sources** (Codex engine review #5, rejected with reason): LCL is priceable when total weight
+   AND total volume are both known, from pieces or stated totals in any combination. "3 pallets
+   120×80×150 cm, total 1,200 kg" (dims + stated weight) is the commonest real phrasing; rejecting it
+   would escalate normal emails. When both sources exist for a quantity, the 2% conflict rule applies.
+2. **Unknown service** (gate): `UNKNOWN` → `missing_required_field [service]` (asked), not
+   `out_of_scope_service`; most port-to-port emails never name a service type.
+3. **No rates in customer text**: on BUY offers a line's rate is a cost, so customer-facing text and the
+   sell-only projection show sell amounts only — never per-unit rates.
+4. **Chargeable quantities**: PER_TON and PER_CBM charge on exact canonical quantities (t from kg 3 dp,
+   m³ 6 dp); only the W/M revenue-ton quantity is rounded up to 3 dp.
+5. **Amount bound**: any amount beyond 10^15 minor units excludes the offer (`amount_out_of_bound`); if
+   no option survives for that reason the result is `pricing_capacity_exceeded`.

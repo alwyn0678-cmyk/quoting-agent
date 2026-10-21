@@ -12,7 +12,8 @@ import type { TariffMode } from "../tariff/model.js";
 export interface Quantities {
   containers: Partial<Record<IsoType, number>>;
   teu: Dec;
-  /** LCL: chargeable tonnes / m³ / revenue tons, each rounded UP to 3 dp (ASSUMPTIONS.md H2). */
+  /** LCL: exact tonnes and m³ (from canonical kg 3 dp / m³ 6 dp); revenue tons = max(t, m³) rounded
+   *  UP to 3 dp (ASSUMPTIONS.md H2) — the only chargeable-quantity rounding. */
   weight_tonnes: Dec | null;
   volume_cbm: Dec | null;
   revenue_tons: Dec | null;
@@ -54,14 +55,15 @@ const LCL: ModeModule = {
   },
   quantities(cargo) {
     if (cargo.weight_kg === null || cargo.volume_cbm === null) throw new Error("LCL quantities need weight and volume (gate first)");
-    const tonnes = Dec.divRound(cargo.weight_kg, KG_PER_TONNE, CHARGEABLE_SCALE, "CEILING");
-    const volume = cargo.volume_cbm.round(CHARGEABLE_SCALE, "CEILING");
+    // kg → t is a division by 10^3: exact at three more decimal places.
+    const tonnes = Dec.parse(Dec.divRound(cargo.weight_kg, KG_PER_TONNE, cargo.weight_kg.scale + 3, "FLOOR").toString());
+    const volume = cargo.volume_cbm;
     return {
       containers: {},
       teu: Dec.ZERO,
       weight_tonnes: tonnes,
       volume_cbm: volume,
-      revenue_tons: tonnes.max(volume),
+      revenue_tons: tonnes.max(volume).round(CHARGEABLE_SCALE, "CEILING"),
     };
   },
 };

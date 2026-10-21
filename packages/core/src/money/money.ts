@@ -24,6 +24,14 @@ export type Currency = keyof typeof CURRENCIES;
  *  P1a (no rebates/credits); signed deltas are computed on raw bigints, never as Money. */
 export const MAX_ABS_MINOR = 10n ** 15n;
 
+/** Raised when an amount exceeds MAX_ABS_MINOR — mapped by the engine to a named result. */
+export class AmountBoundError extends Error {
+  constructor(minor: bigint) {
+    super(`amount out of bound: ${minor}`);
+    this.name = "AmountBoundError";
+  }
+}
+
 export interface Money {
   readonly minor: bigint;
   readonly currency: Currency;
@@ -40,7 +48,7 @@ export function exponentOf(currency: Currency): number {
 export function money(minor: bigint, currency: Currency): Money {
   if (!isCurrency(currency)) throw new Error(`unsupported currency '${String(currency)}'`);
   if (minor < 0n) throw new Error(`negative amount not allowed: ${minor}`);
-  if (minor > MAX_ABS_MINOR) throw new Error(`amount out of bound: ${minor}`);
+  if (minor > MAX_ABS_MINOR) throw new AmountBoundError(minor);
   return { minor, currency };
 }
 
