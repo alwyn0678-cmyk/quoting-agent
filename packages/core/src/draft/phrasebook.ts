@@ -186,6 +186,9 @@ export function chargeKey(code: string): string {
 }
 
 export function phrase(language: Language, key: string, vars: Record<string, string> = {}): string {
-  const template = PHRASES[language][key] ?? PHRASES.en[key] ?? key;
+  const dict = PHRASES[language];
+  if (!dict) throw new Error(`unsupported language '${String(language)}'`);
+  const template = dict[key] ?? PHRASES.en[key];
+  if (template === undefined) throw new Error(`missing phrase key '${key}'`);
   return template.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
 }

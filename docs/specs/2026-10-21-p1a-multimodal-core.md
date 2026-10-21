@@ -321,3 +321,10 @@ shipment-level charges from first equipment line; margin applies to BUY lines on
    `show_carrier`. One sanitising policy: NFKC + strip all Cc/Cf/Zl/Zp characters. A denylist guard on
    model prose is no longer needed — there is no model prose.
 7. **Identity**: origin equal to destination → `ambiguous_request`.
+8. **Draft trust boundary, precisely** (Codex phrasebook review): customer text is composed of
+   (a) code-owned phrasebook text, (b) canonical values (port labels, charge-code names, engine
+   numbers, dates), (c) TRUSTED admin-authored tenant configuration (signature, terms name, carrier
+   label registry) and (d) an optional TRUSTED contact name from customer records (P3) — never email
+   text, tariff free text, or tariff carrier strings. It shows per-line SELL amounts and totals by
+   design; it never shows BUY costs or raw per-unit rate fields. Locales are allowlisted (Gregorian,
+   Latin digits); malformed presentation data fails closed.

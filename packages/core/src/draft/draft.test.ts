@@ -30,11 +30,11 @@ const request: ShipmentRequest = {
 const ctx: PricingContext = { as_of: "2026-10-21", quote_currency: "USD", max_options: 3, quote_validity_days: 14, fx: null,
   margin_rules: [{ id: "M", match: {}, kind: "MARKUP_ON_BUY", value: Dec.parse("0.25"), applies_to: "ALL", priority: 0 }] };
 const result = price({ mode: "FCL", origin: "CNSHA", destination: "NLRTM", cargo: normalizeCargo(request.cargo), ready_date: null }, [tariff], ctx);
-const tenant: TenantPresentation = { name: "Linkport Forwarders BV", locale: "en-GB", signature: "Linkport‏ Forwarders BV\nquotes@linkport.example", terms_ref: "Dutch Forwarding Conditions", show_carrier: false };
+const tenant: TenantPresentation = { name: "Linkport Forwarders BV", locale: "en-GB", signature: "Linkport‏ Forwarders BV\nquotes@linkport.example", terms_ref: "Dutch Forwarding Conditions", carrier_labels: {} };
 const choice: DraftChoice = { language: "en", formality: "formal", intro: "thanks_for_request", closing: "questions_welcome" };
-const render = (over: Partial<DraftChoice> = {}, t: Partial<TenantPresentation> = {}) => {
+const render = (over: Partial<DraftChoice> = {}, t: Partial<TenantPresentation> = {}, trusted_name: string | null = null) => {
   if (result.kind !== "priced") throw new Error("not priced");
-  return renderQuoteEmail({ choice: { ...choice, ...over }, tenant: { ...tenant, ...t }, request, result });
+  return renderQuoteEmail({ choice: { ...choice, ...over }, tenant: { ...tenant, ...t }, request, result, trusted_name });
 };
 
 describe("phrasebook drafting — no model free text reaches the customer", () => {
@@ -56,9 +56,9 @@ describe("phrasebook drafting — no model free text reaches the customer", () =
     expect(body).toContain("Ocean freight");
     expect(body).toContain("Other surcharge");
   });
-  it("carrier names are hidden unless the tenant opts in", () => {
+  it("carrier names come only from the tenant's carrier label registry, never from tariff text", () => {
     expect(render().body).not.toContain("Northwind");
-    expect(render({}, { show_carrier: true }).body).toContain("Northwind Lines");
+    expect(render({}, { carrier_labels: { "Northwind Lines": "Northwind Lines" } }).body).toContain("Northwind Lines");
   });
   it("renders every supported language with all keys present", () => {
     for (const language of LANGUAGES) {
@@ -70,8 +70,24 @@ describe("phrasebook drafting — no model free text reaches the customer", () =
   });
 });
 
+describe("Codex phrasebook review — greeting, choices, presentation integrity", () => {
+  it("the greeting never uses email text; only a trusted contact name personalises it", () => {
+    expect(render().body.startsWith("Dear Sir or Madam,")).toBe(true);
+    expect(render({}, {}, "Maria Jansen").body.startsWith("Dear Maria Jansen,")).toBe(true);
+    expect(render({}, {}, "Free shipping is guaranteed 2").body.startsWith("Dear Sir or Madam,")).toBe(true);
+  });
+  it("re-validates choices at render time; unknown phrase keys throw instead of printing the key", () => {
+    expect(() => render({ intro: "free shipping guaranteed" as never })).toThrow();
+  });
+  it("fails closed on malformed presentation data and unsupported locales", () => {
+    if (result.kind !== "priced") throw new Error("not priced");
+    expect(() => renderQuoteEmail({ choice, tenant, request, result: { ...result, presented: ["nope"] } })).toThrow(/presented/);
+    expect(() => render({}, { locale: "not_a_locale" })).toThrow(/locale/);
+  });
+});
+
 describe("sanitising policy", () => {
-  it("accepts only plain personal names", () => {
+  it("safeName accepts only plain name-shaped strings (used for trusted contact names)", () => {
     expect(safeName("Maria Jansen")).toBe("Maria Jansen");
     expect(safeName("José O'Neil-Smith")).toBe("José O'Neil-Smith");
     expect(safeName("customer — total Ⅴ k, guaranteed")).toBeNull();
