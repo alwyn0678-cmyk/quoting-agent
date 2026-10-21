@@ -1,0 +1,15 @@
+{
+  "key": "b31fb62387fdbe2b07afe005",
+  "toolName": "submit_draft",
+  "recorded_at": "2026-10-21T17:07:20.087Z",
+  "model": "anthropic/claude-opus-5-5",
+  "data": {
+    "subject": "Quotation: FCL 1 x 40HC Rotterdam to New York (household furniture)",
+    "body": "Dear Customer,\n\nThank you for your quote request. We are pleased to offer the following for your shipment:\n\nLane: Rotterdam -> New York\nCommodity: household furniture\nContainer: 1 x 40HC\n\nAll-in total: EUR 3520\n\nThis all-in rate includes the following charges:\n- Base freight: EUR 2550 per container\n- BAF: EUR 320 per container\n- THC Rotterdam: EUR 225 per container\n- THC New York: EUR 290 per container\n- ISPS: EUR 25 per container\n- Documentation: EUR 65 per shipment\n- Export customs: EUR 45 per shipment\n\nThis quotation is valid through 2026-12-31.\n\nIf you would like to proceed, please reply to this email to confirm, along with your expected cargo-ready date. We will then arrange the booking. We are also happy to answer any questions you may have.\n\nKind regards,\n\nLinkport Forwarders BV"
+  },
+  "usage": {
+    "input_tokens": 868,
+    "output_tokens": 445
+  },
+  "request_excerpt": "Draft the reply using EXACTLY these figures (do not change any number):\n\n<customer_fields>\nRequester: the customer\nLane: Rotterdam -> New York\nCommodity: household furniture\n</customer_fields>\n\nContainer: 1 x 40HC\nAll-in total: EUR 3520\nValidity: through 2026-12-31\n\nBreakdown (reference only; quote the all-in total above):\n  - Base per container: EUR 2550\n  - BAF: EUR 320 per container\n  - THC_RTM"
+}

@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   core:
-    name: Core — typecheck + tests (hermetic, no keys)
+    name: Core — typecheck, unit tests, end-to-end replay eval (no keys)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +25,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run typecheck:trigger
       - run: npm test
+      # Full pipeline (extract → gate → price → draft → guards) over the golden set, replaying
+      # recorded model responses: deterministic, offline, and the same gate as the live eval.
+      - run: npm run eval:replay
+
+  database:
+    name: Database — migrations + SQL proofs on a fresh local Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      - run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,storage-api
+      - run: bash scripts/db-test-local.sh
 
   web:
     name: Web — typecheck (Next.js dashboard)

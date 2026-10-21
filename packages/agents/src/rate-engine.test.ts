@@ -33,7 +33,7 @@ describe("T4 — rate engine: deterministic, exact", () => {
       expect(q.container_qty).toBe(c.qty);
       expect(q.currency).toBe("EUR");
       expect(q.lane).toBe("NLRTM-USNYC");
-      expect(q.validity_through).toBe("2026-06-30");
+      expect(q.validity_through).toBe("2026-12-31");
       // breakdown sums back to the headline total
       const surch = q.surcharges.reduce((s, x) => s + x.amount_per_container, 0);
       const fees = q.per_shipment_fees.reduce((s, x) => s + x.amount, 0);

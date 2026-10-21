@@ -194,7 +194,7 @@ describe("P0.1 — expired rates escalate end to end", () => {
   it("an expired card escalates as rate_expired and never drafts", async () => {
     const client = routed(baseExtraction);
     const out = await runAgent(email, client, new StaticCardRateEngine(), undefined, undefined, {
-      asOf: "2026-10-21",
+      asOf: "2027-01-01",
     });
     expect(out.decision).toBe("escalate");
     expect(out.escalation_reason).toBe("rate_expired");

@@ -18,7 +18,7 @@ const inScope = (over: Partial<PriceRequest>): PriceRequest => ({
   ...over,
 });
 
-const cardRow: RateCardRow = { mode: "FCL", version: "2026-06-v1", validity_through: "2026-06-30", lane: "NLRTM-USNYC" };
+const cardRow: RateCardRow = { mode: "FCL", version: "2026-10-v1", validity_through: "2026-12-31", lane: "NLRTM-USNYC" };
 
 // Rows in DELIBERATELY scrambled order — sort_order (within kind) is the source of truth, so the
 // adapter must reorder them to reproduce the StaticCard's arrays.

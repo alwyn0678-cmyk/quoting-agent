@@ -10,7 +10,7 @@ on conflict (id) do update set name = excluded.name;
 insert into public.rate_cards (id, tenant_id, lane, version, validity_through, is_active)
 values ('22222222-2222-4222-8222-222222222222',
         '11111111-1111-4111-8111-111111111111',
-        'NLRTM-USNYC', '2026-06-v1', '2026-06-30', true)
+        'NLRTM-USNYC', '2026-10-v1', '2026-12-31', true)
 on conflict (id) do update
   set lane = excluded.lane, version = excluded.version,
       validity_through = excluded.validity_through, is_active = excluded.is_active;
@@ -28,5 +28,5 @@ insert into public.rate_card_lines (rate_card_id, kind, code, container_type, am
   ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'DOC',            null,  65, 0),  -- A8
   ('22222222-2222-4222-8222-222222222222', 'per_shipment_fee', 'EXPORT_CUSTOMS', null,  45, 1);  -- A9
 
-select 'seeded Linkport card 2026-06-v1: ' || count(*)::text || ' lines' as result
+select 'seeded Linkport card 2026-10-v1: ' || count(*)::text || ' lines' as result
 from public.rate_card_lines where rate_card_id = '22222222-2222-4222-8222-222222222222';

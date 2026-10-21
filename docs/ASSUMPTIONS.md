@@ -11,8 +11,8 @@
 
 ## A. Rate-card figures (all INVENTED — placeholders to make the engine run)
 
-Lane: Rotterdam (NLRTM) → New York (USNYC), FCL ocean. Currency EUR. Rate-card version `2026-06-v1`,
-`validity_through = 2026-06-30`.
+Lane: Rotterdam (NLRTM) → New York (USNYC), FCL ocean. Currency EUR. Rate-card version `2026-10-v1`,
+`validity_through = 2026-12-31` (refreshed 2026-10-21 so the demo card is current; still INVENTED).
 
 | # | Claim | Value | Source | How to verify |
 |---|---|---|---|---|
@@ -34,7 +34,7 @@ the invented inputs above**; they are not real quotes.
 
 Two extra lanes added to `rates/linkport-rate-sheet.xlsx` so the workbook is a realistic multi-lane
 sheet. Every figure is INVENTED; a real forwarder substitutes their contracted rates and re-imports.
-Rate-card version `2026-06-v1`, `validity_through = 2026-06-30`, currency EUR.
+Rate-card version `2026-10-v1`, `validity_through = 2026-12-31` (refreshed 2026-10-21 so the demo card is current; still INVENTED), currency EUR.
 
 **Lane NLRTM → USLAX (Rotterdam → Los Angeles), FCL ocean:**
 
@@ -75,7 +75,7 @@ value). Not a real quote.
 ## A″. Barge mode (NLRTM → DEDUI, all INVENTED)
 
 Lane Rotterdam (NLRTM) → Duisburg (DEDUI), inland Rhine **barge**, EUR, per container. Card
-`2026-06-v1`. This is the first non-FCL mode; the figures are placeholders to exercise the
+`2026-10-v1`. This is the first non-FCL mode; the figures are placeholders to exercise the
 multi-modal engine, not real barge rates.
 
 | # | Item | Value | Status | How to verify |

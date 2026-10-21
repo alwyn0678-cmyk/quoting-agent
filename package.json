@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22.9"
   },
-  "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
+  "description": "QuoteAgent \u2014 Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -42,7 +42,10 @@
     "db:test:hardening": "bash scripts/db.sh supabase/tests/hardening_dml_denial.sql && bash scripts/db.sh supabase/tests/hardening_persist_orphan.sql && bash scripts/db.sh supabase/tests/hardening_sent_gate_insert.sql && bash scripts/db.sh supabase/tests/hardening_requeue_lease.sql && bash scripts/db.sh supabase/tests/hardening_active_card_unique.sql",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "db:test": "bash scripts/db-test-local.sh"
+    "db:test": "bash scripts/db-test-local.sh",
+    "eval:replay": "QUOTEAGENT_MODEL=demo/replay node --import tsx evals/run.ts",
+    "eval:record": "QUOTEAGENT_RECORD=1 node --env-file-if-exists=.env --import tsx evals/run.ts",
+    "typecheck:trigger": "tsc --noEmit -p packages/trigger"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

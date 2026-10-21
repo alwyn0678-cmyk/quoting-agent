@@ -19,8 +19,8 @@ export interface RateCard {
 
 export const RATE_CARD: RateCard = {
   mode: "FCL",
-  version: "2026-06-v1",
-  validity_through: "2026-06-30",
+  version: "2026-10-v1",
+  validity_through: "2026-12-31",
   supported_lane: "NLRTM-USNYC",
   base_per_container: { "20GP": 1800, "40GP": 2400, "40HC": 2550 }, // A1-A3
   surcharges: [
