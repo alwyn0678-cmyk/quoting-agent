@@ -23,7 +23,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            packages/trigger/package-lock.json
       - run: npm ci
+      # The Trigger.dev worker is its own install root (keeps @trigger.dev/sdk out of the core);
+      # its sources import the agent core, so both installs are needed to typecheck it.
+      - run: npm ci --prefix packages/trigger
       - run: npm run typecheck
       - run: npm run typecheck:trigger
       - run: npm test
