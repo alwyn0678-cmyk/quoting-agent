@@ -66,9 +66,9 @@ describe("cargo normalisation — code does every conversion, exactly", () => {
       ...base.cargo,
       pieces: [piece({ qty: 1, length: { value: "48", unit: "in" }, width: { value: "40", unit: "in" }, height: { value: "50", unit: "in" }, weight_each: { value: "1000", unit: "lb" } })],
     });
-    expect(n.weight_kg?.toString()).toBe("453.59237");
-    // 121.92 × 101.6 × 127 cm = 1,573,158.144 cm³ → 1.573158144 m³ (verified with Python Decimal)
-    expect(n.volume_cbm?.toString()).toBe("1.573158144");
+    // exact: 453.59237 kg and 1,573,158.144 cm³ (verified with Python Decimal) → canonical 3 dp / 6 dp
+    expect(n.weight_kg?.toString()).toBe("453.592");
+    expect(n.volume_cbm?.toString()).toBe("1.573158");
   });
   it("maps container text to ISO types in code (the model never picks codes)", () => {
     const n = normalizeCargo({ ...base.cargo, containers: [{ type_raw: "40' HQ", qty: 2 }, { type_raw: "box", qty: 1 }] });
@@ -88,5 +88,25 @@ describe("cargo normalisation — code does every conversion, exactly", () => {
   it("a piece without weight leaves derived weight unknown (not zero)", () => {
     const n = normalizeCargo({ ...base.cargo, pieces: [piece({ weight_each: null })] });
     expect(n.weight_kg).toBeNull();
+  });
+});
+
+describe("Codex review (core 1–4) — request hardening", () => {
+  it("#10 extraction objects are strict (unknown keys rejected) and 'mm' is not an allowed unit", () => {
+    const extra = { ...base, cargo: { ...base.cargo, pieces: [{ ...piece(), legacy_length: 12 }] } };
+    expect(ShipmentRequestSchema.safeParse(extra).success).toBe(false);
+    const mm = { ...base, cargo: { ...base.cargo, pieces: [piece({ length: { value: "1", unit: "mm" } })] } };
+    expect(ShipmentRequestSchema.safeParse(mm).success).toBe(false);
+  });
+  it("#8 ready_date must be a real calendar date", () => {
+    expect(ShipmentRequestSchema.safeParse({ ...base, ready_date: "2026-02-31" }).success).toBe(false);
+  });
+  it("#4 normalised totals use canonical scales: weight 3 dp, volume 6 dp", () => {
+    const n = normalizeCargo({
+      ...base.cargo,
+      pieces: [piece({ qty: 1, length: { value: "48", unit: "in" }, width: { value: "40", unit: "in" }, height: { value: "50", unit: "in" }, weight_each: { value: "1000", unit: "lb" } })],
+    });
+    expect(n.weight_kg?.toString()).toBe("453.592");
+    expect(n.volume_cbm?.toString()).toBe("1.573158");
   });
 });

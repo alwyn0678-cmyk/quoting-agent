@@ -20,7 +20,8 @@ export const CURRENCIES = {
 
 export type Currency = keyof typeof CURRENCIES;
 
-/** |minor| bound — far above any real quote, well inside Postgres bigint. */
+/** Upper bound on amounts — far above any real quote, well inside Postgres bigint. Amounts are ≥ 0 in
+ *  P1a (no rebates/credits); signed deltas are computed on raw bigints, never as Money. */
 export const MAX_ABS_MINOR = 10n ** 15n;
 
 export interface Money {
@@ -38,7 +39,8 @@ export function exponentOf(currency: Currency): number {
 
 export function money(minor: bigint, currency: Currency): Money {
   if (!isCurrency(currency)) throw new Error(`unsupported currency '${String(currency)}'`);
-  if (minor > MAX_ABS_MINOR || minor < -MAX_ABS_MINOR) throw new Error(`amount out of bound: ${minor}`);
+  if (minor < 0n) throw new Error(`negative amount not allowed: ${minor}`);
+  if (minor > MAX_ABS_MINOR) throw new Error(`amount out of bound: ${minor}`);
   return { minor, currency };
 }
 

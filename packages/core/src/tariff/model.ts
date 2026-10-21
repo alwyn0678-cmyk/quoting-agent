@@ -4,6 +4,7 @@ import { Dec } from "../money/dec.js";
 import { CURRENCIES, fromMajor, isCurrency, type Currency, type Money } from "../money/money.js";
 import { EQUIPMENT, type IsoType } from "../places/equipment.js";
 import type { LaneEnd, PortGroups } from "../places/places.js";
+import { IsoDateSchema } from "../time/dates.js";
 
 /**
  * Canonical tariffs. A tariff is an immutable, versioned snapshot of one rate source; it holds rate
@@ -15,6 +16,7 @@ import type { LaneEnd, PortGroups } from "../places/places.js";
 
 export const MAX_LINES_PER_TARIFF = 5000;
 export const MAX_CHARGES_PER_LINE = 50;
+export const MAX_CARRIERS_PER_SNAPSHOT = 20;
 
 export const ChargeBasisSchema = z.enum([
   "PER_CONTAINER", "PER_TEU", "PER_SHIPMENT", "PER_BL", "PER_WM", "PER_CBM", "PER_TON", "PCT_OF",
@@ -22,8 +24,8 @@ export const ChargeBasisSchema = z.enum([
 export const ChargeCategorySchema = z.enum(["FREIGHT", "SURCHARGE", "LOCAL", "DOCUMENT"]);
 export const TariffModeSchema = z.enum(["FCL", "LCL"]);
 
-const nonNegDecimal = z.string().regex(/^\d{1,12}(\.\d{1,8})?$/, "non-negative decimal string");
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const nonNegDecimal = z.string().max(16).regex(/^\d{1,12}(\.\d{1,8})?$/, "non-negative decimal string (≤ 16 chars)");
+const isoDate = IsoDateSchema;
 const id = z.string().min(1).max(80).regex(/^[A-Za-z0-9._:-]+$/);
 const LaneEndSchema = z.union([
   z.object({ unlocode: z.string().regex(/^[A-Z]{2}[A-Z2-9]{3}$/) }).strict(),
@@ -127,6 +129,13 @@ export interface Tariff {
 
 export type LoadResult = { ok: true; tariff: Tariff } | { ok: false; errors: string[] };
 
+/** Canonical decimal spelling ("1000.00" and "001000" → "1000") so semantics, not formatting, hash. */
+const canonDec = (s: string | undefined): string | undefined => (s === undefined ? undefined : Dec.parse(s).toString());
+const byId = <T extends { id: string }>(a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+function canonicalCharge(c: ChargeWire): Record<string, unknown> {
+  return { ...c, rate: canonDec(c.rate), min: canonDec(c.min), max: canonDec(c.max), percent_of: c.percent_of ? [...c.percent_of].sort() : undefined };
+}
+
 /** JSON with object keys sorted recursively — the basis of every hash and equality check. */
 export function canonicalJson(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(canonicalJson).join(",")}]`;
@@ -140,6 +149,8 @@ export function canonicalJson(v: unknown): string {
 }
 
 const LCL_ONLY = new Set<ChargeBasis>(["PER_WM", "PER_CBM", "PER_TON"]);
+/** Charged once per shipment (offer), not per equipment line. */
+export const SHIPMENT_LEVEL = new Set<ChargeBasis>(["PER_SHIPMENT", "PER_BL"]);
 const FCL_ONLY = new Set<ChargeBasis>(["PER_CONTAINER", "PER_TEU"]);
 
 /** Topologically order charges so every PCT_OF follows what it references; report cycles. */
@@ -185,6 +196,7 @@ export function loadTariff(input: unknown): LoadResult {
     const vf = l.valid_from ?? w.valid_from;
     const vt = l.valid_to ?? w.valid_to;
     if (vf > vt) errors.push(`line '${l.id}': valid_from after valid_to`);
+    if (vf < w.valid_from || vt > w.valid_to) errors.push(`line '${l.id}': validity outside the tariff's validity`);
 
     let equipment: IsoType | null = null;
     if (l.mode === "FCL") {
@@ -219,6 +231,7 @@ export function loadTariff(input: unknown): LoadResult {
           const target = l.charges.find((x) => x.id === ref);
           if (!target) errors.push(`line '${l.id}' charge '${c.id}': unknown charge '${ref}'`);
           else if (target.currency !== c.currency) errors.push(`line '${l.id}' charge '${c.id}': PCT_OF base must be the same currency`);
+          else if (SHIPMENT_LEVEL.has(target.basis)) errors.push(`line '${l.id}' charge '${c.id}': PCT_OF may not reference shipment-level charge '${ref}'`);
         }
       } else if (c.percent_of !== undefined) {
         errors.push(`line '${l.id}' charge '${c.id}': percent_of only allowed with PCT_OF`);
@@ -246,7 +259,7 @@ export function loadTariff(input: unknown): LoadResult {
         min,
         max,
         percent_of: c.percent_of ?? [],
-        canonical: canonicalJson(c),
+        canonical: canonicalJson(canonicalCharge(c)),
       });
     }
 
@@ -279,9 +292,15 @@ export function loadTariff(input: unknown): LoadResult {
 
   if (errors.length > 0) return { ok: false, errors };
 
-  const { lines: wireLines, ...header } = w;
-  const sortedLines = [...wireLines].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  const content_hash = createHash("sha256").update(canonicalJson({ header, lines: sortedLines })).digest("hex");
+  // Hash the SEMANTICS: unordered collections sorted, decimals in canonical spelling.
+  const { lines: wireLines, port_groups, ...header } = w;
+  const canonGroups = Object.fromEntries(Object.entries(port_groups).map(([g, m]) => [g, [...m].sort()]));
+  const canonLines = [...wireLines]
+    .sort(byId)
+    .map((l) => ({ ...l, charges: [...l.charges].sort(byId).map(canonicalCharge) }));
+  const content_hash = createHash("sha256")
+    .update(canonicalJson({ header: { ...header, port_groups: canonGroups }, lines: canonLines }))
+    .digest("hex");
 
   return {
     ok: true,
@@ -297,4 +316,38 @@ export function loadTariff(input: unknown): LoadResult {
       content_hash,
     },
   };
+}
+
+export type SnapshotResult = { ok: true; tariffs: Tariff[] } | { ok: false; errors: string[] };
+
+/**
+ * Load every tariff of one tenant's pricing snapshot and validate what only the whole snapshot can
+ * show: unique tariff ids, unique rate-line ids across tariffs (receipts and match keys rely on it;
+ * charge ids are unique per line, so rate_line_id + charge_id identifies a charge), and the carrier
+ * bound.
+ */
+export function loadSnapshot(inputs: readonly unknown[]): SnapshotResult {
+  const errors: string[] = [];
+  const tariffs: Tariff[] = [];
+  for (const [i, input] of inputs.entries()) {
+    const r = loadTariff(input);
+    if (r.ok) tariffs.push(r.tariff);
+    else errors.push(...r.errors.map((e) => `tariff[${i}]: ${e}`));
+  }
+  const tariffIds = new Set<string>();
+  const lineIds = new Set<string>();
+  const carriers = new Set<string>();
+  for (const t of tariffs) {
+    if (tariffIds.has(t.id)) errors.push(`duplicate tariff id '${t.id}' in snapshot`);
+    tariffIds.add(t.id);
+    for (const l of t.lines) {
+      if (lineIds.has(l.id)) errors.push(`duplicate rate line id '${l.id}' across the snapshot`);
+      lineIds.add(l.id);
+      carriers.add(l.carrier);
+    }
+  }
+  if (carriers.size > MAX_CARRIERS_PER_SNAPSHOT) {
+    errors.push(`snapshot has ${carriers.size} carriers (max ${MAX_CARRIERS_PER_SNAPSHOT})`);
+  }
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, tariffs };
 }

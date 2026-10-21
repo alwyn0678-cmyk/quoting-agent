@@ -1,5 +1,6 @@
 import { Dec, roundDiv } from "./dec.js";
 import { CURRENCIES, exponentOf, isCurrency, money, type Currency, type Money } from "./money.js";
+import { dayNumber, isIsoDate } from "../time/dates.js";
 
 /**
  * FX snapshots and exact conversion. A snapshot lists, for each currency, the units of that currency
@@ -32,14 +33,13 @@ export interface FxReceipt {
   rounding: "HALF_AWAY_FROM_ZERO";
 }
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 /** Maximum snapshot age in days before a conversion is refused (ASSUMPTIONS.md H5). */
 export const FX_MAX_AGE_DAYS = 7;
 
 export function validateFx(fx: FxSnapshot): string[] {
   const errors: string[] = [];
   if (!isCurrency(fx.base)) errors.push(`unsupported base currency '${String(fx.base)}'`);
-  if (!DATE_RE.test(fx.as_of)) errors.push("as_of must be YYYY-MM-DD");
+  if (!isIsoDate(fx.as_of)) errors.push("as_of must be a real calendar date (YYYY-MM-DD)");
   if (!fx.source) errors.push("source is required");
   for (const [ccy, rate] of Object.entries(fx.rates)) {
     if (!isCurrency(ccy)) errors.push(`unsupported currency '${ccy}'`);
@@ -49,8 +49,6 @@ export function validateFx(fx: FxSnapshot): string[] {
   if (!baseRate || baseRate.cmp(Dec.ONE) !== 0) errors.push("base rate must be exactly 1");
   return errors;
 }
-
-const dayNumber = (iso: string): number => Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86_400_000);
 
 /** ok: 0 ≤ age ≤ FX_MAX_AGE_DAYS relative to `asOf`; future-dated snapshots are rejected too. */
 export function fxFreshness(fx: FxSnapshot, asOf: string): "ok" | "stale" | "future" {

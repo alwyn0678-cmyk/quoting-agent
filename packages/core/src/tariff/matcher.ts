@@ -102,8 +102,10 @@ export function matchOffers(tariffs: readonly Tariff[], q: MatchQuery): MatchRes
   const ambiguous: { key: string; line_ids: string[] }[] = [];
   for (const [key, candidates] of [...groups.entries()].sort(([a], [b]) => cmpStr(a, b))) {
     const front = candidates.filter((c) => !candidates.some((o) => o !== c && dominates(o, c)));
+    for (const c of candidates) if (!front.includes(c)) trace.excluded.push({ key: c.line.id, reason: "dominated" });
     const top = Math.max(...front.map((c) => c.line.priority));
     const winners = front.filter((c) => c.line.priority === top);
+    for (const c of front) if (c.line.priority !== top) trace.excluded.push({ key: c.line.id, reason: "lower_priority" });
     if (winners.length === 1) resolved.set(key, winners[0]!);
     else ambiguous.push({ key, line_ids: winners.map((w) => w.line.id).sort(cmpStr) });
   }

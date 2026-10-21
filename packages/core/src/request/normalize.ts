@@ -9,12 +9,18 @@ import type { Cargo } from "./schema.js";
  * conflict for the gate to escalate — the engine never silently picks one of two contradicting facts.
  */
 
+/** Canonical scales for normalised totals (spec §1): weight kg 3 dp, volume m³ 6 dp. */
+export const WEIGHT_SCALE = 3;
+export const VOLUME_SCALE = 6;
+const canon = (d: Dec | null, scale: number): Dec | null =>
+  d === null ? null : Dec.parse(d.round(scale, "HALF_AWAY_FROM_ZERO").toString());
+
 /** Relative difference above which stated and derived totals conflict (ASSUMPTIONS.md H3). */
 export const CONFLICT_TOLERANCE = Dec.parse("0.02");
 
 const KG_PER: Record<"kg" | "lb" | "t", Dec> = { kg: Dec.ONE, lb: Dec.parse("0.45359237"), t: Dec.parse("1000") };
-const CM_PER: Record<"cm" | "m" | "mm" | "in" | "ft", Dec> = {
-  cm: Dec.ONE, m: Dec.parse("100"), mm: Dec.parse("0.1"), in: Dec.parse("2.54"), ft: Dec.parse("30.48"),
+const CM_PER: Record<"cm" | "m" | "in" | "ft", Dec> = {
+  cm: Dec.ONE, m: Dec.parse("100"), in: Dec.parse("2.54"), ft: Dec.parse("30.48"),
 };
 const CBM_PER: Record<"cbm" | "cft", Dec> = { cbm: Dec.ONE, cft: Dec.parse("0.028316846592") };
 const CM3_PER_CBM = Dec.parse("1000000");
@@ -72,8 +78,11 @@ export function normalizeCargo(cargo: Cargo): NormalizedCargo {
       : null;
   }
 
-  const statedWeight = cargo.stated_total_weight ? toKg(cargo.stated_total_weight) : null;
-  const statedVolume = cargo.stated_total_volume ? toCbm(cargo.stated_total_volume) : null;
+  // Aggregate exactly, then round once to the canonical scales.
+  derivedWeight = canon(derivedWeight, WEIGHT_SCALE);
+  derivedVolume = canon(derivedVolume, VOLUME_SCALE);
+  const statedWeight = canon(cargo.stated_total_weight ? toKg(cargo.stated_total_weight) : null, WEIGHT_SCALE);
+  const statedVolume = canon(cargo.stated_total_volume ? toCbm(cargo.stated_total_volume) : null, VOLUME_SCALE);
 
   const conflicts: ("weight" | "volume")[] = [];
   if (derivedWeight && statedWeight && differsBeyondTolerance(derivedWeight, statedWeight)) conflicts.push("weight");

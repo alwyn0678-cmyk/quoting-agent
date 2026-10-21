@@ -20,6 +20,10 @@ const MAX_INPUT_LENGTH = 40;
 
 const pow10 = (n: number): bigint => 10n ** BigInt(n);
 
+function checkScale(scale: number): void {
+  if (!Number.isSafeInteger(scale) || scale < 0 || scale > 64) throw new Error(`invalid scale ${scale}`);
+}
+
 /** Integer division n / d with a single explicit rounding. */
 export function roundDiv(n: bigint, d: bigint, mode: RoundingMode): bigint {
   if (d === 0n) throw new Error("division by zero");
@@ -65,7 +69,7 @@ export class Dec {
   }
 
   static of(coef: bigint, scale = 0): Dec {
-    if (!Number.isInteger(scale) || scale < 0) throw new Error(`invalid scale ${scale}`);
+    checkScale(scale);
     return new Dec(coef, scale);
   }
 
@@ -79,6 +83,7 @@ export class Dec {
 
   /** Exact rational a / b rounded once to `scale` decimal places. */
   static divRound(a: Dec, b: Dec, scale: number, mode: RoundingMode): Dec {
+    checkScale(scale);
     if (b.coef === 0n) throw new Error("division by zero");
     // a.coef·10^-a.s / (b.coef·10^-b.s) = q·10^-scale  ⇒  q = a.coef·10^(scale + b.s) / (b.coef·10^a.s)
     const n = a.coef * pow10(scale + b.scale);
@@ -133,6 +138,7 @@ export class Dec {
 
   /** Round to `scale` decimal places with an explicit mode (exact when scale ≥ current scale). */
   round(scale: number, mode: RoundingMode): Dec {
+    checkScale(scale);
     if (scale >= this.scale) return new Dec(this.rescaled(scale), scale);
     return new Dec(roundDiv(this.coef, pow10(this.scale - scale), mode), scale);
   }
@@ -163,6 +169,7 @@ export class Dec {
 
   /** Fixed-scale string (e.g. money display) — exact; throws rather than round silently. */
   toFixedString(scale: number): string {
+    checkScale(scale);
     const coef = this.coefAt(scale);
     const negative = coef < 0n;
     let digits = (negative ? -coef : coef).toString();

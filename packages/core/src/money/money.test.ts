@@ -76,7 +76,7 @@ describe("Money — minor units, ISO-4217 exponents, bounds", () => {
   });
   it("renders major units with the currency's exponent", () => {
     expect(toMajorString(money(123450n, "EUR"))).toBe("1234.50");
-    expect(toMajorString(money(-5n, "USD"))).toBe("-0.05");
+    expect(toMajorString(money(5n, "USD"))).toBe("0.05");
     expect(toMajorString(money(500n, "JPY"))).toBe("500");
   });
   it("never adds across currencies", () => {
@@ -128,5 +128,20 @@ describe("FX — exact rational conversion, typed receipts, strict snapshots", (
     expect(fxFreshness(fx, "2026-10-28")).toBe("ok");
     expect(fxFreshness(fx, "2026-10-29")).toBe("stale");
     expect(fxFreshness(fx, "2026-10-20")).toBe("future");
+  });
+});
+
+describe("Codex review (core 1–4) — money hardening", () => {
+  it("#7 public scale arguments must be non-negative safe integers", () => {
+    expect(() => Dec.parse("15").round(-1, "HALF_AWAY_FROM_ZERO")).toThrow(/scale/);
+    expect(() => Dec.divRound(Dec.ONE, Dec.ONE, -1, "HALF_AWAY_FROM_ZERO")).toThrow(/scale/);
+    expect(() => Dec.ONE.toFixedString(-2)).toThrow(/scale/);
+  });
+  it("#11 public money is non-negative in P1a", () => {
+    expect(() => money(-1n, "USD")).toThrow(/negative/);
+  });
+  it("#8 FX snapshot dates must be real calendar dates", () => {
+    const fx = { base: "EUR" as const, rates: { EUR: Dec.ONE }, source: "ECB", as_of: "2026-02-31" };
+    expect(validateFx(fx)).toContain("as_of must be a real calendar date (YYYY-MM-DD)");
   });
 });

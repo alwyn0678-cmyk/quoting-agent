@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IsoDateSchema } from "../time/dates.js";
 
 /**
  * ShipmentRequest v2 — the extraction contract (what the model may report about an email). It is
@@ -15,12 +16,12 @@ const positiveDecimal = z
   .refine((s) => /[1-9]/.test(s), "must be greater than zero");
 
 export const WeightUnit = z.enum(["kg", "lb", "t"]);
-export const LengthUnit = z.enum(["cm", "m", "mm", "in", "ft"]);
+export const LengthUnit = z.enum(["cm", "m", "in", "ft"]);
 export const VolumeUnit = z.enum(["cbm", "cft"]);
 
-export const WeightSchema = z.object({ value: positiveDecimal, unit: WeightUnit });
-export const LengthSchema = z.object({ value: positiveDecimal, unit: LengthUnit });
-export const VolumeSchema = z.object({ value: positiveDecimal, unit: VolumeUnit });
+export const WeightSchema = z.object({ value: positiveDecimal, unit: WeightUnit }).strict();
+export const LengthSchema = z.object({ value: positiveDecimal, unit: LengthUnit }).strict();
+export const VolumeSchema = z.object({ value: positiveDecimal, unit: VolumeUnit }).strict();
 
 export const RequestModeSchema = z.enum([
   "FCL", "LCL", "AIR", "EXPRESS", "FTL", "LTL", "DRAYAGE", "RAIL", "BARGE", "MULTIMODAL", "UNKNOWN",
@@ -36,12 +37,12 @@ export const PlaceSchema = z.object({
   iata: z.string().regex(/^[A-Z]{3}$/).nullable(),
   country: z.string().regex(/^[A-Z]{2}$/).nullable(),
   postcode: shortText(16).nullable(),
-});
+}).strict();
 
 export const ContainerLineSchema = z.object({
   type_raw: shortText(40),
   qty: z.number().int().min(1).max(999),
-});
+}).strict();
 
 export const PieceSchema = z.object({
   qty: z.number().int().min(1).max(10_000),
@@ -50,7 +51,7 @@ export const PieceSchema = z.object({
   height: LengthSchema,
   weight_each: WeightSchema.nullable(),
   stackable: z.boolean().nullable(),
-});
+}).strict();
 
 export const CargoSchema = z.object({
   containers: z.array(ContainerLineSchema).max(50),
@@ -60,7 +61,7 @@ export const CargoSchema = z.object({
   commodity: shortText(200).nullable(),
   dangerous_goods: z.boolean().nullable(),
   temperature_controlled: z.boolean().nullable(),
-});
+}).strict();
 
 export const RequestFieldSchema = z.enum([
   "origin", "destination", "mode", "service", "containers", "pieces", "weight", "volume", "incoterm", "ready_date",
@@ -73,17 +74,17 @@ export const ShipmentRequestSchema = z.object({
   destination: PlaceSchema,
   cargo: CargoSchema,
   incoterm: IncotermSchema.nullable(),
-  ready_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  ready_date: IsoDateSchema.nullable(),
   requester_name: shortText(120).nullable(),
   requester_company: shortText(160).nullable(),
-  field_confidence: z.array(z.object({ field: RequestFieldSchema, confidence: z.number().min(0).max(1) })).max(20),
+  field_confidence: z.array(z.object({ field: RequestFieldSchema, confidence: z.number().min(0).max(1) }).strict()).max(20),
   overall_confidence: z.number().min(0).max(1),
   injection_detected: z.boolean(),
   model_notes: z.object({
     missing: z.array(shortText(120)).max(20),
     conflicting: z.array(shortText(200)).max(20),
-  }),
-});
+  }).strict(),
+}).strict();
 
 export type ShipmentRequest = z.infer<typeof ShipmentRequestSchema>;
 export type Cargo = z.infer<typeof CargoSchema>;

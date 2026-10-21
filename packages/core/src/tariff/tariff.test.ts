@@ -125,3 +125,49 @@ describe("matching — specificity partial order, priority, validity, mixed equi
     expect(r.kind === "matched" && r.offers[0]!.lines[0]!.line.id).toBe("LCL1");
   });
 });
+
+describe("tariff validation — scope rules the engine relies on", () => {
+  const errs = (w: TariffWire) => {
+    const r = loadTariff(w);
+    return r.ok ? [] : r.errors;
+  };
+  it("PCT_OF may not reference a shipment-level charge (it would double count per equipment line)", () => {
+    const l = line({ charges: [charge(), charge({ id: "DOC", basis: "PER_BL", category: "DOCUMENT" }), charge({ id: "P", basis: "PCT_OF", rate: "0.1", percent_of: ["DOC"] })] });
+    expect(errs(tariff([l])).join()).toMatch(/shipment-level/);
+  });
+  it("line validity must sit inside the tariff's validity", () => {
+    expect(errs(tariff([line({ valid_to: "2027-01-31" })])).join()).toMatch(/outside the tariff/);
+  });
+});
+
+describe("Codex review (core 1–4) — tariff/snapshot hardening", () => {
+  it("#3 identifiers are unique across the whole snapshot (tariff ids, rate-line ids)", async () => {
+    const { loadSnapshot } = await import("./model.js");
+    const a = tariff([line()]);
+    expect(loadSnapshot([a, { ...a }]).ok).toBe(false);
+    expect(loadSnapshot([a, tariff([line()], { id: "T2" })]).ok).toBe(false); // line L1 twice
+    expect(loadSnapshot([a, tariff([line({ id: "L9" })], { id: "T2" })]).ok).toBe(true);
+  });
+  it("#5 the content hash is canonical over charge order, group member order and decimal spelling", () => {
+    const two = [charge(), charge({ id: "DOC", code: "DOC", basis: "PER_BL", category: "DOCUMENT", rate: "50" })];
+    const h1 = ok(tariff([line({ charges: two })])).content_hash;
+    expect(ok(tariff([line({ charges: [...two].reverse() })])).content_hash).toBe(h1);
+    expect(ok(tariff([line({ charges: [charge({ rate: "1000.00" }), two[1]!] })])).content_hash).toBe(h1);
+    expect(ok(tariff([line()], { port_groups: { CN_MAIN: ["CNNGB", "CNSHA"] } })).content_hash).toBe(ok(tariff([line()])).content_hash);
+  });
+  it("#6 bounded decimal strings (≤ 16 chars) and ≤ 20 carriers per snapshot", async () => {
+    const { loadSnapshot } = await import("./model.js");
+    const r = loadTariff(tariff([line({ charges: [charge({ rate: "999999999999.99999999" })] })]));
+    expect(r.ok).toBe(false);
+    const many = Array.from({ length: 21 }, (_, i) => line({ id: `L${i}`, carrier: `Carrier ${i}`, offer_id: `O${i}` }));
+    expect(loadSnapshot([tariff(many)]).ok).toBe(false);
+  });
+  it("#8 tariff dates must be real calendar dates", () => {
+    expect(loadTariff(tariff([line()], { valid_to: "2026-02-31" })).ok).toBe(false);
+  });
+  it("#9 the trace records dominated and lower-priority lines", () => {
+    const t = ok(tariff([line({ id: "exact" }), line({ id: "country", origin: { country: "CN" } }), line({ id: "low", origin: { country: "CN" }, destination: { country: "NL" }, priority: -1 })]));
+    const r = matchOffers([t], q());
+    expect(r.trace.excluded).toContainEqual({ key: "country", reason: "dominated" });
+  });
+});
