@@ -335,7 +335,8 @@ export function price(input: PriceInput, tariffs: readonly Tariff[], ctx: Pricin
   }
 
   trace.margin_rule_ids = [...marginRuleIds].sort(cmpStr);
-  if (candidates.length === 0 && trace.excluded.some((x) => x.reason === "amount_out_of_bound")) {
+  const offerFailures = trace.excluded.filter((x) => match.offers.some((o) => o.key === x.key));
+  if (candidates.length === 0 && offerFailures.length > 0 && offerFailures.every((x) => x.reason === "amount_out_of_bound")) {
     return fail("pricing_capacity_exceeded", "an amount exceeds the supported maximum");
   }
   if (candidates.length === 0) {

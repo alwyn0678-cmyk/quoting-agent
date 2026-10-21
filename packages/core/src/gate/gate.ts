@@ -31,6 +31,7 @@ export function gateRequest(req: ShipmentRequest): GateOutcome {
   if (!req.origin.unlocode) missingPlaces.push("origin");
   if (!req.destination.unlocode) missingPlaces.push("destination");
   if (missingPlaces.length > 0) return stop("missing_required_field", missingPlaces, "origin/destination port not identified");
+  if (req.origin.unlocode === req.destination.unlocode) return stop("ambiguous_request", ["origin", "destination"], "origin and destination are the same place");
 
   if (req.mode === "UNKNOWN") return stop("missing_required_field", ["mode"], "transport mode not stated");
   const mod = modeModule(req.mode);

@@ -231,3 +231,13 @@ describe("Codex review (engine) — fixes", () => {
     expect(price(input("LCL", cg), [t], ctx([grossAll()])).kind).toBe("priced");
   });
 });
+
+describe("Codex review (task 7) #7 — capacity only when every offer failure is an overflow", () => {
+  it("one overflow + one invalid offer → tariff_config_error with the full trace", () => {
+    const big = fclLine("BIG", "45G1", "900000000000", "900000000000", { carrier: "Big Carrier", offer_id: "OB" });
+    const bad = fclLine("BAD", "45G1", "100", "0", { carrier: "Bad Carrier", offer_id: "OX", price_kind: "BUY", charges: [c({ rate: "100", currency: "EUR" })] });
+    const r = price(input("FCL", cargo({ containers: [{ type_raw: "40HC", qty: 999 }] })), [load(tariff([big, bad]))],
+      ctx([{ ...markupFreight, min_margin: money(100n, "USD") }], { quote_currency: "EUR" }));
+    expect(r.kind === "unpriceable" && r.reason).toBe("tariff_config_error");
+  });
+});

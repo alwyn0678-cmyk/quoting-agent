@@ -44,3 +44,10 @@ describe("gate v2 — ordered, deterministic, named fields", () => {
     expect(g).toMatchObject({ reason: "conflicting_cargo" });
   });
 });
+
+describe("Codex review (task 7) — identity invariant", () => {
+  it("origin equal to destination is rejected", () => {
+    const g = gateRequest(req({ destination: { raw: "Shanghai", unlocode: "CNSHA", iata: null, country: "CN", postcode: null } }));
+    expect(g).toMatchObject({ pass: false, reason: "ambiguous_request" });
+  });
+});

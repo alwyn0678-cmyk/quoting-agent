@@ -313,3 +313,11 @@ shipment-level charges from first equipment line; margin applies to BUY lines on
    m³ 6 dp); only the W/M revenue-ton quantity is rounded up to 3 dp.
 5. **Amount bound**: any amount beyond 10^15 minor units excludes the offer (`amount_out_of_bound`); if
    no option survives for that reason the result is `pricing_capacity_exceeded`.
+6. **Phrasebook drafting** (Codex task-7 review #1–#5, supersedes §8 and §15.14): the model's drafting
+   output is a closed set of choices `{ language, formality, intro, closing }`; every customer-visible
+   word is code-owned (six-language phrasebook), every inserted value is canonical (UN/LOCODE labels,
+   charge-code dictionary, pricing result) or strictly patterned (a plain personal name). Email text,
+   tariff descriptions and FX-source strings never reach the customer; carrier names only with
+   `show_carrier`. One sanitising policy: NFKC + strip all Cc/Cf/Zl/Zp characters. A denylist guard on
+   model prose is no longer needed — there is no model prose.
+7. **Identity**: origin equal to destination → `ambiguous_request`.
