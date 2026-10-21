@@ -1,0 +1,31 @@
+{
+  "id": "m11-kopjeveld-fcl-durban-rotterdam",
+  "description": "South African forwarder, FCL export to Rotterdam (ZAR quote).",
+  "tenant": "kopjeveld",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Thandiwe Mokoena <thandiwe@karoo-citrus.example>",
+    "subject": "Rates please: 2 x 20ft Durban to Rotterdam",
+    "body": "Good day,\n\nPlease send rates for 2 x 20ft dry containers Durban to Rotterdam, port to port, FCA Durban. Cargo is canned fruit, about 21 t per box.\n\nKind regards,\nThandiwe Mokoena\nKaroo Citrus Exporters"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "ZADUR",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "22G1": 2
+      }
+    },
+    "quote": {
+      "currency": "ZAR",
+      "total": "82194.35",
+      "options": 2
+    },
+    "language": "en"
+  }
+}

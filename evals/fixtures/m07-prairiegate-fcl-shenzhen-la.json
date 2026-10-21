@@ -1,0 +1,33 @@
+{
+  "id": "m07-prairiegate-fcl-shenzhen-la",
+  "description": "US-English FCL request to a Chicago forwarder (USD).",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Derek Lindqvist <dlindqvist@pinecrest-outdoor.example>",
+    "subject": "Need rates: 3x40HC Shenzhen to LA",
+    "body": "Hey team,\n\nCan I get rates on 3 x 40HC from Shenzhen to Los Angeles, port to port? Camping gear, ready Nov 10. FOB Shenzhen.\n\nThanks!\nDerek\nPinecrest Outdoor Co."
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSZX",
+      "destination": "USLAX",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 3
+      },
+      "ready_date": null
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "23627.00",
+      "options": 3
+    },
+    "language": "en",
+    "notes": "'ready Nov 10' has no year: the extractor reports only dates the email states in full (no year is guessed), so ready_date is null. Anchoring partial dates on the email's received date is a P4 item (ASSUMPTIONS I8)."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "m23-elbkai-reefer",
+  "description": "Reefer equipment goes to a specialist.",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Sophie Laurent <s.laurent@frais-du-nord.example>",
+    "subject": "2 x 40' reefer Hamburg to New York",
+    "body": "Hello,\n\nPlease quote 2 x 40' reefer (set at -18°C) Hamburg to New York, port to port. Frozen seafood.\n\nThank you,\nSophie Laurent"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_cargo",
+    "extraction": {
+      "origin": "DEHAM",
+      "destination": "USNYC",
+      "mode": "FCL"
+    }
+  }
+}

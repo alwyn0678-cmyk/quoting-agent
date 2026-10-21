@@ -1,7 +1,8 @@
 {
   "id": "08-noisy-thread-40hc-x1",
   "description": "Real-world noise: pleasantries, signature block, and a quoted prior thread. A single valid request is buried inside. Extraction must ignore the noise.",
-  "exercises": ["T1", "T3", "T4", "T9", "T10", "T11", "T13"],
+  "tenant": "legacy",
+  "as_of": "2026-06-01",
   "input": {
     "from": "Sophie Meijer <s.meijer@harbourtrade.example>",
     "subject": "RE: catching up + a quick quote",
@@ -12,21 +13,20 @@
     "injection_flag": false,
     "escalation_reason": null,
     "extraction": {
-      "origin_port_code": "NLRTM",
-      "destination_port_code": "USNYC",
+      "origin": "NLRTM",
+      "destination": "USNYC",
       "mode": "FCL",
-      "container_type": "40HC",
-      "container_qty": 1,
-      "incoterm": "FOB",
-      "commodity": "machinery parts",
-      "requester_company": "Harbour Trade BV"
+      "containers": {
+        "45G1": 1
+      },
+      "service": "PORT_TO_PORT"
     },
     "quote": {
       "currency": "EUR",
-      "container_type": "40HC",
-      "container_qty": 1,
-      "all_in_total": 3520
+      "total": "3520.00",
+      "options": 1
     },
+    "language": "en",
     "notes": "all_in = 1 x (2550+860)+110 = 3520. Must extract from the live request, not the quoted newsletter thread."
   }
 }

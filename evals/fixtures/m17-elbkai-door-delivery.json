@@ -1,0 +1,21 @@
+{
+  "id": "m17-elbkai-door-delivery",
+  "description": "Door delivery to an inland address is not quoted yet (port-to-port only).",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Stefan Weber <s.weber@weber-moebel.example>",
+    "subject": "Angebot 1x40HC Shanghai bis Werk München",
+    "body": "Guten Tag,\n\nbitte Angebot für 1 x 40HC von Shanghai (Hafen) bis zu unserem Werk, Industriestraße 12, 80939 München (Zustellung frei Haus). Möbel, ca. 8 t.\n\nDanke und Gruß\nStefan Weber"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_service",
+    "extraction": {
+      "origin": "CNSHA",
+      "mode": "FCL",
+      "service": "PORT_TO_DOOR"
+    }
+  }
+}

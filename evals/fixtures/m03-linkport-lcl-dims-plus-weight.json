@@ -1,0 +1,31 @@
+{
+  "id": "m03-linkport-lcl-dims-plus-weight",
+  "description": "LCL with piece dimensions and a stated total weight (the commonest real phrasing, spec §17.1).",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Sam Whitaker <sam@whitakerdesign.example>",
+    "subject": "LCL quote Shanghai to Rotterdam",
+    "body": "Hi,\n\nWe need an LCL quote Shanghai to Rotterdam port to port: 3 pallets, each 120 x 80 x 150 cm, total weight 1,200 kg. General cargo (furniture parts), not hazardous.\n\nThanks,\nSam"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "NLRTM",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "1200",
+      "volume_cbm": "4.32"
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "757.78",
+      "options": 1
+    },
+    "language": "en",
+    "notes": "3 x 1.2 x 0.8 x 1.5 = 4.32 m³ derived from pieces; 1,200 kg stated. W/M = max(1.2 t, 4.32 m³) = 4.32."
+  }
+}

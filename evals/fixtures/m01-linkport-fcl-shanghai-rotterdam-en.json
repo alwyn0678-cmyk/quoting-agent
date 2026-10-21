@@ -1,0 +1,31 @@
+{
+  "id": "m01-linkport-fcl-shanghai-rotterdam-en",
+  "description": "Complete FCL request in English to a Dutch forwarder (EUR quote from USD/EUR tariffs).",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Hannah Okafor <h.okafor@brightlane-imports.example>",
+    "subject": "RFQ: 2x40HC Shanghai - Rotterdam",
+    "body": "Hello Linkport team,\n\nCould you please quote 2 x 40' high cube from Shanghai to Rotterdam, port to port, FOB Shanghai?\nCommodity: LED lighting fixtures, approx. 9,800 kg per container. Cargo ready early November.\n\nBest regards,\nHannah Okafor\nBrightlane Imports Ltd"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 2
+      }
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "7217.07",
+      "options": 3
+    },
+    "language": "en"
+  }
+}

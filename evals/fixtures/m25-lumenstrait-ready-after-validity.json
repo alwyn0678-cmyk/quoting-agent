@@ -1,0 +1,25 @@
+{
+  "id": "m25-lumenstrait-ready-after-validity",
+  "description": "Cargo ready after every tariff expires (pricing date = ready date) — must not quote an expired rate.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Kenji Sato <k.sato@sato-instruments.example>",
+    "subject": "SIN-RTM 1x20' for February",
+    "body": "Hello,\n\nWe plan to ship 1 x 20' GP Singapore to Rotterdam port to port, cargo ready 15 February 2027. Please quote.\n\nRegards,\nKenji Sato"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "rate_expired",
+    "extraction": {
+      "origin": "SGSIN",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "containers": {
+        "22G1": 1
+      },
+      "ready_date": "2027-02-15"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "m08-prairiegate-lcl-pieces",
+  "description": "LCL from piece list only: 12 cartons with dimensions and per-piece weight.",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Ana Ruiz <ana.ruiz@lumacandles.example>",
+    "subject": "LCL Shanghai -> Los Angeles",
+    "body": "Hello,\n\nPlease quote LCL Shanghai to Los Angeles (CY/CFS port to port): 12 cartons, each 60 x 40 x 40 cm, 18 kg each. Scented candles, non-hazardous.\n\nRegards,\nAna Ruiz\nLuma Candles"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "USLAX",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "216",
+      "volume_cbm": "1.152"
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "363.88",
+      "options": 1
+    },
+    "language": "en",
+    "notes": "12 x 0.6 x 0.4 x 0.4 = 1.152 m³; 12 x 18 = 216 kg."
+  }
+}

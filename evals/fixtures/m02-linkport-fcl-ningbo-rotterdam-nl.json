@@ -1,0 +1,31 @@
+{
+  "id": "m02-linkport-fcl-ningbo-rotterdam-nl",
+  "description": "Dutch-language FCL request; draft must be Dutch.",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Pieter de Vries <p.devries@tulpwerk.example>",
+    "subject": "Offerte aanvraag 1x20ft Ningbo - Rotterdam",
+    "body": "Goedemiddag,\n\nGraag ontvangen wij een offerte voor 1 x 20ft container van Ningbo naar Rotterdam (haven tot haven). Lading: keramische bloempotten, ca. 14.000 kg. Incoterm FOB.\n\nMet vriendelijke groet,\nPieter de Vries\nTulpwerk BV"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNNGB",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "22G1": 1
+      }
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "2704.38",
+      "options": 3
+    },
+    "language": "nl"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "m09-lumenstrait-fcl-singapore-rotterdam",
+  "description": "Singapore forwarder, FCL to Europe, 40' standard.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Tan Wei Ming <weiming.tan@harbourspice.example>",
+    "subject": "Quotation request SIN - RTM 1x40'",
+    "body": "Hi Lumenstrait,\n\nPls quote 1 x 40' GP Singapore to Rotterdam, port to port. Spices in bags, ~20 tons. FOB Singapore.\n\nThanks & regards,\nWei Ming"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "SGSIN",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "42G1": 1
+      }
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "3662.50",
+      "options": 2
+    },
+    "language": "en"
+  }
+}

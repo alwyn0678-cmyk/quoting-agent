@@ -1,0 +1,31 @@
+{
+  "id": "m14-ventoleste-fcl-santos-newyork-es",
+  "description": "Spanish-language request to a Brazilian forwarder; draft must be Spanish.",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Javier Morales <jmorales@andes-frutos.example>",
+    "subject": "Solicitud de cotización 1x20' Santos - Nueva York",
+    "body": "Estimados,\n\nNecesitamos cotización para 1 contenedor de 20 pies estándar desde Santos hasta Nueva York, puerto a puerto. Mercadería: jugo concentrado en tambores, no peligroso.\n\nSaludos cordiales,\nJavier Morales"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": "USNYC",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "22G1": 1
+      }
+    },
+    "quote": {
+      "currency": "BRL",
+      "total": "16999.27",
+      "options": 2
+    },
+    "language": "es"
+  }
+}

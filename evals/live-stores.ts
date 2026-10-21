@@ -3,18 +3,19 @@ import { pollMailbox } from "../packages/ingest/src/poll.js";
 import { runAndPersist } from "../packages/ingest/src/run.js";
 import { SupabaseIngestStore, SupabaseRunStore } from "../packages/ingest/src/supabase-store.js";
 import { createStubMailbox } from "../packages/ingest/src/stub-transport.js";
-import { RoutingMockLlmClient } from "../packages/agents/src/mock-llm.js";
-import { StaticCardRateEngine } from "../packages/agents/src/rate-engine.js";
-import type { ExtractionResult } from "../packages/agents/src/schemas.js";
+import { legacyStaticSource } from "../packages/agents/src/sources/tariff-source.js";
+import { legacyTenantConfig } from "../packages/agents/src/pipeline/tenant.js";
+import { pipelineLlm, SAMPLE_FCL_REQUEST } from "../packages/agents/src/pipeline/testing.js";
+import type { RoutingMockLlmClient } from "../packages/agents/src/mock-llm.js";
 
 /**
  * Live proof of the concrete autonomous-path stores (Phase 1C live, L1 — npm run eval:live-stores).
  * The REAL SupabaseIngestStore + SupabaseRunStore run against the live `quoteagent` Supabase as
- * service_role, driven by a DETERMINISTIC mock LLM + StaticCardRateEngine (the agent logic is already
+ * service_role, driven by a DETERMINISTIC mock LLM + the static legacy tariff (the agent logic is already
  * proven hermetically; this isolates the adapters' real-DB behaviour, and burns no Anthropic tokens —
  * the real-LLM end-to-end run is L3). Asserts the contract invariants the hermetic fakes stand in for:
- * AC-1 insert-once dedup, cursor round-trip, the durable run's claim/persist/complete, P-1C.2 retry
- * idempotency, and the P-TENANT claim gate. Idempotent seed + cleanup. Requires SUPABASE_URL +
+ * AC-1 insert-once dedup, cursor round-trip, the durable run's owner-checked claim/persist (v2 quote,
+ * internals, outcome detail), P-1C.2 retry idempotency, lease ownership and the P-TENANT claim gate. Idempotent seed + cleanup. Requires SUPABASE_URL +
  * SUPABASE_SERVICE_ROLE_KEY.
  */
 
@@ -39,30 +40,10 @@ const MB = "inbox";
 const QUOTABLE_GID = "stub-01-complete-40hc-x2";
 const ESCALATE_GID = "stub-04-missing-container-type";
 
-const baseExtraction: ExtractionResult = {
-  origin: { raw: "Rotterdam", port_code: "NLRTM" },
-  destination: { raw: "New York", port_code: "USNYC" },
-  mode: "FCL",
-  container_type: "40HC",
-  container_qty: 2,
-  incoterm: "FOB",
-  commodity: "coffee",
-  ready_date: null,
-  weight_kg: null,
-  requester_name: "Maria",
-  requester_company: "Apex",
-  field_confidence: [],
-  overall_confidence: 0.95,
-  injection_detected: false,
-};
-const escalateExtraction: ExtractionResult = { ...baseExtraction, container_type: "UNKNOWN", container_qty: null };
-
-const routed = (extraction: ExtractionResult, draftBody = "all-in EUR 6,930.") =>
-  new RoutingMockLlmClient({
-    submit_extraction: { data: extraction, usage: { input_tokens: 300, output_tokens: 90 } },
-    submit_draft: { data: { subject: "Re: Quote request", body: draftBody }, usage: { input_tokens: 250, output_tokens: 140 } },
-  });
-const deps = (client: RoutingMockLlmClient) => ({ client, engine: new StaticCardRateEngine() });
+const escalateRequest = { ...SAMPLE_FCL_REQUEST, cargo: { ...SAMPLE_FCL_REQUEST.cargo, containers: [] } };
+const AS_OF = { asOf: "2026-06-01" };
+const deps = (llm: RoutingMockLlmClient, tenantId = T) => ({ llm, tariffs: legacyStaticSource(tenantId), tenant: legacyTenantConfig(tenantId) });
+const OWNER = "live-stores-run";
 
 let pass = true;
 const check = (label: string, ok: boolean): void => {
@@ -70,13 +51,18 @@ const check = (label: string, ok: boolean): void => {
   if (!ok) pass = false;
 };
 const countFor = async (table: string, requestId: string): Promise<number> => {
-  const { count, error } = await admin.from(table).select("*", { count: "exact", head: true }).eq("request_id", requestId);
+  let q = admin.from(table).select("*", { count: "exact", head: true }).eq("request_id", requestId);
+  // audit_log also carries one 'transition' row per status change (trigger, migration 0019); the
+  // usage rows these checks count are the run outcome events.
+  if (table === "audit_log") q = q.in("event", ["quote", "escalate"]);
+  const { count, error } = await q;
   if (error) throw error;
   return count ?? 0;
 };
 
 async function cleanup(): Promise<void> {
   must(await admin.from("audit_log").delete().in("tenant_id", [T, TW]), "cleanup audit_log");
+  must(await admin.from("quote_internals").delete().in("tenant_id", [T, TW]), "cleanup quote_internals");
   must(await admin.from("quotes").delete().in("tenant_id", [T, TW]), "cleanup quotes");
   must(await admin.from("drafts").delete().in("tenant_id", [T, TW]), "cleanup drafts");
   must(await admin.from("quote_requests").delete().in("tenant_id", [T, TW]), "cleanup quote_requests");
@@ -134,26 +120,40 @@ async function main(): Promise<void> {
 
   // ── SupabaseRunStore: quote path (durable run, live DB, deterministic LLM) ──
   console.log("SupabaseRunStore — quote path");
-  const r1 = await runAndPersist(T, quotableId, deps(routed(baseExtraction)), runStore);
+  const r1 = await runAndPersist(T, quotableId, OWNER, deps(pipelineLlm(SAMPLE_FCL_REQUEST)), runStore, AS_OF);
   check("run(quote): ran + decision quote + status awaiting_review", r1.ran === true && r1.decision === "quote" && r1.status === "awaiting_review");
   check("run(quote): atomic persist won the transition (transitioned=true)", r1.ran === true && r1.transitioned === true);
-  const { data: q } = await admin.from("quotes").select("all_in_total").eq("request_id", quotableId).single();
-  check("quote row persisted with all_in_total 6930 (snapshot)", (q?.all_in_total as number | undefined) === 6930);
+  const { data: q } = await admin.from("quotes").select("quote_version, currency, total_minor, option_count").eq("request_id", quotableId).single();
+  check("v2 quote row persisted: EUR 693000 minor, 1 option", q?.quote_version === 2 && q?.currency === "EUR" && String(q?.total_minor) === "693000" && q?.option_count === 1);
+  check("cost-confidential internals row persisted (service_role table)", (await countFor("quote_internals", quotableId)) === 1);
   check("draft row persisted", (await countFor("drafts", quotableId)) === 1);
-  const { data: qr1 } = await admin.from("quote_requests").select("status").eq("id", quotableId).single();
-  check("request advanced to awaiting_review", qr1?.status === "awaiting_review");
+  const { data: qr1 } = await admin.from("quote_requests").select("status, claim_owner, outcome_detail").eq("id", quotableId).single();
+  check("request advanced to awaiting_review, owned by this run, with a public outcome", qr1?.status === "awaiting_review" && qr1?.claim_owner === OWNER && (qr1?.outcome_detail as { options_presented?: number } | null)?.options_presented === 1);
   check("exactly one usage row logged (quote)", (await countFor("audit_log", quotableId)) === 1);
 
   // ── retry idempotency (P-1C.2, live) ──
-  const retryClient = routed(baseExtraction);
-  const r1b = await runAndPersist(T, quotableId, deps(retryClient), runStore);
+  const retryClient = pipelineLlm(SAMPLE_FCL_REQUEST);
+  const r1b = await runAndPersist(T, quotableId, OWNER, deps(retryClient), runStore, AS_OF);
   check("retry after success: not_claimable (terminal)", r1b.ran === false);
   check("retry did NOT re-invoke the model (no re-bill, no flip)", retryClient.calls.length === 0);
   check("still exactly one quote / one draft / one usage row", (await countFor("quotes", quotableId)) === 1 && (await countFor("drafts", quotableId)) === 1 && (await countFor("audit_log", quotableId)) === 1);
 
   // ── escalate path ──
   console.log("SupabaseRunStore — escalate path");
-  const r2 = await runAndPersist(T, escalateId, deps(routed(escalateExtraction)), runStore);
+  // Lease ownership (live): another owner cannot take a live lease; persist under a foreign owner is a no-op.
+  console.log("Lease ownership");
+  const held = await runStore.claim(T, escalateId, "owner-a");
+  const stolen = await runStore.claim(T, escalateId, "owner-b");
+  check("claim records the owner; a second owner cannot take a live lease", held !== null && stolen === null);
+  const foreign = await runStore.persistOutcome(escalateId, T, "owner-b", {
+    status: "escalated", escalationReason: "low_confidence", injectionFlag: false, quote: null, draft: null,
+    usage: { model: "none", input_tokens: 0, output_tokens: 0, est_cost_usd: 0 }, extraction: null,
+    outcomeDetail: { reason: "low_confidence", missing_fields: [], options_presented: 0, candidates: 0 }, internals: null,
+  });
+  check("persist under a foreign owner writes nothing", foreign === false && (await countFor("audit_log", escalateId)) === 0);
+  check("markError under a foreign owner is a no-op", (await runStore.markError(T, escalateId, "owner-b")) === false);
+
+  const r2 = await runAndPersist(T, escalateId, "owner-a", deps(pipelineLlm(escalateRequest)), runStore, AS_OF);
   check("run(escalate): escalated + reason missing_required_field", r2.ran === true && r2.decision === "escalate" && r2.status === "escalated" && r2.escalation_reason === "missing_required_field");
   check("no quote and no draft on the escalate path", (await countFor("quotes", escalateId)) === 0 && (await countFor("drafts", escalateId)) === 0);
   const { data: qr2 } = await admin.from("quote_requests").select("status").eq("id", escalateId).single();
@@ -162,8 +162,8 @@ async function main(): Promise<void> {
 
   // ── P-TENANT claim gate (live): the WRONG tenant claims nothing — no model call, status unchanged ──
   console.log("P-TENANT claim gate");
-  const wrongClient = routed(baseExtraction);
-  const r3 = await runAndPersist(TW, id1 as string, deps(wrongClient), runStore); // id1 is a 'received' row owned by T
+  const wrongClient = pipelineLlm(SAMPLE_FCL_REQUEST);
+  const r3 = await runAndPersist(TW, id1 as string, OWNER, deps(wrongClient, TW), runStore, AS_OF); // id1 is a 'received' row owned by T
   const { data: qr3 } = await admin.from("quote_requests").select("status").eq("id", id1 as string).single();
   check("wrong-tenant run is not_claimable, model not called, row untouched", r3.ran === false && wrongClient.calls.length === 0 && qr3?.status === "received");
 

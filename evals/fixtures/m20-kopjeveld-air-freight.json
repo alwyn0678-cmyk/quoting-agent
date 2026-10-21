@@ -1,0 +1,19 @@
+{
+  "id": "m20-kopjeveld-air-freight",
+  "description": "Air freight is not priced in this phase.",
+  "tenant": "kopjeveld",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Lerato Dlamini <lerato@savanna-pharma.example>",
+    "subject": "Air freight JNB - LHR",
+    "body": "Hi,\n\nPlease quote air freight from Johannesburg (JNB) to London Heathrow (LHR): 2 boxes, 120 x 80 x 100 cm, 300 kg total, general cargo.\n\nRegards,\nLerato"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_mode",
+    "extraction": {
+      "mode": "AIR"
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import { pollMailbox } from "../packages/ingest/src/poll.js";
+import { randomUUID } from "node:crypto";
 import { runAndPersist } from "../packages/ingest/src/run.js";
+import { productionRunDeps } from "../packages/ingest/src/production.js";
 import {
   SupabaseIngestStore,
   SupabaseRunStore,
@@ -8,8 +10,6 @@ import {
 import { createOutlookMailboxFromEnv, hasGraphEnv } from "../packages/graph/src/graph-transport.js";
 import {
   createLlmFromEnv,
-  createKnowledgeRetrieverFromEnv,
-  createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
 } from "../packages/agents/src/index.js";
 
@@ -39,14 +39,14 @@ async function main(): Promise<void> {
 
   const llm = createLlmFromEnv();
   if (llm.mode === "demo") throw new Error("poll_once needs a live LLM provider (ANTHROPIC_API_KEY or QUOTEAGENT_MODEL)");
-  const client = llm.client;
-  const engine = createSupabaseRateEngine(tenantId);
+  const deps = productionRunDeps(supabase, tenantId, llm);
+  const owner = `poll_once:${randomUUID()}`;
   const store = new SupabaseRunStore(supabase);
   let failed = 0;
   for (const requestId of result.toRun) {
     // Per-id isolation: one failing run must not abort the rest of the batch.
     try {
-      const summary = await runAndPersist(tenantId, requestId, { client, engine, routing: llm.routing, retriever: createKnowledgeRetrieverFromEnv(tenantId) }, store);
+      const summary = await runAndPersist(tenantId, requestId, owner, deps, store);
       console.log(`run ${requestId}: ${JSON.stringify(summary)}`);
     } catch (e) {
       failed += 1;

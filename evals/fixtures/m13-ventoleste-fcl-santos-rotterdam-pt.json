@@ -1,0 +1,31 @@
+{
+  "id": "m13-ventoleste-fcl-santos-rotterdam-pt",
+  "description": "Portuguese FCL request; equipment written in Portuguese; BRL quote.",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Mariana Costa <mariana.costa@cafe-serrano.example>",
+    "subject": "Cotação 2 x 40 HC Santos - Roterdã",
+    "body": "Bom dia,\n\nSolicito cotação de frete marítimo para 2 contêineres de 40 pés HC, de Santos para Roterdã, porto a porto. Mercadoria: café em grãos. Incoterm FOB Santos.\n\nAtenciosamente,\nMariana Costa\nCafé Serrano Ltda."
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": "NLRTM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 2
+      }
+    },
+    "quote": {
+      "currency": "BRL",
+      "total": "37634.21",
+      "options": 2
+    },
+    "language": "pt"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "m16-linkport-dangerous-goods",
+  "description": "Dangerous goods (UN1263 paint, class 3) go to a specialist.",
+  "tenant": "linkport",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Olivia Grant <ogrant@colourworks.example>",
+    "subject": "Quote 1x20GP Shanghai-Rotterdam (DG)",
+    "body": "Hello,\n\nPlease quote 1 x 20GP Shanghai to Rotterdam port to port. Cargo: paint, UN1263, class 3, packing group III, 16,000 kg.\n\nRegards,\nOlivia Grant"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_cargo",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "NLRTM",
+      "mode": "FCL"
+    }
+  }
+}

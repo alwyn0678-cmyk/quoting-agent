@@ -12,7 +12,9 @@ import { estimateStepCostUsd } from "./pricing.js";
 import { ReplayLlmClient, RecordingLlmClient } from "./replay.js";
 import { resolveLlmFromEnv } from "./resolve.js";
 import { LlmOutputError, LlmRefusalError, type StructuredCall } from "../llm.js";
-import { ExtractionResultSchema, DraftSchema } from "../schemas.js";
+import { ShipmentRequestSchema as ExtractionResultSchema } from "../../../core/src/request/schema.js";
+
+const DraftSchema = z.object({ subject: z.string(), body: z.string() });
 import { MockLlmClient } from "../mock-llm.js";
 
 const call = (over: Partial<StructuredCall> = {}): StructuredCall => ({

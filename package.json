@@ -22,6 +22,7 @@
     "db:migrate:rag": "bash scripts/db.sh supabase/migrations/0010_knowledge_base.sql",
     "eval:rag": "node --env-file-if-exists=.env --import tsx evals/rag-retrieval.ts",
     "eval": "node --env-file-if-exists=.env --import tsx evals/run.ts",
+    "eval:derive": "node --import tsx scripts/derive-eval-expectations.ts",
     "eval:adapter": "node --env-file-if-exists=.env --import tsx evals/adapter.ts",
     "eval:web-ac5": "node --env-file-if-exists=.env --import tsx evals/web-ac5.ts",
     "eval:web-approve": "node --env-file-if-exists=.env --import tsx evals/web-approve.ts",

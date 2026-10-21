@@ -1,0 +1,32 @@
+{
+  "id": "m05-elbkai-fcl-mixed-hamburg-newyork",
+  "description": "Mixed equipment on one offer (1x40HC + 1x20GP) composed per carrier offer.",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Claire Dumont <claire.dumont@atelier-rive.example>",
+    "subject": "Quote request Hamburg -> New York, mixed containers",
+    "body": "Dear Elbkai team,\n\nPlease quote port-to-port Hamburg to New York for 1 x 40HC and 1 x 20GP, machinery spare parts, FCA Hamburg.\n\nKind regards,\nClaire Dumont"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "DEHAM",
+      "destination": "USNYC",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 1,
+        "22G1": 1
+      }
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "5636.37",
+      "options": 2
+    },
+    "language": "en"
+  }
+}

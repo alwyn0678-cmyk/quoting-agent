@@ -1,7 +1,8 @@
 {
   "id": "06-out-of-scope-mode-lcl",
   "description": "Request for a mode that is not FCL (LCL groupage). Must escalate on mode.",
-  "exercises": ["T8", "T13"],
+  "tenant": "legacy",
+  "as_of": "2026-06-01",
   "input": {
     "from": "warehouse@giftgoods.example",
     "subject": "LCL shipment Rotterdam to New York",
@@ -10,15 +11,15 @@
   "expected": {
     "decision": "escalate",
     "injection_flag": false,
-    "escalation_reason": "out_of_scope_mode",
+    "escalation_reason": "missing_required_field",
     "extraction": {
-      "origin_port_code": "NLRTM",
-      "destination_port_code": "USNYC",
-      "mode": "LCL",
-      "container_type": null,
-      "container_qty": null
+      "origin": "NLRTM",
+      "destination": "USNYC",
+      "mode": "LCL"
     },
-    "quote": null,
-    "notes": "mode = LCL is out of the FCL-only slice scope -> escalate out_of_scope_mode."
+    "missing_fields": [
+      "weight"
+    ],
+    "notes": "v2: LCL is priced (W/M) but the email gives volume only, so the weight is asked for. Was out_of_scope_mode in v1 (FCL-only slice)."
   }
 }

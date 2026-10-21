@@ -1,7 +1,8 @@
 {
   "id": "05-out-of-scope-lane-rotterdam-la",
   "description": "Otherwise-complete request for a lane not in the rate card (Rotterdam -> Los Angeles). Must escalate, never fabricate a price.",
-  "exercises": ["T5", "T7", "T13"],
+  "tenant": "legacy",
+  "as_of": "2026-06-01",
   "input": {
     "from": "Klaas Bakker <k.bakker@bakkerelectronics.example>",
     "subject": "FCL quote Rotterdam to Los Angeles",
@@ -12,13 +13,13 @@
     "injection_flag": false,
     "escalation_reason": "out_of_scope_lane",
     "extraction": {
-      "origin_port_code": "NLRTM",
-      "destination_port_code": "USLAX",
+      "origin": "NLRTM",
+      "destination": "USLAX",
       "mode": "FCL",
-      "container_type": "40HC",
-      "container_qty": 2
+      "containers": {
+        "45G1": 2
+      }
     },
-    "quote": null,
     "notes": "Extraction succeeds; lane NLRTM-USLAX is not in the card -> escalate out_of_scope_lane. T5: engine never invents a price for an unknown lane."
   }
 }

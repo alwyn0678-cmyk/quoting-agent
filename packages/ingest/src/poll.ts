@@ -13,6 +13,10 @@ import type { InboundMessage } from "../../graph/src/outlook.js";
  * that run is idempotent, so re-enqueuing an in-flight request is harmless.
  */
 
+/** A claimed run older than this is presumed crashed and may be re-claimed (claim_request default;
+ *  beyond the run task's 60-minute max duration). */
+export const LEASE_MINUTES = 70;
+
 /** A new message to persist. graph_message_id is UNIQUE → the dedup key. */
 export interface ReceivedRequest {
   tenant_id: string;
@@ -31,8 +35,8 @@ export interface IngestStore {
   /** Insert a received request; dedup on the UNIQUE graph_message_id. Returns the new request id, or
    *  null if a request for that graph_message_id already existed (the dedup hit — AC-1). */
   insertReceived(row: ReceivedRequest): Promise<string | null>;
-  /** Request ids still in 'received' for THIS tenant (ingested, not yet successfully run). */
-  listReceived(tenantId: string): Promise<string[]>;
+  /** Request ids to (re-)run for THIS tenant: 'received', or 'processing' with an expired lease. */
+  listRunnable(tenantId: string): Promise<string[]>;
 }
 
 /** Just the read half of OutlookMailbox the poll uses (structural — real wrapper + fakes satisfy it). */
@@ -44,7 +48,7 @@ export interface PollResult {
   insertedIds: string[]; // request ids newly ingested this cycle
   duplicates: number; // messages already seen (dedup hits — AC-1)
   cursor: string; // advanced cursor
-  reEnqueued: string[]; // pre-existing stranded 'received' request ids (W5)
+  reEnqueued: string[]; // pre-existing stranded request ids (W5 + expired leases)
   toRun: string[]; // the set to trigger an agent-run for: new ∪ stranded
 }
 
@@ -81,8 +85,9 @@ export async function pollMailbox(
 
   await store.setCursor(tenantId, mailbox, next);
 
-  // Stranded = 'received' requests that aren't the ones we just inserted (their run never finished).
-  const received = await store.listReceived(tenantId);
+  // Stranded = runnable requests that aren't the ones we just inserted: 'received' whose run never
+  // started, or 'processing' whose lease expired (the run crashed mid-flight).
+  const received = await store.listRunnable(tenantId);
   const reEnqueued = received.filter((id) => !insertedIds.includes(id));
 
   return { insertedIds, duplicates, cursor: next, reEnqueued, toRun: [...insertedIds, ...reEnqueued] };

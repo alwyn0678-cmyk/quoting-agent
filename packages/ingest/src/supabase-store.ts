@@ -1,6 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { quoteToRow } from "../../agents/src/quote-store.js";
-import type { IngestStore, ReceivedRequest } from "./poll.js";
+import { LEASE_MINUTES, type IngestStore, type ReceivedRequest } from "./poll.js";
 import type { RunStore, RequestRow, PersistOutcome } from "./run.js";
 
 /**
@@ -12,7 +11,7 @@ import type { RunStore, RequestRow, PersistOutcome } from "./run.js";
  */
 
 /** Build a service_role client from env (server-side ONLY — bypasses RLS; never ships to a browser).
- *  Mirrors createSupabaseRateEngine's env handling; used by the autonomous poll + run tasks (1C live). */
+ *  Used by the autonomous poll + run tasks (1C live). */
 export function createServiceClient(): SupabaseClient {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,12 +59,15 @@ export class SupabaseIngestStore implements IngestStore {
     return first ? (first.id as string) : null;
   }
 
-  async listReceived(tenantId: string): Promise<string[]> {
+  async listRunnable(tenantId: string, now: Date = new Date()): Promise<string[]> {
+    // 'received', plus 'processing' rows whose lease expired (a crashed run) or that were claimed before
+    // leases existed (claimed_at null) — claim_request steals exactly these, so re-enqueuing is safe.
+    const cutoff = new Date(now.getTime() - LEASE_MINUTES * 60_000).toISOString();
     const { data, error } = await this.client
       .from("quote_requests")
       .select("id")
       .eq("tenant_id", tenantId)
-      .eq("status", "received");
+      .or(`status.eq.received,and(status.eq.processing,claimed_at.lt.${cutoff}),and(status.eq.processing,claimed_at.is.null)`);
     if (error) throw error;
     return (data ?? []).map((r) => r.id as string);
   }
@@ -74,19 +76,16 @@ export class SupabaseIngestStore implements IngestStore {
 export class SupabaseRunStore implements RunStore {
   constructor(private readonly client: SupabaseClient) {}
 
-  async claim(tenantId: string, requestId: string): Promise<RequestRow | null> {
-    // Atomic conditional UPDATE: received|processing -> processing, scoped to the tenant. A terminal
-    // row (or a wrong tenant / missing id) matches nothing -> null. RETURNING gives the row to run.
-    // ('processing' is claimable so a retried/crashed run re-runs; idempotency below keeps it safe.)
-    const { data, error } = await this.client
-      .from("quote_requests")
-      .update({ status: "processing" })
-      .eq("id", requestId)
-      .eq("tenant_id", tenantId)
-      .in("status", ["received", "processing"])
-      .select("id, tenant_id, from_email, subject, body");
+  async claim(tenantId: string, requestId: string, owner: string): Promise<RequestRow | null> {
+    // claim_request (migration 0021): tenant-scoped, owner-recording, lease-aware claim in one UPDATE.
+    // received | processing(same owner) | processing(lease > 70 min) -> processing; else no row.
+    const { data, error } = await this.client.rpc("claim_request", {
+      p_tenant_id: tenantId,
+      p_request_id: requestId,
+      p_owner: owner,
+    });
     if (error) throw error;
-    const row = data?.[0];
+    const row = (data as Record<string, unknown>[] | null)?.[0];
     if (!row) return null;
     return {
       id: row.id as string,
@@ -97,17 +96,16 @@ export class SupabaseRunStore implements RunStore {
     };
   }
 
-  async persistOutcome(requestId: string, tenantId: string, o: PersistOutcome): Promise<boolean> {
-    // One atomic txn (persist_run_outcome, migration 0009 — codex Gate-4 P1-b): insert-once quote +
-    // draft (immutable snapshot via the canonical quoteToRow, AC-4), first-writer status flip, and the
-    // usage row logged on the winning transition. Returns whether THIS call won the transition.
+  async persistOutcome(requestId: string, tenantId: string, owner: string, o: PersistOutcome): Promise<boolean> {
+    // One atomic txn (persist_run_outcome, migration 0021): owner-checked first-writer status flip, then
+    // insert-once quote (v2) + draft + quote_internals, outcome detail and the usage/audit row.
     const { data, error } = await this.client.rpc("persist_run_outcome", {
       p_request_id: requestId,
       p_tenant_id: tenantId,
       p_status: o.status,
       p_escalation_reason: o.escalationReason,
       p_injection_flag: o.injectionFlag,
-      p_quote: o.quote ? quoteToRow(requestId, tenantId, o.quote) : null,
+      p_quote: o.quote,
       p_draft: o.draft ? { subject: o.draft.subject, body: o.draft.body } : null,
       p_usage: {
         model: o.usage.model,
@@ -116,21 +114,23 @@ export class SupabaseRunStore implements RunStore {
         est_cost_usd: o.usage.est_cost_usd,
       },
       p_extraction: o.extraction,
+      p_outcome_detail: o.outcomeDetail,
+      p_internals: o.internals,
+      p_owner: owner,
     });
     if (error) throw error;
     return Boolean(data);
   }
 
-  /** Mark a stuck 'processing' run as 'error' after Trigger.dev exhausts retries (codex Gate-4 P2-c).
-   *  First-writer-safe: only flips a row still 'processing', never clobbers a terminal outcome. Not on
-   *  the RunStore interface — it's the run task's onFailure hook, not part of the happy-path run. */
-  async markError(tenantId: string, requestId: string): Promise<void> {
-    const { error } = await this.client
-      .from("quote_requests")
-      .update({ status: "error" })
-      .eq("id", requestId)
-      .eq("tenant_id", tenantId)
-      .eq("status", "processing");
+  /** Mark this owner's stuck 'processing' run as 'error' after Trigger.dev exhausts retries
+   *  (mark_run_error, owner-checked: never clobbers a terminal outcome or another owner's lease). */
+  async markError(tenantId: string, requestId: string, owner: string): Promise<boolean> {
+    const { data, error } = await this.client.rpc("mark_run_error", {
+      p_tenant_id: tenantId,
+      p_request_id: requestId,
+      p_owner: owner,
+    });
     if (error) throw error;
+    return Boolean(data);
   }
 }

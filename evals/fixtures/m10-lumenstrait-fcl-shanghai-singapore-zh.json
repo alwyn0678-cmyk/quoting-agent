@@ -1,0 +1,31 @@
+{
+  "id": "m10-lumenstrait-fcl-shanghai-singapore-zh",
+  "description": "Chinese-language FCL request; draft must be Chinese.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "李娜 <li.na@donghai-trading.example>",
+    "subject": "询价：上海到新加坡 2个40尺高柜",
+    "body": "您好，\n\n请报价：2个40尺高柜，上海港到新加坡港（港到港），货物为家用电器，FOB上海。\n\n谢谢！\n李娜\n东海贸易有限公司"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "SGSIN",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "45G1": 2
+      }
+    },
+    "quote": {
+      "currency": "USD",
+      "total": "3112.00",
+      "options": 2
+    },
+    "language": "zh"
+  }
+}

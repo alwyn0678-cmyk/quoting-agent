@@ -1,24 +1,23 @@
 import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { runAndPersist } from "../packages/ingest/src/run.js";
+import { productionRunDeps } from "../packages/ingest/src/production.js";
 import { SupabaseRunStore, createServiceClient } from "../packages/ingest/src/supabase-store.js";
 import {
   createLlmFromEnv,
-  createKnowledgeRetrieverFromEnv,
-  createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
-  type EmailInput,
 } from "../packages/agents/src/index.js";
 
 /**
  * Run ONE email through the live pipeline and persist it so it appears in the dashboard — the same
- * extract -> gate -> price -> draft -> atomic-persist the autonomous run-request task does, but
+ * extract -> gate -> price -> guard -> render -> atomic-persist the autonomous run-request task does, but
  * in-process (no Trigger.dev worker needed). Inserts the email as a 'paste' quote_request under the
  * Linkport demo tenant, then runAndPersist (live Anthropic + live Supabase rate card).
  *
  * Usage: node --env-file=.env --import tsx scripts/ingest_email.ts <email.json>
  * The JSON may be {from,subject,body} or a golden fixture ({input:{from,subject,body}}).
  */
-function loadEmail(path: string): EmailInput {
+function loadEmail(path: string): { from: string; subject: string; body: string } {
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
   const e = ((parsed as { input?: unknown }).input ?? parsed) as Record<string, unknown>;
   if (typeof e.from !== "string" || typeof e.subject !== "string" || typeof e.body !== "string") {
@@ -56,18 +55,14 @@ function liveLlm() {
   // Paste rows have no dedup, so a pipeline failure must not strand the row in 'received'/'processing'
   // forever — mark it 'error' (same markError the Trigger.dev run task uses on failure) and exit 1.
   const store = new SupabaseRunStore(supabase);
+  const owner = `ingest_email:${randomUUID()}`;
   let summary;
   try {
-    summary = await runAndPersist(
-      tenantId,
-      requestId,
-      { ...liveLlm(), engine: createSupabaseRateEngine(tenantId), retriever: createKnowledgeRetrieverFromEnv(tenantId) },
-      store,
-    );
+    summary = await runAndPersist(tenantId, requestId, owner, productionRunDeps(supabase, tenantId, liveLlm()), store);
   } catch (err) {
     console.error(`pipeline FAILED for request ${requestId}: ${err instanceof Error ? err.message : String(err)}`);
     try {
-      await store.markError(tenantId, requestId);
+      await store.markError(tenantId, requestId, owner);
       console.error(`request ${requestId} marked status=error`);
     } catch (markErr) {
       console.error(`could not mark request ${requestId} as error: ${markErr instanceof Error ? markErr.message : String(markErr)}`);

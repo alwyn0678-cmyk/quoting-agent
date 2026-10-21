@@ -178,3 +178,5 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | I5 | LCL bands per W/M and minimum = 1 W/M | Low-confidence secondary / INVENTED | Co-loader LCL tariffs |
 | I6 | Margin policies: FCL markup 10% on freight + surcharges; LCL gross margin 15% with a minimum (EUR 75 / USD 85 / ZAR 1,500 / BRL 450) | INVENTED | Forwarder pricing policy |
 | I7 | Six fictional companies and carriers do not collide with real registered names | Web search only | Company registries (KvK, Handelsregister, state SOS, ACRA, CIPC, CNPJ) |
+| I8 | A date without a year ("ready Nov 10") is not resolved: the extractor reports only fully stated dates, so pricing uses as_of | Design choice (no guessing) | Anchor partial dates on the email's received date (P4) and check against forwarder practice |
+| I9 | Golden-set emails (26 mock-world, 6 languages) represent real quote-request phrasing | INVENTED by the builder | Replace/extend with anonymised real inbound emails from a design partner |

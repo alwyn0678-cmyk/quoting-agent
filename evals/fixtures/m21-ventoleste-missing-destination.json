@@ -1,0 +1,24 @@
+{
+  "id": "m21-ventoleste-missing-destination",
+  "description": "Destination not yet known — must ask for it.",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Bruno Alves <bruno@alves-granitos.example>",
+    "subject": "Cotação 1x40HC saindo de Santos",
+    "body": "Boa tarde,\n\nGostaria de uma cotação para 1 contêiner 40HC saindo de Santos com granito polido. O porto de destino na Europa ainda será confirmado pelo nosso cliente.\n\nObrigado,\nBruno Alves"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "missing_required_field",
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": null,
+      "mode": "FCL"
+    },
+    "missing_fields": [
+      "destination"
+    ]
+  }
+}

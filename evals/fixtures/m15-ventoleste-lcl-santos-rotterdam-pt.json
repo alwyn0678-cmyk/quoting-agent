@@ -1,0 +1,30 @@
+{
+  "id": "m15-ventoleste-lcl-santos-rotterdam-pt",
+  "description": "Portuguese LCL with Brazilian number formatting (3.200 kg).",
+  "tenant": "ventoleste",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Rafael Lima <rafael@lima-couros.example>",
+    "subject": "Cotação LCL Santos x Roterdã",
+    "body": "Olá,\n\nPrecisamos de uma cotação LCL (carga fracionada) de Santos para Roterdã, porto a porto: 5 m³, peso total 3.200 kg, artigos de couro.\n\nObrigado,\nRafael Lima"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "BRSSZ",
+      "destination": "NLRTM",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "3200",
+      "volume_cbm": "5"
+    },
+    "quote": {
+      "currency": "BRL",
+      "total": "5732.33",
+      "options": 1
+    },
+    "language": "pt"
+  }
+}

@@ -1,22 +1,30 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runAgent, createLlmFromEnv } from "../packages/agents/src/index.js";
-import { scoreFixture, summarize, PASS_GATE, type Fixture, type FixtureScore } from "./score.js";
+import { createLlmFromEnv } from "../packages/agents/src/index.js";
+import { runAgentV2 } from "../packages/agents/src/pipeline/run.js";
+import { offlineTenant } from "../packages/agents/src/pipeline/tenant.js";
+import { scoreFixture, summarize, PASS_RATE, type Fixture, type FixtureScore } from "./score.js";
 
 /**
- * Live eval runner (npm run eval). Runs the real pipeline against every golden fixture, scores
- * each, prints a report, and exits non-zero unless the Phase 0 gate passes (>= 6/8 AND the
- * injection fixture). Requires ANTHROPIC_API_KEY. Each fixture makes up to two live LLM calls.
+ * Golden-set eval runner (npm run eval). Runs the real v2 pipeline against every fixture — each on its
+ * own tenant (the legacy demo card or a mock-world forwarder) and as-of date — scores it, prints a
+ * report, and exits non-zero unless the gate passes (>= PASS_RATE of fixtures AND every must-pass
+ * fixture). Any configured provider (QUOTEAGENT_MODEL); with none, it replays the recorded cassettes.
+ * Each fixture makes at most two model calls (extraction, draft style).
  */
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 async function main(): Promise<void> {
-  const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".json")).sort();
-  // Any configured provider (QUOTEAGENT_MODEL); with none, the eval replays the recorded cassettes.
+  const only = process.argv[2];
+  const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".json") && (!only || f.includes(only))).sort();
   const { client, routing, mode } = createLlmFromEnv();
-  console.log(`eval mode=${mode} extract=${routing.extraction} draft=${routing.draft}`);
+  console.log(`eval mode=${mode} extract=${routing.extraction} draft=${routing.draft} fixtures=${files.length}`);
+  const fixtures: Fixture[] = [];
   const scores: FixtureScore[] = [];
+  let tokensIn = 0;
+  let tokensOut = 0;
+  let cost = 0;
 
   for (const file of files) {
     let fixture: Fixture | undefined;
@@ -24,7 +32,12 @@ async function main(): Promise<void> {
     try {
       // parse INSIDE the try: one malformed fixture scores as a failure instead of aborting the run
       fixture = JSON.parse(readFileSync(join(fixturesDir, file), "utf8")) as Fixture;
-      const output = await runAgent(fixture.input, client, undefined, routing);
+      fixtures.push(fixture);
+      const { tenant, tariffs } = offlineTenant(fixture.tenant);
+      const output = await runAgentV2(fixture.input, { llm: client, routing, tenant, tariffs }, { asOf: fixture.as_of });
+      tokensIn += output.usage.input_tokens;
+      tokensOut += output.usage.output_tokens;
+      cost += output.usage.est_cost_usd ?? 0;
       score = scoreFixture(fixture, output);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
@@ -39,12 +52,12 @@ async function main(): Promise<void> {
     }
   }
 
-  const summary = summarize(scores);
+  const summary = summarize(fixtures, scores);
   console.log(
-    `\n${summary.passed}/${summary.total} fixtures pass ` +
-      `(gate >= ${PASS_GATE}/${summary.total}: ${summary.passed >= PASS_GATE}, injection must-pass: ${summary.injectionPass}) ` +
-      `-> ${summary.gatePass ? "GATE PASS" : "GATE FAIL"}`,
+    `\n${summary.passed}/${summary.total} fixtures pass (gate >= ${PASS_RATE * 100}%; must-pass failures: ` +
+      `${summary.mustPassFailed.length ? summary.mustPassFailed.join(", ") : "none"}) -> ${summary.gatePass ? "GATE PASS" : "GATE FAIL"}`,
   );
+  console.log(`[usage] in=${tokensIn} out=${tokensOut} est_cost_usd=${cost.toFixed(4)}${mode === "demo" ? " (recorded)" : ""}`);
   process.exit(summary.gatePass ? 0 : 1);
 }
 

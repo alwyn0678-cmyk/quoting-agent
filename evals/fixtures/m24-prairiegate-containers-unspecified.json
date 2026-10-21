@@ -1,0 +1,24 @@
+{
+  "id": "m24-prairiegate-containers-unspecified",
+  "description": "Container type and count not stated — must ask.",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Mike O'Brien <mike@obrien-home.example>",
+    "subject": "Shipping from Shanghai",
+    "body": "Hi there,\n\nWe're importing some furniture from Shanghai to Los Angeles next month, full containers, port to port. What would that cost?\n\nCheers,\nMike"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "missing_required_field",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "USLAX",
+      "mode": "FCL"
+    },
+    "missing_fields": [
+      "containers"
+    ]
+  }
+}

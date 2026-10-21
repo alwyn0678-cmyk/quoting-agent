@@ -1,7 +1,8 @@
 {
   "id": "04-missing-container-type",
   "description": "Missing required field (no container type, vague quantity). Must escalate, not guess.",
-  "exercises": ["T6", "T13"],
+  "tenant": "legacy",
+  "as_of": "2026-06-01",
   "input": {
     "from": "ops@freshflowers.example",
     "subject": "Shipping quote Rotterdam to New York",
@@ -10,15 +11,12 @@
   "expected": {
     "decision": "escalate",
     "injection_flag": false,
-    "escalation_reason": "missing_required_field",
+    "escalation_reason": "out_of_scope_cargo",
     "extraction": {
-      "origin_port_code": "NLRTM",
-      "destination_port_code": "USNYC",
-      "mode": "FCL",
-      "container_type": "UNKNOWN",
-      "container_qty": null
+      "origin": "NLRTM",
+      "destination": "USNYC",
+      "mode": "FCL"
     },
-    "quote": null,
-    "notes": "container_type is absent -> gate escalates with missing_required_field; no quote, no draft."
+    "notes": "v2: refrigerated cargo is out_of_scope_cargo (special-cargo check precedes completeness); the container type is also unstated. Was missing_required_field in v1."
   }
 }

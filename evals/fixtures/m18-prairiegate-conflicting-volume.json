@@ -1,0 +1,25 @@
+{
+  "id": "m18-prairiegate-conflicting-volume",
+  "description": "Stated total volume contradicts the piece dimensions by far more than 2%.",
+  "tenant": "prairiegate",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Greg Tanaka <greg@tanaka-ceramics.example>",
+    "subject": "LCL Shanghai to LA",
+    "body": "Hi,\n\nLCL Shanghai to Los Angeles port to port please: 10 boxes of 50 x 50 x 50 cm, 30 kg each — total volume 3 cbm.\n\nThanks,\nGreg"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "conflicting_cargo",
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "USLAX",
+      "mode": "LCL"
+    },
+    "missing_fields": [
+      "volume"
+    ],
+    "notes": "10 x 0.125 = 1.25 m³ derived vs 3 m³ stated: conflict on volume."
+  }
+}

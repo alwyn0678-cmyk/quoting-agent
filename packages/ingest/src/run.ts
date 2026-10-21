@@ -1,27 +1,22 @@
-import { runAgent } from "../../agents/src/agent.js";
-import type { RateEngine } from "../../agents/src/rate-engine.js";
-import { LlmOutputError, LlmRefusalError, type LlmClient } from "../../agents/src/llm.js";
-import { PER_STEP_ROUTING, type ModelRouting } from "../../agents/src/config.js";
-import type { RateQuote } from "../../agents/src/schemas.js";
-import type { KnowledgeRetriever } from "../../agents/src/knowledge-retriever.js";
+import { runAgentV2, type AgentDeps, type RunOptions } from "../../agents/src/pipeline/run.js";
+import { quoteRowV2, type OutcomeDetailPublic, type QuoteRowV2 } from "../../agents/src/pipeline/output.js";
+import type { Wire } from "../../core/src/pricing/wire.js";
 
 /**
- * Durable agent-run for ONE request (1C.2). The run is responsible for its OWN tenant safety and
- * idempotency — it does not trust a caller-supplied row (codex Gate-4 #1):
+ * Durable agent-run for ONE request. The run is responsible for its OWN tenant safety, idempotency and
+ * lease ownership — it does not trust a caller-supplied row:
  *
- *   1. CLAIM — load the request scoped to (tenantId, requestId) and move 'received' -> 'processing'.
- *      Refuses (no model call, no writes) for another tenant, a missing id, or an ALREADY-TERMINAL
- *      request. This is the tenant gate (P-TENANT) AND the idempotency gate: a Trigger.dev retry
- *      after success re-runs nothing, so the LLM outcome can't flip awaiting_review<->escalated (#2).
- *   2. RUN the Phase-0 pipeline (extract -> gate -> price -> draft -> guard).
- *   3. PERSIST atomically — ONE RPC (persist_run_outcome, migration 0009) inserts-once quote + draft
- *      (UNIQUE request_id — P-1C.2), flips 'processing' -> terminal (first-writer-wins), and logs usage
- *      on the winning transition. One transaction → a crash leaves no partial state (codex Gate-4 P1-b).
+ *   1. CLAIM — claim_request (migration 0021) moves the request to 'processing' for THIS tenant and
+ *      records `owner` (the Trigger run id, stable across retries of one run). It succeeds for
+ *      'received', for 'processing' held by the same owner (a retry), or for a lease older than 70 min
+ *      (a crashed run — stale steal). Another tenant, a missing id or a terminal request → no model call.
+ *   2. RUN the v2 pipeline (extract → gate → tariff snapshot → price → guard → render).
+ *   3. PERSIST atomically — persist_run_outcome: an owner-checked first statement (a stolen lease or a
+ *      stale retry writes nothing), insert-once quote + draft + cost-confidential internals, outcome
+ *      detail, usage + audit row. One transaction → a crash leaves no partial state.
  *
- * The autonomous path runs as service_role (RLS bypassed), so isolation is code-level: every store
- * call is scoped to `tenantId` (P-TENANT). Claiming via 'processing' also keeps the poll (1C.1) from
- * re-enqueuing an in-flight run (#3); crash recovery of a stuck 'processing' row is the live layer's
- * job (a claimed_at lease + Trigger.dev concurrency key — see DECISION_LOG).
+ * The autonomous path runs as service_role (RLS bypassed), so isolation is code-level: every store call
+ * is scoped to `tenantId` and `owner`.
  */
 
 export interface RequestRow {
@@ -44,36 +39,28 @@ export interface PersistOutcome {
   status: "awaiting_review" | "escalated";
   escalationReason: string | null;
   injectionFlag: boolean;
-  quote: RateQuote | null;
+  quote: QuoteRowV2 | null;
   draft: { subject: string; body: string } | null;
   usage: UsageRecord;
-  /** What the model extracted (persisted for reviewers/auditors); null when extraction failed. */
+  /** What the model extracted (for reviewers/auditors); null when extraction did not happen. */
   extraction: unknown | null;
+  /** Browser-safe outcome summary (reason, missing fields, option counts). */
+  outcomeDetail: OutcomeDetailPublic;
+  /** Full pricing result (costs, margins, all candidates, trace) — service_role-only table. */
+  internals: Wire | null;
 }
 
 export interface RunStore {
+  /** Atomically claim for THIS tenant and owner (see 1. above); null when not claimable. */
+  claim(tenantId: string, requestId: string, owner: string): Promise<RequestRow | null>;
   /**
-   * Atomically claim a request for THIS tenant: return it and move 'received' -> 'processing' iff it
-   * belongs to `tenantId` and is claimable ('received', or 'processing' for a retried/crashed run).
-   * Return null for another tenant, a missing id, or an already-terminal request.
+   * Persist the whole outcome in ONE transaction. Returns true iff THIS call (same owner) transitioned
+   * the request; a retry-after-success or a run whose lease was stolen returns false and writes nothing.
    */
-  claim(tenantId: string, requestId: string): Promise<RequestRow | null>;
-  /**
-   * Persist the whole outcome in ONE transaction (codex Gate-4 P1-b): insert-once quote + draft, flip
-   * 'processing' -> terminal (first-writer-wins), and log usage on the winning transition. Returns true
-   * iff THIS call transitioned the request — a retry-after-success returns false and writes nothing new.
-   * Because it is atomic, a crash can never leave an orphaned quote/draft or a terminal row without usage.
-   */
-  persistOutcome(requestId: string, tenantId: string, outcome: PersistOutcome): Promise<boolean>;
+  persistOutcome(requestId: string, tenantId: string, owner: string, outcome: PersistOutcome): Promise<boolean>;
 }
 
-export interface RunDeps {
-  client: LlmClient;
-  engine: RateEngine;
-  routing?: ModelRouting;
-  /** Grounds the draft prose (scoped RAG). Optional: absent means an ungrounded draft. */
-  retriever?: KnowledgeRetriever;
-}
+export type RunDeps = AgentDeps;
 
 export type RunSummary =
   | { ran: false; reason: "not_claimable" }
@@ -83,58 +70,37 @@ export type RunSummary =
       status: "awaiting_review" | "escalated";
       escalation_reason: string | null;
       injection_flag: boolean;
-      /** Whether THIS run won the first-writer transition (false if a concurrent/earlier run already did). */
+      /** Whether THIS run won the owner-checked transition. */
       transitioned: boolean;
     };
 
 export async function runAndPersist(
   tenantId: string,
   requestId: string,
+  owner: string,
   deps: RunDeps,
   store: RunStore,
+  options: RunOptions = {},
 ): Promise<RunSummary> {
-  const request = await store.claim(tenantId, requestId);
+  if (deps.tenant.id !== tenantId) throw new Error(`tenant config ${deps.tenant.id} does not match request tenant ${tenantId}`);
+  const request = await store.claim(tenantId, requestId, owner);
   if (!request) return { ran: false, reason: "not_claimable" };
 
-  const routing = deps.routing ?? PER_STEP_ROUTING;
-  let out;
-  try {
-    out = await runAgent(
-      { from: request.from_email ?? "", subject: request.subject ?? "", body: request.body ?? "" },
-      deps.client,
-      deps.engine,
-      routing,
-      deps.retriever,
-    );
-  } catch (err) {
-    // A refusal or unusable model output is terminal for THIS request, not an infrastructure fault:
-    // retrying would repeat it. Escalate to a human with a named reason (fail closed) instead of
-    // letting the durable job retry and end in 'error'. Anything else still throws, so it retries.
-    const reason =
-      err instanceof LlmRefusalError ? "model_refused" : err instanceof LlmOutputError ? "model_output_invalid" : null;
-    if (!reason) throw err;
-    const transitioned = await store.persistOutcome(requestId, tenantId, {
-      status: "escalated",
-      escalationReason: reason,
-      injectionFlag: false,
-      quote: null,
-      draft: null,
-      // Tokens spent on the failed call are not reported by the adapter; record the attempt honestly.
-      usage: { model: `${routing.extraction} (extract)`, input_tokens: 0, output_tokens: 0, est_cost_usd: null },
-      extraction: null,
-    });
-    return { ran: true, decision: "escalate", status: "escalated", escalation_reason: reason, injection_flag: false, transitioned };
-  }
+  // Model refusals / invalid output escalate inside runAgentV2; anything thrown here is an
+  // infrastructure fault and propagates so the durable job retries (same owner → re-claimable).
+  const out = await runAgentV2({ from: request.from_email ?? "", subject: request.subject ?? "", body: request.body ?? "" }, deps, options);
 
   const status = out.decision === "quote" ? "awaiting_review" : "escalated";
-  const transitioned = await store.persistOutcome(requestId, tenantId, {
+  const transitioned = await store.persistOutcome(requestId, tenantId, owner, {
     status,
     escalationReason: out.escalation_reason,
     injectionFlag: out.injection_flag,
-    quote: out.decision === "quote" ? out.quote : null,
-    draft: out.decision === "quote" && out.draft ? { subject: out.draft.subject, body: out.draft.body } : null,
+    quote: out.quote_view ? quoteRowV2(out.quote_view) : null,
+    draft: out.draft,
     usage: out.usage,
     extraction: out.extraction,
+    outcomeDetail: out.outcome,
+    internals: out.pricing,
   });
 
   return { ran: true, decision: out.decision, status, escalation_reason: out.escalation_reason, injection_flag: out.injection_flag, transitioned };

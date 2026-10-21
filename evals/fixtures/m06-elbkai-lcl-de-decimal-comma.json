@@ -1,0 +1,30 @@
+{
+  "id": "m06-elbkai-lcl-de-decimal-comma",
+  "description": "German LCL with German number formatting (4,5 cbm; 2.300 kg) — extraction must normalise separators.",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Monika Brandt <m.brandt@brandt-textil.example>",
+    "subject": "LCL-Anfrage Shanghai - Hamburg",
+    "body": "Hallo,\n\nwir haben eine Sammelgutsendung (LCL) von Shanghai nach Hamburg, Hafen zu Hafen: 4,5 cbm, Gesamtgewicht 2.300 kg, Textilien.\nBitte um Ihr Angebot.\n\nViele Grüße\nMonika Brandt"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "DEHAM",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "2300",
+      "volume_cbm": "4.5"
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "792.60",
+      "options": 1
+    },
+    "language": "de"
+  }
+}

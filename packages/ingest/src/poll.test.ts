@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pollMailbox, type IngestStore, type MailboxReader, type ReceivedRequest } from "./poll.js";
+import { pollMailbox, LEASE_MINUTES, type IngestStore, type MailboxReader, type ReceivedRequest } from "./poll.js";
 import type { InboundMessage } from "../../graph/src/outlook.js";
 
 function msg(id: string): InboundMessage {
@@ -15,7 +15,7 @@ function msg(id: string): InboundMessage {
 /** In-memory store mirroring the DB invariants: graph_message_id is GLOBALLY unique (the dedup key);
  *  rows + cursor are tenant-scoped. */
 class FakeStore implements IngestStore {
-  rows = new Map<string, { id: string; tenant_id: string; status: string }>(); // keyed by graph_message_id
+  rows = new Map<string, { id: string; tenant_id: string; status: string; claimed_at: number | null }>(); // keyed by graph_message_id
   private cursors = new Map<string, string>();
   private seq = 0;
   async getCursor(t: string, m: string) {
@@ -27,11 +27,20 @@ class FakeStore implements IngestStore {
   async insertReceived(row: ReceivedRequest) {
     if (this.rows.has(row.graph_message_id)) return null; // UNIQUE graph_message_id -> dedup (AC-1)
     const id = `req-${++this.seq}`;
-    this.rows.set(row.graph_message_id, { id, tenant_id: row.tenant_id, status: "received" });
+    this.rows.set(row.graph_message_id, { id, tenant_id: row.tenant_id, status: "received", claimed_at: null });
     return id;
   }
-  async listReceived(t: string) {
-    return [...this.rows.values()].filter((r) => r.tenant_id === t && r.status === "received").map((r) => r.id);
+  now = Date.parse("2026-05-25T12:00:00Z");
+  async listRunnable(t: string) {
+    const expired = (r: { claimed_at: number | null }) => r.claimed_at === null || r.claimed_at < this.now - LEASE_MINUTES * 60_000;
+    return [...this.rows.values()]
+      .filter((r) => r.tenant_id === t && (r.status === "received" || (r.status === "processing" && expired(r))))
+      .map((r) => r.id);
+  }
+  claim(graphId: string, minutesAgo: number) {
+    const r = this.rows.get(graphId)!;
+    r.status = "processing";
+    r.claimed_at = this.now - minutesAgo * 60_000;
   }
   complete(graphId: string) {
     const r = this.rows.get(graphId);
@@ -121,6 +130,15 @@ describe("1C.1 — scheduled poll (cursor + dedup + re-enqueue)", () => {
     expect(rA.insertedIds).toHaveLength(1);
     expect(rA.toRun).not.toContain(bId); // A never enqueues B's request
     expect(rA.reEnqueued).not.toContain(bId);
-    expect(await store.listReceived(TA)).not.toContain(bId);
+    expect(await store.listRunnable(TA)).not.toContain(bId);
+  });
+
+  it("recovery: a 'processing' row whose lease expired is re-enqueued; a live lease is not", async () => {
+    const store = new FakeStore();
+    await pollMailbox(TA, MB, new FakeMailbox([[msg("m1"), msg("m2")]]), store);
+    store.claim("m1", LEASE_MINUTES + 1); // crashed run
+    store.claim("m2", 5); // in flight
+    const r = await pollMailbox(TA, MB, new FakeMailbox([[]]), store);
+    expect(r.reEnqueued).toEqual([store.rows.get("m1")!.id]);
   });
 });

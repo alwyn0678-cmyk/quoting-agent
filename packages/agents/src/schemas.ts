@@ -1,68 +1,16 @@
 import { z } from "zod";
 
 /**
- * Data contracts for the Phase 0 slice (see docs/SLICE.md). These Zod schemas are the
- * single source of truth: they validate LLM structured output AND back the acceptance
- * tests. Monetary values are whole EUR by deliberate choice (ASSUMPTIONS.md B3).
+ * Legacy (v1) rate-quote contract — whole-EUR quotes from the original demo/Excel/Supabase rate cards.
+ * Kept because the legacy rate engine is the parity ORACLE for the canonical pricing core
+ * (sources/legacy-card.test.ts) and the knowledge retriever builds its query from it. The agent's
+ * extraction and output contracts now live in packages/core (request/schema.ts) and pipeline/output.ts.
  */
 
-/** UN/LOCODE: 2-letter country + 3-char location (letters or digits 2-9 — 0/1 are excluded
- *  by the spec to avoid O/I confusion; the regex now matches the comment). */
-const portCodeSchema = z
-  .string()
-  .regex(/^[A-Z]{2}[A-Z2-9]{3}$/, "expected a 5-char UN/LOCODE");
-
-const locationSchema = z.object({
-  raw: z.string(),
-  port_code: portCodeSchema.nullable(),
-});
-
-export const modeSchema = z.enum(["FCL", "LCL", "AIR", "RAIL", "BARGE", "UNKNOWN"]);
-
-/**
- * What the extractor may report — includes UNKNOWN / absent. Deliberately the DEMO LANE's quotable
- * set (NLRTM-USNYC prices 20GP/40GP/40HC), NOT the engine's full priceable set: the gate's
- * "quote ⇒ priceable" invariant (gate.ts) relies on every extractable container being priceable on
- * the demo card. 45HC is priceable by the engine on the new lanes (rateContainerTypeSchema below),
- * but is not offered on the demo lane, so the extractor does not surface it — a 45HC demo request
- * resolves to UNKNOWN and escalates rather than reaching priceQuote().
- */
-export const extractionContainerTypeSchema = z
-  .enum(["20GP", "40GP", "40HC", "UNKNOWN"])
-  .nullable();
-
-/** What the rate engine can actually price — the real supported set (broader than the demo lane). */
+/** What the legacy rate engine can price. */
 export const rateContainerTypeSchema = z.enum(["20GP", "40GP", "40HC", "45HC"]);
 
-const confidence = z.number().min(0).max(1);
-
-export const ExtractionResultSchema = z.object({
-  origin: locationSchema,
-  destination: locationSchema,
-  mode: modeSchema,
-  container_type: extractionContainerTypeSchema,
-  container_qty: z.number().int().positive().nullable(),
-  incoterm: z.string().nullable(),
-  commodity: z.string().nullable(),
-  ready_date: z.string().nullable(),
-  weight_kg: z.number().positive().nullable(),
-  requester_name: z.string().nullable(),
-  requester_company: z.string().nullable(),
-  /** 0..1 confidence per required field, as a closed list (portable to every strict structured-
-   *  output mode — an open record is not). Advisory only: no decision reads it. */
-  field_confidence: z.array(
-    z.object({
-      field: z.enum(["origin", "destination", "mode", "container_type", "container_qty"]),
-      confidence,
-    }),
-  ),
-  overall_confidence: confidence,
-  /** The model's own injection flag; corroborated by a code-side guard (Task 6). */
-  injection_detected: z.boolean(),
-});
-export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
-
-/** Whole EUR, non-negative (ASSUMPTIONS.md B3 — no cents, no FX in Phase 0). */
+/** Whole EUR, non-negative (ASSUMPTIONS.md B3 — no cents, no FX on legacy cards). */
 const eurAmount = z.number().int().nonnegative();
 
 export const RateQuoteSchema = z.object({
@@ -80,62 +28,3 @@ export const RateQuoteSchema = z.object({
   validity_through: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "ISO date YYYY-MM-DD"),
 });
 export type RateQuote = z.infer<typeof RateQuoteSchema>;
-
-export const decisionSchema = z.enum(["quote", "escalate"]);
-
-export const escalationReasonSchema = z.enum([
-  "missing_required_field",
-  "out_of_scope_lane",
-  "out_of_scope_mode",
-  "out_of_scope_container",
-  "rate_expired",
-  "model_refused",
-  "model_output_invalid",
-  "ambiguous_request",
-  "low_confidence",
-  "guard_violation",
-]);
-export type EscalationReason = z.infer<typeof escalationReasonSchema>;
-
-export const DraftSchema = z.object({ subject: z.string(), body: z.string() });
-export type Draft = z.infer<typeof DraftSchema>;
-
-const usageSchema = z.object({
-  model: z.string(),
-  input_tokens: z.number().int().nonnegative(),
-  output_tokens: z.number().int().nonnegative(),
-  /** null when the serving model's price is unknown — never a fabricated 0. */
-  est_cost_usd: z.number().nonnegative().nullable(),
-});
-
-/**
- * The agent's output for one email. The superRefine encodes the load-bearing invariant
- * the escalation gate depends on: a "quote" carries a quote + draft and no reason;
- * an "escalate" carries a reason and neither quote nor draft.
- */
-export const AgentOutputSchema = z
-  .object({
-    decision: decisionSchema,
-    extraction: ExtractionResultSchema,
-    injection_flag: z.boolean(),
-    escalation_reason: escalationReasonSchema.nullable(),
-    quote: RateQuoteSchema.nullable(),
-    draft: DraftSchema.nullable(),
-    usage: usageSchema,
-  })
-  .superRefine((o, ctx) => {
-    const bad = (message: string, path: string) =>
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
-    if (o.decision === "quote") {
-      if (o.quote === null) bad("decision 'quote' requires a quote", "quote");
-      if (o.draft === null) bad("decision 'quote' requires a draft", "draft");
-      if (o.escalation_reason !== null)
-        bad("decision 'quote' must not carry an escalation_reason", "escalation_reason");
-    } else {
-      if (o.quote !== null) bad("decision 'escalate' must not carry a quote", "quote");
-      if (o.draft !== null) bad("decision 'escalate' must not carry a draft", "draft");
-      if (o.escalation_reason === null)
-        bad("decision 'escalate' requires an escalation_reason", "escalation_reason");
-    }
-  });
-export type AgentOutput = z.infer<typeof AgentOutputSchema>;

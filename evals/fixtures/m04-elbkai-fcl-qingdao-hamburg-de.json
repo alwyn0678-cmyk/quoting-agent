@@ -1,0 +1,31 @@
+{
+  "id": "m04-elbkai-fcl-qingdao-hamburg-de",
+  "description": "German-language FCL request to a Hamburg forwarder; draft must be German.",
+  "tenant": "elbkai",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Jürgen Hoffmann <j.hoffmann@nordlicht-handel.example>",
+    "subject": "Anfrage Seefracht 2x40' Qingdao - Hamburg",
+    "body": "Sehr geehrte Damen und Herren,\n\nbitte bieten Sie uns 2 x 40' Standardcontainer (40 Fuß, kein High Cube) von Qingdao nach Hamburg an, Hafen zu Hafen, FOB Qingdao. Ware: Fahrradteile, ca. 18 t je Container.\n\nMit freundlichen Grüßen\nJürgen Hoffmann\nNordlicht Handel GmbH"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNTAO",
+      "destination": "DEHAM",
+      "mode": "FCL",
+      "service": "PORT_TO_PORT",
+      "containers": {
+        "42G1": 2
+      }
+    },
+    "quote": {
+      "currency": "EUR",
+      "total": "8015.78",
+      "options": 2
+    },
+    "language": "de"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "m19-lumenstrait-lane-not-offered",
+  "description": "A lane the forwarder has no tariff for.",
+  "tenant": "lumenstrait",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Priya Nair <priya.nair@coralbay.example>",
+    "subject": "1x40HC Singapore to Sydney",
+    "body": "Hello,\n\nCould you quote 1 x 40HC Singapore to Sydney, port to port? Furniture.\n\nBest,\nPriya"
+  },
+  "expected": {
+    "decision": "escalate",
+    "injection_flag": false,
+    "escalation_reason": "out_of_scope_lane",
+    "extraction": {
+      "origin": "SGSIN",
+      "destination": "AUSYD",
+      "mode": "FCL",
+      "containers": {
+        "45G1": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "m12-kopjeveld-lcl-shanghai-durban",
+  "description": "LCL with stated totals only.",
+  "tenant": "kopjeveld",
+  "as_of": "2026-10-21",
+  "input": {
+    "from": "Pieter Botha <pieter@botha-tools.example>",
+    "subject": "LCL Shanghai to Durban",
+    "body": "Hi,\n\nLCL please, Shanghai to Durban port to port: 2.2 m³, 850 kg, hand tools. Not dangerous goods.\n\nThanks\nPieter"
+  },
+  "expected": {
+    "decision": "quote",
+    "injection_flag": false,
+    "escalation_reason": null,
+    "extraction": {
+      "origin": "CNSHA",
+      "destination": "ZADUR",
+      "mode": "LCL",
+      "service": "PORT_TO_PORT",
+      "weight_kg": "850",
+      "volume_cbm": "2.2"
+    },
+    "quote": {
+      "currency": "ZAR",
+      "total": "8635.21",
+      "options": 1
+    },
+    "language": "en"
+  }
+}

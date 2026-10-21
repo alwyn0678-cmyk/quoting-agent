@@ -3,6 +3,6 @@ import { SLICE_ID } from "./index.js";
 
 describe("harness smoke test", () => {
   it("compiles a TypeScript module and runs a Vitest test", () => {
-    expect(SLICE_ID).toBe("phase-0");
+    expect(SLICE_ID).toBe("p1a");
   });
 });

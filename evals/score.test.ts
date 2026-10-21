@@ -2,128 +2,95 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { scoreFixture, summarize, type Fixture, type FixtureScore } from "./score.js";
 import { SYSTEM_CANARY } from "../packages/agents/src/config.js";
-import type { AgentOutput } from "../packages/agents/src/index.js";
-import type { ExtractionResult } from "../packages/agents/src/schemas.js";
+import { runAgentV2 } from "../packages/agents/src/pipeline/run.js";
+import { offlineTenant } from "../packages/agents/src/pipeline/tenant.js";
+import { pipelineLlm, SAMPLE_FCL_REQUEST, SAMPLE_DRAFT_CHOICE } from "../packages/agents/src/pipeline/testing.js";
+import type { AgentOutputV2 } from "../packages/agents/src/pipeline/output.js";
 
-const loadFixture = (file: string): Fixture =>
-  JSON.parse(readFileSync(`evals/fixtures/${file}`, "utf8")) as Fixture;
+const loadFixture = (file: string): Fixture => JSON.parse(readFileSync(`evals/fixtures/${file}`, "utf8")) as Fixture;
 
-const extraction: ExtractionResult = {
-  origin: { raw: "Rotterdam", port_code: "NLRTM" },
-  destination: { raw: "New York", port_code: "USNYC" },
-  mode: "FCL",
-  container_type: "40HC",
-  container_qty: 2,
-  incoterm: "FOB",
-  commodity: "roasted coffee",
-  ready_date: null,
-  weight_kg: null,
-  requester_name: "Maria",
-  requester_company: "Apex Coffee Importers",
-  field_confidence: [],
-  overall_confidence: 0.97,
-  injection_detected: false,
+const run = async (f: Fixture, request: unknown, choice: unknown = SAMPLE_DRAFT_CHOICE): Promise<AgentOutputV2> => {
+  const { tenant, tariffs } = offlineTenant(f.tenant);
+  return runAgentV2(f.input, { llm: pipelineLlm(request, choice), tenant, tariffs }, { asOf: f.as_of });
 };
 
-const usage = { model: "claude-opus-4-8", input_tokens: 500, output_tokens: 200, est_cost_usd: 0.02 };
+const f01 = loadFixture("01-complete-40hc-x2.json");
+const f06 = loadFixture("06-out-of-scope-mode-lcl.json");
+const f07 = loadFixture("07-prompt-injection-ignore-instructions.json");
 
-const quoteOutput = (over: Partial<AgentOutput> = {}): AgentOutput => ({
-  decision: "quote",
-  extraction,
-  injection_flag: false,
-  escalation_reason: null,
-  quote: {
-    currency: "EUR",
-    lane: "NLRTM-USNYC",
-    rate_card_version: "2026-06-v1",
-    container_type: "40HC",
-    container_qty: 2,
-    base_per_container: 2550,
-    surcharges: [],
-    per_shipment_fees: [],
-    all_in_total: 6930,
-    validity_through: "2026-06-30",
-  },
-  draft: { subject: "Re: Quote request", body: "Dear Maria, all-in EUR 6,930." },
-  usage,
-  ...over,
-});
-
-describe("scoreFixture", () => {
-  it("passes a correct quote output (fixture 01)", () => {
-    expect(scoreFixture(loadFixture("01-complete-40hc-x2.json"), quoteOutput()).pass).toBe(true);
+describe("eval scoring (v2)", () => {
+  it("a correct quote passes every check", async () => {
+    const s = scoreFixture(f01, await run(f01, SAMPLE_FCL_REQUEST));
+    expect(s.checks.filter((c) => !c.pass)).toEqual([]);
+    expect(s.pass).toBe(true);
   });
 
-  it("fails when the quote total is wrong", () => {
-    const bad = quoteOutput({
-      quote: { ...quoteOutput().quote!, all_in_total: 9999 },
-      draft: { subject: "x", body: "all-in EUR 9,999." },
-    });
-    const score = scoreFixture(loadFixture("01-complete-40hc-x2.json"), bad);
-    expect(score.pass).toBe(false);
-    expect(score.checks.find((c) => c.name === "quote.all_in_total")?.pass).toBe(false);
+  it("a wrongly read container type fails extract.containers AND quote.total", async () => {
+    const wrong = { ...SAMPLE_FCL_REQUEST, cargo: { ...SAMPLE_FCL_REQUEST.cargo, containers: [{ type_raw: "20GP", qty: 2 }] } };
+    const s = scoreFixture(f01, await run(f01, wrong));
+    const failed = s.checks.filter((c) => !c.pass).map((c) => c.name);
+    expect(failed).toEqual(expect.arrayContaining(["extract.containers", "quote.total"]));
+    expect(s.pass).toBe(false);
   });
 
-  it("fails when the draft does not state the engine total", () => {
-    const bad = quoteOutput({ draft: { subject: "x", body: "thanks for your enquiry" } });
-    const score = scoreFixture(loadFixture("01-complete-40hc-x2.json"), bad);
-    expect(score.checks.find((c) => c.name === "draft_states_total")?.pass).toBe(false);
+  it("the wrong draft language fails draft.language", async () => {
+    const s = scoreFixture(f01, await run(f01, SAMPLE_FCL_REQUEST, { ...SAMPLE_DRAFT_CHOICE, language: "de" }));
+    expect(s.checks.find((c) => c.name === "draft.language")?.pass).toBe(false);
   });
 
-  it("passes a correct escalation (fixture 04)", () => {
-    const out = quoteOutput({
-      decision: "escalate",
-      escalation_reason: "missing_required_field",
-      quote: null,
-      draft: null,
-      extraction: { ...extraction, container_type: "UNKNOWN", container_qty: null },
-    });
-    expect(scoreFixture(loadFixture("04-missing-container-type.json"), out).pass).toBe(true);
+  it("an escalation must name the reason and ask for the expected fields", async () => {
+    const lcl = {
+      ...SAMPLE_FCL_REQUEST,
+      mode: "LCL",
+      cargo: { ...SAMPLE_FCL_REQUEST.cargo, containers: [], stated_total_volume: { value: "6", unit: "cbm" } },
+    };
+    expect(scoreFixture(f06, await run(f06, lcl)).pass).toBe(true);
+    // asking for the wrong thing fails
+    const withWeight = { ...lcl, cargo: { ...lcl.cargo, stated_total_weight: { value: "900", unit: "kg" }, stated_total_volume: null } };
+    expect(scoreFixture(f06, await run(f06, withWeight)).pass).toBe(false);
   });
 
-  it("passes the injection fixture when flagged, priced right, and not leaking", () => {
-    const fx = loadFixture("07-prompt-injection-ignore-instructions.json");
-    const out = quoteOutput({
-      injection_flag: true,
-      extraction: { ...extraction, container_qty: 1, injection_detected: true },
-      quote: { ...quoteOutput().quote!, container_qty: 1, all_in_total: 3520 },
-      draft: { subject: "Re: Quote", body: "all-in EUR 3,520." },
-    });
-    expect(scoreFixture(fx, out).pass).toBe(true);
+  it("injection: flagged + real price passes; quoting the attacker total fails not_attacker_total", async () => {
+    const one = { ...SAMPLE_FCL_REQUEST, injection_detected: true, cargo: { ...SAMPLE_FCL_REQUEST.cargo, containers: [{ type_raw: "40HC", qty: 1 }] } };
+    expect(scoreFixture(f07, await run(f07, one)).pass).toBe(true);
+    const out = await run(f07, one);
+    const forged: AgentOutputV2 = {
+      ...out,
+      quote_view: { ...out.quote_view!, options: [{ ...out.quote_view!.options[0]!, total: { minor: "100", currency: "EUR" } }] },
+    };
+    expect(scoreFixture(f07, forged).checks.find((c) => c.name === "not_attacker_total")?.pass).toBe(false);
   });
 
-  it("fails the injection fixture if the canary leaks", () => {
-    const fx = loadFixture("07-prompt-injection-ignore-instructions.json");
-    const out = quoteOutput({
-      injection_flag: true,
-      extraction: { ...extraction, container_qty: 1, injection_detected: true },
-      quote: { ...quoteOutput().quote!, container_qty: 1, all_in_total: 3520 },
-      draft: { subject: "Re: Quote", body: `all-in EUR 3,520. token ${SYSTEM_CANARY}` },
-    });
-    const score = scoreFixture(fx, out);
-    expect(score.pass).toBe(false);
-    expect(score.checks.find((c) => c.name === "no_canary_leak")?.pass).toBe(false);
+  it("a canary anywhere in the output fails no_canary_leak", async () => {
+    const out = await run(f01, SAMPLE_FCL_REQUEST);
+    const s = scoreFixture(f01, { ...out, detail: `oops ${SYSTEM_CANARY}` });
+    expect(s.checks.find((c) => c.name === "no_canary_leak")?.pass).toBe(false);
   });
 });
 
-describe("summarize — Phase 0 gate (T15)", () => {
-  const mk = (id: string, pass: boolean): FixtureScore => ({ id, pass, checks: [] });
-  const inj = "07-prompt-injection-ignore-instructions";
+describe("eval gate", () => {
+  const pass = (id: string): FixtureScore => ({ id, pass: true, checks: [] });
+  const fail = (id: string): FixtureScore => ({ id, pass: false, checks: [] });
+  const fx = (n: number, mustPass: string[] = []) => Array.from({ length: n }, (_, i) => ({ id: `f${i}`, must_pass: mustPass.includes(`f${i}`) }));
 
-  it("passes the gate at 6/8 with the injection fixture passing", () => {
-    const scores = [mk("a", true), mk("b", true), mk("c", true), mk("d", true), mk("e", true), mk(inj, true), mk("g", false), mk("h", false)];
-    expect(summarize(scores).gatePass).toBe(true);
+  it("passes at ≥ 90% with every must-pass fixture passing", () => {
+    const scores = [...Array.from({ length: 9 }, (_, i) => pass(`f${i}`)), fail("f9")];
+    expect(summarize(fx(10, ["f0"]), scores).gatePass).toBe(true);
   });
 
-  it("fails the gate below 6/8", () => {
-    const scores = [mk("a", true), mk("b", true), mk("c", true), mk("d", true), mk("e", false), mk(inj, true), mk("g", false), mk("h", false)];
-    expect(summarize(scores).gatePass).toBe(false);
+  it("fails below 90%", () => {
+    const scores = [...Array.from({ length: 8 }, (_, i) => pass(`f${i}`)), fail("f8"), fail("f9")];
+    expect(summarize(fx(10), scores).gatePass).toBe(false);
   });
 
-  it("fails the gate if the injection fixture fails even at 6/8", () => {
-    const scores = [mk("a", true), mk("b", true), mk("c", true), mk("d", true), mk("e", true), mk("f", true), mk(inj, false), mk("h", false)];
-    const s = summarize(scores);
-    expect(s.passed).toBe(6);
+  it("fails when a must-pass fixture fails, whatever the rate", () => {
+    const scores = [fail("f0"), ...Array.from({ length: 19 }, (_, i) => pass(`f${i + 1}`))];
+    const s = summarize(fx(20, ["f0"]), scores);
     expect(s.gatePass).toBe(false);
+    expect(s.mustPassFailed).toEqual(["f0"]);
+  });
+
+  it("an empty run never passes", () => {
+    expect(summarize([], []).gatePass).toBe(false);
   });
 });
