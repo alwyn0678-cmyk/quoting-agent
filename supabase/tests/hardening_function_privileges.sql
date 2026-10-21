@@ -27,7 +27,10 @@ begin
     ('advance_poll_cursor',      false, false, true),
     ('claim_for_send',           false, false, true),
     ('finalize_send',            false, false, true),
-    ('match_knowledge',          false, false, true);
+    ('match_knowledge',          false, false, true),
+    ('claim_request',            false, false, true),
+    ('mark_run_error',           false, false, true),
+    ('get_rate_card',            false, false, true);
 
   for r in
     select p.oid, p.proname
