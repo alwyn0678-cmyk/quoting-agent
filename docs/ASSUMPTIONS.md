@@ -149,3 +149,17 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | G3 | Linkport quoting policy (validity, port-to-port basis, inclusions/exclusions, booking) | INVENTED (fictional tenant) | n/a (fictional) — confirm shape with a forwarder |
 | G4 | Lane/port notes (NLRTM/USNYC/USLAX/DEHAM) | INVENTED | UN/LOCODE registry; a forwarder for routing/transit |
 | G5 | Gemini embedding model id `gemini-embedding-2`, 768-dim, auto-normalized; REST body uses camelCase `outputDimensionality` (Gate-4 fix #2) and encodes the task as an in-prompt instruction (no `taskType` param) | **LIVE-CONFIRMED 2026-05-31** | Verified end-to-end: `rag:index` embedded the corpus at 768-dim (the length assert did not throw) and `eval:rag` + the pgvector `match_knowledge` smoke both ranked 3/3 against the real API. The model id, 768-dim output, and camelCase request shape are confirmed; only the corpus *content* (G1–G4) remains INVENTED |
+
+## H. Pricing core v2 (P1a) — STRUCTURAL assumptions (verify with a forwarder)
+
+| # | Claim | Source | How to verify |
+|---|---|---|---|
+| H1 | Commercial rounding is **half away from zero**, once per charge line, to the currency's minor unit; totals are exact sums of lines | By analogy to VAT practice (Hoge Raad 2009 Ahold; Reg. 1103/97 Art. 5) — not freight-specific | Check a forwarder's invoicing/ERP rounding settings |
+| H2 | LCL revenue tons = max(tonnes, m³) with 1 t = 1 m³ (W/M 1:1), rounded **up** to 3 dp | INVENTED convention (common in rate guides; unverified) | Carrier/co-loader LCL tariff rules |
+| H3 | Stated cargo totals that differ from piece-derived totals by > 2% are a conflict | INVENTED threshold | Reviewer feedback on real emails |
+| H4 | Pricing date = max(as-of, cargo-ready date); a line must be valid on both | INVENTED policy (carrier contracts may govern by ETD or gate-in) | Carrier contract terms |
+| H5 | FX snapshot max age 7 days; conversion via base rates (ECB EUR-based) with one rounding | INVENTED policy | Forwarder treasury practice |
+| H6 | Quote validity default 14 days, capped by every component rate's validity | INVENTED | Forwarder quote T&Cs |
+| H7 | Dangerous goods / temperature control not stated = quoted as general cargo, with a visible assumption line | INVENTED policy | Forwarder practice; legal review |
+| H8 | Margin applies to BUY lines only; SELL (all-in) tariffs pass through unchanged | STRUCTURAL | Forwarder pricing desk |
+| H9 | Mixed-equipment offers charge shipment-level fees once and require them to be identical across lines | STRUCTURAL | Carrier contract structure |
