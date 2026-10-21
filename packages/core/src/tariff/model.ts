@@ -22,7 +22,9 @@ export const ChargeBasisSchema = z.enum([
   "PER_CONTAINER", "PER_TEU", "PER_SHIPMENT", "PER_BL", "PER_WM", "PER_CBM", "PER_TON", "PCT_OF",
 ]);
 export const ChargeCategorySchema = z.enum(["FREIGHT", "SURCHARGE", "LOCAL", "DOCUMENT"]);
-export const TariffModeSchema = z.enum(["FCL", "LCL"]);
+export const TariffModeSchema = z.enum(["FCL", "LCL", "BARGE", "RAIL"]);
+/** Modes priced per container/unit (equipment required on every line). */
+export const CONTAINER_MODES = new Set(["FCL", "BARGE", "RAIL"]);
 
 const nonNegDecimal = z.string().max(16).regex(/^\d{1,12}(\.\d{1,8})?$/, "non-negative decimal string (≤ 16 chars)");
 const isoDate = IsoDateSchema;
@@ -199,8 +201,8 @@ export function loadTariff(input: unknown): LoadResult {
     if (vf < w.valid_from || vt > w.valid_to) errors.push(`line '${l.id}': validity outside the tariff's validity`);
 
     let equipment: IsoType | null = null;
-    if (l.mode === "FCL") {
-      if (!l.equipment || !(l.equipment in EQUIPMENT)) errors.push(`FCL line '${l.id}' needs a valid ISO 6346 equipment code`);
+    if (CONTAINER_MODES.has(l.mode)) {
+      if (!l.equipment || !(l.equipment in EQUIPMENT)) errors.push(`${l.mode} line '${l.id}' needs a valid ISO 6346 equipment code`);
       else equipment = l.equipment as IsoType;
     } else if (l.equipment !== undefined) {
       errors.push(`LCL line '${l.id}' must not set equipment`);
@@ -224,7 +226,7 @@ export function loadTariff(input: unknown): LoadResult {
         continue;
       }
       if (l.mode === "LCL" && FCL_ONLY.has(c.basis)) errors.push(`line '${l.id}' charge '${c.id}': ${c.basis} is not valid for LCL`);
-      if (l.mode === "FCL" && LCL_ONLY.has(c.basis)) errors.push(`line '${l.id}' charge '${c.id}': ${c.basis} is not valid for FCL`);
+      if (CONTAINER_MODES.has(l.mode) && LCL_ONLY.has(c.basis)) errors.push(`line '${l.id}' charge '${c.id}': ${c.basis} is not valid for ${l.mode}`);
       if (c.basis === "PCT_OF") {
         if (!c.percent_of || c.percent_of.length === 0) errors.push(`line '${l.id}' charge '${c.id}': PCT_OF needs percent_of`);
         for (const ref of c.percent_of ?? []) {

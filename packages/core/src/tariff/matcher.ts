@@ -1,6 +1,6 @@
 import { laneEndScore } from "../places/places.js";
 import type { IsoType } from "../places/equipment.js";
-import type { RateLine, Tariff, TariffMode } from "./model.js";
+import { CONTAINER_MODES, type RateLine, type Tariff, type TariffMode } from "./model.js";
 
 /**
  * Tariff matching. Deterministic, explainable, and never silently picks between equals:
@@ -78,7 +78,7 @@ export function matchOffers(tariffs: readonly Tariff[], q: MatchQuery): MatchRes
       const d = laneEndScore(line.destination, q.destination, tariff.port_groups);
       if (o === null || d === null) continue;
       laneMatched += 1;
-      if (q.mode === "FCL" && (!line.equipment || !requested.has(line.equipment))) continue;
+      if (CONTAINER_MODES.has(q.mode) && (!line.equipment || !requested.has(line.equipment))) continue;
       const eqKey = line.equipment ?? "*";
       const stats = perEquipment.get(eqKey) ?? { seen: 0, valid: 0 };
       stats.seen += 1;
@@ -119,7 +119,7 @@ export function matchOffers(tariffs: readonly Tariff[], q: MatchQuery): MatchRes
   }
   const offers: Offer[] = [];
   for (const [key, lines] of [...byOffer.entries()].sort(([a], [b]) => cmpStr(a, b))) {
-    if (q.mode === "FCL") {
+    if (CONTAINER_MODES.has(q.mode)) {
       const have = new Set(lines.map((l) => l.equipment));
       if (![...requested].every((e) => have.has(e))) {
         trace.excluded.push({ key, reason: "incomplete_equipment" });
@@ -139,7 +139,7 @@ export function matchOffers(tariffs: readonly Tariff[], q: MatchQuery): MatchRes
   if (offers.length > MAX_OFFERS) return { kind: "capacity", trace };
   if (offers.length > 0) return { kind: "matched", offers, trace };
   if (laneMatched === 0) return { kind: "none", reason: "out_of_scope_lane", trace };
-  const wanted = q.mode === "FCL" ? [...requested] : ["*"];
+  const wanted = CONTAINER_MODES.has(q.mode) ? [...requested] : ["*"];
   // A requested type nobody prices on this lane → container scope; priced only by expired lines → expired.
   if (wanted.some((e) => !perEquipment.has(e))) return { kind: "none", reason: "out_of_scope_container", trace };
   if (wanted.some((e) => perEquipment.get(e)!.valid === 0)) return { kind: "none", reason: "rate_expired", trace };

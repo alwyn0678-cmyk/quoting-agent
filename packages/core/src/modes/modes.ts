@@ -28,8 +28,9 @@ export interface ModeModule {
 const CHARGEABLE_SCALE = 3;
 const KG_PER_TONNE = Dec.parse("1000");
 
-const FCL: ModeModule = {
-  mode: "FCL",
+/** Container/unit-priced modes share the same quantity rules (P1c adds mode-specific surcharges). */
+const containerModule = (mode: TariffMode): ModeModule => ({
+  mode,
   missingFields(cargo) {
     return cargo.containers.length === 0 || cargo.containers.some((c) => c.iso === null) ? ["containers"] : [];
   },
@@ -43,7 +44,7 @@ const FCL: ModeModule = {
     }
     return { containers, teu, weight_tonnes: null, volume_cbm: null, revenue_tons: null };
   },
-};
+});
 
 const LCL: ModeModule = {
   mode: "LCL",
@@ -68,7 +69,12 @@ const LCL: ModeModule = {
   },
 };
 
-export const MODE_MODULES: Readonly<Partial<Record<string, ModeModule>>> = { FCL, LCL };
+export const MODE_MODULES: Readonly<Partial<Record<string, ModeModule>>> = {
+  FCL: containerModule("FCL"),
+  LCL,
+  BARGE: containerModule("BARGE"),
+  RAIL: containerModule("RAIL"),
+};
 
 export function modeModule(mode: string): ModeModule | null {
   return MODE_MODULES[mode] ?? null;

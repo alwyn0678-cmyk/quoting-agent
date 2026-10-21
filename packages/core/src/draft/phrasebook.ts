@@ -28,7 +28,7 @@ const en: Phrases = {
   assume_general: "Quoted as non-hazardous, non-temperature-controlled general cargo.",
   assume_port: "Port-to-port service; local charges beyond those listed are not included.",
   terms: "All business is subject to our {terms}.",
-  ch_OF: "Ocean freight", ch_BAF: "Bunker adjustment (BAF)", ch_LSS: "Low-sulphur surcharge", ch_EBS: "Emergency bunker surcharge",
+  ch_BASE: "Base freight", ch_OF: "Ocean freight", ch_BAF: "Bunker adjustment (BAF)", ch_LSS: "Low-sulphur surcharge", ch_EBS: "Emergency bunker surcharge",
   ch_THC: "Terminal handling", ch_THC_O: "Origin terminal handling", ch_THC_D: "Destination terminal handling",
   ch_ISPS: "Port security (ISPS)", ch_DOC: "Documentation", ch_CFS: "CFS handling", ch_PSS: "Peak season surcharge",
   ch_ETS: "EU ETS surcharge", ch_CAF: "Currency adjustment", ch_GRI: "General rate increase", ch_CUSTOMS: "Customs clearance",
@@ -55,7 +55,7 @@ const nl: Phrases = {
   assume_general: "Geoffreerd als niet-gevaarlijke, niet-temperatuurgevoelige stukgoederen.",
   assume_port: "Port-to-port service; lokale kosten buiten de vermelde posten zijn niet inbegrepen.",
   terms: "Op al onze werkzaamheden zijn de {terms} van toepassing.",
-  ch_OF: "Zeevracht", ch_BAF: "Bunkertoeslag (BAF)", ch_LSS: "Laagzwaveltoeslag", ch_EBS: "Noodbunkertoeslag",
+  ch_BASE: "Basisvracht", ch_OF: "Zeevracht", ch_BAF: "Bunkertoeslag (BAF)", ch_LSS: "Laagzwaveltoeslag", ch_EBS: "Noodbunkertoeslag",
   ch_THC: "Terminal handling", ch_THC_O: "Terminal handling vertrek", ch_THC_D: "Terminal handling bestemming",
   ch_ISPS: "Havenbeveiliging (ISPS)", ch_DOC: "Documentatie", ch_CFS: "CFS-handling", ch_PSS: "Piekseizoentoeslag",
   ch_ETS: "EU ETS-toeslag", ch_CAF: "Valutatoeslag", ch_GRI: "Algemene tariefverhoging", ch_CUSTOMS: "Douane-inklaring",
@@ -82,7 +82,7 @@ const de: Phrases = {
   assume_general: "Angeboten als nicht gefährliches, nicht temperaturgeführtes Stückgut.",
   assume_port: "Port-to-port-Leistung; nicht aufgeführte lokale Kosten sind nicht enthalten.",
   terms: "Alle Geschäfte unterliegen unseren {terms}.",
-  ch_OF: "Seefracht", ch_BAF: "Bunkerzuschlag (BAF)", ch_LSS: "Niedrigschwefelzuschlag", ch_EBS: "Notfall-Bunkerzuschlag",
+  ch_BASE: "Grundfracht", ch_OF: "Seefracht", ch_BAF: "Bunkerzuschlag (BAF)", ch_LSS: "Niedrigschwefelzuschlag", ch_EBS: "Notfall-Bunkerzuschlag",
   ch_THC: "Terminal Handling", ch_THC_O: "Terminal Handling Abgang", ch_THC_D: "Terminal Handling Bestimmung",
   ch_ISPS: "Hafensicherheit (ISPS)", ch_DOC: "Dokumentation", ch_CFS: "CFS-Handling", ch_PSS: "Hochsaisonzuschlag",
   ch_ETS: "EU-ETS-Zuschlag", ch_CAF: "Währungszuschlag", ch_GRI: "Allgemeine Ratenerhöhung", ch_CUSTOMS: "Verzollung",
@@ -109,7 +109,7 @@ const es: Phrases = {
   assume_general: "Cotizado como carga general no peligrosa y sin control de temperatura.",
   assume_port: "Servicio puerto a puerto; no se incluyen cargos locales distintos de los indicados.",
   terms: "Todas las operaciones están sujetas a nuestras {terms}.",
-  ch_OF: "Flete marítimo", ch_BAF: "Recargo por combustible (BAF)", ch_LSS: "Recargo bajo azufre", ch_EBS: "Recargo de emergencia por combustible",
+  ch_BASE: "Flete base", ch_OF: "Flete marítimo", ch_BAF: "Recargo por combustible (BAF)", ch_LSS: "Recargo bajo azufre", ch_EBS: "Recargo de emergencia por combustible",
   ch_THC: "Manipulación en terminal", ch_THC_O: "Manipulación en terminal de origen", ch_THC_D: "Manipulación en terminal de destino",
   ch_ISPS: "Seguridad portuaria (ISPS)", ch_DOC: "Documentación", ch_CFS: "Manipulación CFS", ch_PSS: "Recargo de temporada alta",
   ch_ETS: "Recargo EU ETS", ch_CAF: "Ajuste por divisa", ch_GRI: "Incremento general de tarifas", ch_CUSTOMS: "Despacho aduanero",
@@ -136,7 +136,7 @@ const pt: Phrases = {
   assume_general: "Cotado como carga geral não perigosa e sem controle de temperatura.",
   assume_port: "Serviço porto a porto; taxas locais além das listadas não estão incluídas.",
   terms: "Todas as operações estão sujeitas às nossas {terms}.",
-  ch_OF: "Frete marítimo", ch_BAF: "Ajuste de combustível (BAF)", ch_LSS: "Sobretaxa de baixo enxofre", ch_EBS: "Sobretaxa emergencial de combustível",
+  ch_BASE: "Frete básico", ch_OF: "Frete marítimo", ch_BAF: "Ajuste de combustível (BAF)", ch_LSS: "Sobretaxa de baixo enxofre", ch_EBS: "Sobretaxa emergencial de combustível",
   ch_THC: "Movimentação no terminal", ch_THC_O: "Movimentação no terminal de origem", ch_THC_D: "Movimentação no terminal de destino",
   ch_ISPS: "Segurança portuária (ISPS)", ch_DOC: "Documentação", ch_CFS: "Manuseio CFS", ch_PSS: "Sobretaxa de alta temporada",
   ch_ETS: "Sobretaxa EU ETS", ch_CAF: "Ajuste cambial", ch_GRI: "Aumento geral de tarifas", ch_CUSTOMS: "Desembaraço aduaneiro",
@@ -163,7 +163,7 @@ const zh: Phrases = {
   assume_general: "按非危险品、非温控普通货物报价。",
   assume_port: "港到港服务；未列明的当地费用不包含在内。",
   terms: "所有业务均适用我们的{terms}。",
-  ch_OF: "海运费", ch_BAF: "燃油附加费 (BAF)", ch_LSS: "低硫附加费", ch_EBS: "紧急燃油附加费",
+  ch_BASE: "基本运费", ch_OF: "海运费", ch_BAF: "燃油附加费 (BAF)", ch_LSS: "低硫附加费", ch_EBS: "紧急燃油附加费",
   ch_THC: "码头操作费", ch_THC_O: "起运港码头操作费", ch_THC_D: "目的港码头操作费",
   ch_ISPS: "港口安保费 (ISPS)", ch_DOC: "文件费", ch_CFS: "拼箱站操作费", ch_PSS: "旺季附加费",
   ch_ETS: "欧盟碳排放附加费", ch_CAF: "货币调整费", ch_GRI: "综合运价上调", ch_CUSTOMS: "报关费",
@@ -180,6 +180,7 @@ export function chargeKey(code: string): string {
   const c = code.toUpperCase();
   if (KNOWN_CHARGES.has(c)) return `ch_${c}`;
   if (c.startsWith("THC")) return "ch_THC";
+  if (c.startsWith("BASE")) return "ch_BASE";
   if (c.startsWith("EXPORT_CUSTOMS") || c.startsWith("CUSTOMS")) return "ch_CUSTOMS";
   return "ch_OTHER";
 }

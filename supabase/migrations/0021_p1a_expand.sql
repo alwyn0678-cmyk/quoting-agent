@@ -27,7 +27,7 @@ alter table public.quotes add constraint quotes_version_shape check (
      and all_in_total is not null and validity_through is not null)
   or
   (quote_version = 2
-     and mode in ('FCL', 'LCL')
+     and mode in ('FCL', 'LCL', 'BARGE', 'RAIL')
      and currency in ('EUR','USD','GBP','CNY','SGD','ZAR','BRL','HKD','INR','JPY')
      and total_minor between 0 and 1000000000000000
      and option_count >= 1

@@ -12,8 +12,8 @@ interface LaneSpec {
   lines: Line[];
 }
 
-// Valid through: today + 90 days (UTC), so a regenerated sheet is never born expired. The 90-day
-// validity window is an INVENTED assumption (docs/ASSUMPTIONS.md) — a real forwarder sets its own.
+// Validity is a fixed INVENTED date (docs/ASSUMPTIONS.md B6) so the committed sheet is reproducible;
+// a real forwarder sets its own.
 const VALIDITY = "2026-12-31"; // fixed, so the committed sheet is reproducible (ASSUMPTIONS.md B6)
 
 const LANES: LaneSpec[] = [

@@ -165,3 +165,4 @@ Incoterms 2020 reference; the lane/port operational notes (routing/transit) are 
 | H9 | Mixed-equipment offers charge shipment-level fees once and require them to be identical across lines | STRUCTURAL | Carrier contract structure |
 | H10 | A 45' container counts as 2 TEU (some carriers count 2.25) | STRUCTURAL | Carrier tariff TEU rules for PER_TEU charges |
 | H11 | Phrasebook translations (NL, DE, ES, PT, ZH) are correct, natural and commercially appropriate | INVENTED (written without native review) | Native-speaker review per language before customer use |
+| H12 | Legacy rate cards have no start date; they are treated as valid from 2000-01-01 through their validity_through | STRUCTURAL | Confirm forwarders' cards have no meaningful start date, or add valid_from to the legacy schema |
