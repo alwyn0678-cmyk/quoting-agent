@@ -4,8 +4,14 @@
 export const SLICE_ID = "phase-0" as const;
 
 export { runAgent } from "./agent.js";
-export { AnthropicLlmClient } from "./llm.js";
-export type { LlmClient } from "./llm.js";
+// The LLM port and its adapters — any provider via "provider/model" refs (llm/resolve.ts).
+export { LlmRefusalError, LlmOutputError } from "./llm.js";
+export type { LlmClient, StructuredCall, StructuredResult, Usage } from "./llm.js";
+export { AnthropicLlmClient } from "./llm/anthropic.js";
+export { AiSdkLlmClient } from "./llm/ai-sdk.js";
+export { ReplayLlmClient, RecordingLlmClient } from "./llm/replay.js";
+export { createLlmFromEnv, resolveLlmFromEnv, DEFAULT_MODEL, DEMO_MODEL } from "./llm/resolve.js";
+export type { CreatedLlm, ResolvedLlm } from "./llm/resolve.js";
 export type { EmailInput } from "./extraction.js";
 export type { AgentOutput } from "./schemas.js";
 export { EXTRACTION_MODEL, DRAFT_MODEL, FALLBACK_MODEL } from "./config.js";

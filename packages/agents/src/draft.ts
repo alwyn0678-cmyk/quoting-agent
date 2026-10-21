@@ -1,4 +1,3 @@
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { DraftSchema, type Draft, type RateQuote } from "./schemas.js";
 import { SYSTEM_CANARY, DRAFT_MODEL } from "./config.js";
 import { escapeForTag } from "./extraction.js";
@@ -29,10 +28,6 @@ export interface DraftInput {
 }
 
 const TOOL_NAME = "submit_draft";
-
-const DRAFT_TOOL_INPUT_SCHEMA = zodToJsonSchema(DraftSchema, {
-  $refStrategy: "none",
-}) as Record<string, unknown>;
 
 export function buildDraftSystemPrompt(hasGrounding: boolean = false): string {
   return [
@@ -112,7 +107,7 @@ export async function generateDraft(
   input: DraftInput,
   client: LlmClient,
   model: string = DRAFT_MODEL,
-): Promise<{ draft: Draft; usage: Usage }> {
+): Promise<{ draft: Draft; usage: Usage; model: string }> {
   const hasGrounding = !!(input.groundingContext && input.groundingContext.length > 0);
   const result = await client.callStructured({
     model,
@@ -120,11 +115,11 @@ export async function generateDraft(
     userContent: buildDraftUserContent(input),
     toolName: TOOL_NAME,
     toolDescription: "Submit the drafted reply email (subject and body).",
-    inputSchema: DRAFT_TOOL_INPUT_SCHEMA,
+    schema: DraftSchema,
   });
 
   const draft = DraftSchema.parse(result.data);
-  return { draft, usage: result.usage };
+  return { draft, usage: result.usage, model: result.model ?? model };
 }
 
 /**

@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=22.9"
   },
-  "description": "QuoteAgent \u2014 Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
+  "description": "QuoteAgent — Phase 0 vertical slice (CLI): FCL Rotterdam->New York quote email in, drafted reply out.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -52,8 +52,12 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.100.1",
+    "@ai-sdk/google": "4.0.89",
+    "@ai-sdk/openai": "4.0.85",
+    "@ai-sdk/openai-compatible": "3.0.64",
+    "@anthropic-ai/sdk": "0.131.0",
     "@supabase/supabase-js": "^2.106.2",
+    "ai": "7.0.129",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   },

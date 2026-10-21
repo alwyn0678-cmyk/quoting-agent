@@ -3,7 +3,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   runAgent,
-  AnthropicLlmClient,
+  createLlmFromEnv,
   StaticCardRateEngine,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
@@ -61,7 +61,8 @@ async function main(): Promise<void> {
   const uslaxCard = await supa.cardFor(FIXTURE_05_REQUEST);
   const uslaxQuote = uslaxCard ? await supa.price(FIXTURE_05_REQUEST, uslaxCard) : null;
 
-  const client = new AnthropicLlmClient();
+  const { client, routing, mode } = createLlmFromEnv();
+  if (mode === "demo") throw new Error("eval:adapter needs a live LLM provider");
   const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".json")).sort();
   const scores: FixtureScore[] = [];
   for (const file of files) {
@@ -75,7 +76,7 @@ async function main(): Promise<void> {
     }
     let score: FixtureScore;
     try {
-      const output = await runAgent(fixture.input, client, supa);
+      const output = await runAgent(fixture.input, client, supa, routing);
       score = scoreFixture(fixture, output);
     } catch (err) {
       score = { id: fixture.id, pass: false, checks: [{ name: "ran", pass: false, detail: err instanceof Error ? err.message : String(err) }] };

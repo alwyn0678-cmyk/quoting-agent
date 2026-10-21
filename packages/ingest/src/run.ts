@@ -3,6 +3,7 @@ import type { RateEngine } from "../../agents/src/rate-engine.js";
 import type { LlmClient } from "../../agents/src/llm.js";
 import { PER_STEP_ROUTING, type ModelRouting } from "../../agents/src/config.js";
 import type { RateQuote } from "../../agents/src/schemas.js";
+import type { KnowledgeRetriever } from "../../agents/src/knowledge-retriever.js";
 
 /**
  * Durable agent-run for ONE request (1C.2). The run is responsible for its OWN tenant safety and
@@ -35,7 +36,7 @@ export interface UsageRecord {
   model: string;
   input_tokens: number;
   output_tokens: number;
-  est_cost_usd: number;
+  est_cost_usd: number | null;
 }
 
 /** The run outcome to persist atomically. quote + draft are null on the escalate path. */
@@ -68,6 +69,8 @@ export interface RunDeps {
   client: LlmClient;
   engine: RateEngine;
   routing?: ModelRouting;
+  /** Grounds the draft prose (scoped RAG). Optional: absent means an ungrounded draft. */
+  retriever?: KnowledgeRetriever;
 }
 
 export type RunSummary =
@@ -96,6 +99,7 @@ export async function runAndPersist(
     deps.client,
     deps.engine,
     deps.routing ?? PER_STEP_ROUTING,
+    deps.retriever,
   );
 
   const status = out.decision === "quote" ? "awaiting_review" : "escalated";

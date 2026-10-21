@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runAgent, AnthropicLlmClient } from "../packages/agents/src/index.js";
+import { runAgent, createLlmFromEnv } from "../packages/agents/src/index.js";
 import { scoreFixture, summarize, PASS_GATE, type Fixture, type FixtureScore } from "./score.js";
 
 /**
@@ -13,7 +13,9 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 async function main(): Promise<void> {
   const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".json")).sort();
-  const client = new AnthropicLlmClient(); // throws clearly if ANTHROPIC_API_KEY is unset
+  // Any configured provider (QUOTEAGENT_MODEL); with none, the eval replays the recorded cassettes.
+  const { client, routing, mode } = createLlmFromEnv();
+  console.log(`eval mode=${mode} extract=${routing.extraction} draft=${routing.draft}`);
   const scores: FixtureScore[] = [];
 
   for (const file of files) {
@@ -22,7 +24,7 @@ async function main(): Promise<void> {
     try {
       // parse INSIDE the try: one malformed fixture scores as a failure instead of aborting the run
       fixture = JSON.parse(readFileSync(join(fixturesDir, file), "utf8")) as Fixture;
-      const output = await runAgent(fixture.input, client);
+      const output = await runAgent(fixture.input, client, undefined, routing);
       score = scoreFixture(fixture, output);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);

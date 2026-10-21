@@ -30,7 +30,7 @@ export function formatAgentOutput(o: AgentOutput): string {
 
   lines.push(
     `[usage] model=${o.usage.model} in=${o.usage.input_tokens} out=${o.usage.output_tokens} ` +
-      `est_cost_usd=${o.usage.est_cost_usd}`,
+      `est_cost_usd=${o.usage.est_cost_usd ?? "unknown"}`,
   );
 
   return lines.join("\n");

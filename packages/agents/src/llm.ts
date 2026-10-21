@@ -1,9 +1,13 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type { ZodTypeAny } from "zod";
 
 /**
- * Thin LLM abstraction. The agent depends on this interface, not on the SDK directly, so the
- * extraction/draft steps can be unit-tested with a mock (see mock-llm.ts) and exercised live
- * with AnthropicLlmClient. All structured output goes through a single forced tool call.
+ * The LLM port. The agent depends on this interface only — never on a vendor SDK — so any provider
+ * (Anthropic natively; OpenAI, Google, Azure, Bedrock, Ollama, OpenRouter, any OpenAI-compatible
+ * server through the AI SDK adapter) can sit behind it, and tests use deterministic doubles.
+ *
+ * The contract is structured output only: the caller supplies a Zod schema (the single source of
+ * truth), each adapter derives the provider's schema format from it, and the caller re-validates
+ * `data` with that same schema. No adapter forces a tool call or sends sampling parameters.
  */
 
 export interface Usage {
@@ -12,63 +16,44 @@ export interface Usage {
 }
 
 export interface StructuredCall {
-  /** The model id this step routes to (D-07) — extraction and drafting may differ. */
+  /** Model ref, "provider/model-id" (e.g. "anthropic/claude-opus-5-5", "ollama/qwen2.5:7b"). */
   model: string;
   system: string;
   userContent: string;
+  /** Name of the structured output (also how test doubles route canned responses). */
   toolName: string;
   toolDescription: string;
-  /** JSON Schema for the tool input (derived from a Zod schema by the caller). */
-  inputSchema: Record<string, unknown>;
+  /** Zod schema for the output — the adapter converts it; the caller validates against it. */
+  schema: ZodTypeAny;
 }
 
 export interface StructuredResult {
-  /** Raw tool input from the model — caller validates it against its Zod schema. */
+  /** Raw structured output — the caller validates it against its Zod schema. */
   data: unknown;
   usage: Usage;
+  /** The model ref that actually served the call (a server-side fallback may differ). */
+  model?: string;
 }
 
 export interface LlmClient {
   callStructured(call: StructuredCall): Promise<StructuredResult>;
 }
 
-/** Real client. Forces a single tool call against the model the caller routes to per step. */
-export class AnthropicLlmClient implements LlmClient {
-  private readonly client: Anthropic;
-
-  constructor(apiKey: string = process.env.ANTHROPIC_API_KEY ?? "") {
-    if (!apiKey) {
-      throw new Error("ANTHROPIC_API_KEY is not set — required for live LLM calls.");
-    }
-    this.client = new Anthropic({ apiKey });
+/** The provider declined the request (safety refusal). The pipeline escalates; it never guesses. */
+export class LlmRefusalError extends Error {
+  constructor(
+    message: string,
+    readonly category: string | null = null,
+  ) {
+    super(message);
+    this.name = "LlmRefusalError";
   }
+}
 
-  async callStructured(call: StructuredCall): Promise<StructuredResult> {
-    const message = await this.client.messages.create({
-      model: call.model,
-      max_tokens: 2048,
-      system: call.system,
-      messages: [{ role: "user", content: call.userContent }],
-      tools: [
-        {
-          name: call.toolName,
-          description: call.toolDescription,
-          input_schema: call.inputSchema as unknown as Anthropic.Tool.InputSchema,
-        },
-      ],
-      tool_choice: { type: "tool", name: call.toolName },
-    });
-
-    const block = message.content.find((b) => b.type === "tool_use");
-    if (!block || block.type !== "tool_use") {
-      throw new Error("model did not return the expected tool_use block");
-    }
-    return {
-      data: block.input,
-      usage: {
-        input_tokens: message.usage.input_tokens,
-        output_tokens: message.usage.output_tokens,
-      },
-    };
+/** The provider returned output that is truncated, not JSON, or not schema-shaped. */
+export class LlmOutputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LlmOutputError";
   }
 }

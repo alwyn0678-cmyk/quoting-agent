@@ -3,7 +3,8 @@ import { decide, todayIso } from "./gate.js";
 import { StaticCardRateEngine, type RateEngine } from "./rate-engine.js";
 import { generateDraft } from "./draft.js";
 import { injectionGuard } from "./injection-guard.js";
-import { estimateCostUsd, SYSTEM_CANARY, PER_STEP_ROUTING, RAG_TOP_K, type ModelRouting } from "./config.js";
+import { SYSTEM_CANARY, PER_STEP_ROUTING, RAG_TOP_K, type ModelRouting } from "./config.js";
+import { estimateStepCostUsd, sumCosts } from "./llm/pricing.js";
 import { type KnowledgeRetriever, EmptyRetriever, buildRetrievalQuery } from "./knowledge-retriever.js";
 import {
   AgentOutputSchema,
@@ -34,7 +35,11 @@ export async function runAgent(
   options: RunOptions = {},
 ): Promise<AgentOutput> {
   const asOf = options.asOf ?? todayIso();
-  const { extraction, usage: extractionUsage } = await extractRequest(email, client, routing.extraction);
+  const {
+    extraction,
+    usage: extractionUsage,
+    model: extractionModel,
+  } = await extractRequest(email, client, routing.extraction);
 
   // Build the price request once, resolve the active card for its (mode, lane), and gate against
   // THAT card — so the gate's "quote ⇒ priceable" guarantee holds for every mode/lane, not just the
@@ -58,6 +63,7 @@ export async function runAgent(
   let quote: RateQuote | null = null;
   let draft: Draft | null = null;
   let draftUsage: Usage = { input_tokens: 0, output_tokens: 0 };
+  let draftModel = routing.draft;
 
   if (gate.decision === "quote") {
     // Deterministic pricing via the injected engine. Price against the SAME card the gate validated
@@ -95,6 +101,7 @@ export async function runAgent(
     draftCalled = true;
     draft = drafted.draft;
     draftUsage = drafted.usage;
+    draftModel = drafted.model;
 
     // Fail closed on any injection-outcome violation (leak / price tampering). The guard
     // re-derives the price against the SAME gate-validated card the engine priced on.
@@ -118,13 +125,18 @@ export async function runAgent(
     quote,
     draft,
     usage: {
-      // Honest: report the model(s) that actually ran (drafting fires only on the quote path).
+      // Honest: report the model(s) that actually served each step (drafting fires only on the quote
+      // path; a provider-side fallback may have answered instead of the routed model).
       model: draftCalled
-        ? `${routing.extraction} (extract), ${routing.draft} (draft)`
-        : `${routing.extraction} (extract)`,
+        ? `${extractionModel} (extract), ${draftModel} (draft)`
+        : `${extractionModel} (extract)`,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
-      est_cost_usd: estimateCostUsd(inputTokens, outputTokens),
+      // Priced per step from each serving model; null (unknown) if any step's price is not known.
+      est_cost_usd: sumCosts([
+        estimateStepCostUsd(extractionModel, extractionUsage),
+        ...(draftCalled ? [estimateStepCostUsd(draftModel, draftUsage)] : []),
+      ]),
     },
   };
 

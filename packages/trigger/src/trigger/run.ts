@@ -1,14 +1,18 @@
 import { task } from "@trigger.dev/sdk";
 import { runAndPersist } from "../../../ingest/src/run.js";
 import { SupabaseRunStore, createServiceClient } from "../../../ingest/src/supabase-store.js";
-import { AnthropicLlmClient, createSupabaseRateEngine } from "../../../agents/src/index.js";
+import {
+  createLlmFromEnv,
+  createSupabaseRateEngine,
+  createKnowledgeRetrieverFromEnv,
+} from "../../../agents/src/index.js";
 
 /**
  * Durable agent-run for ONE request (Phase 1C live, L2). Wraps the idempotent runAndPersist (1C.2)
- * with the PRODUCTION deps: the real Anthropic LLM client, the live Supabase rate-card engine
- * (createSupabaseRateEngine resolves the active card by the request's tenant + mode + lane), and the service_role
- * SupabaseRunStore. The agent's per-step model routing defaults to PER_STEP_ROUTING (Sonnet extract /
- * Haiku draft).
+ * with the PRODUCTION deps: the env-configured LLM (any provider — createLlmFromEnv), the live
+ * Supabase rate-card engine (resolves the active card by the request's tenant + mode + lane), the
+ * scoped knowledge retriever (env-gated; ungrounded if unset), and the service_role SupabaseRunStore.
+ * Demo mode is refused here: the autonomous path must never answer real mail from recordings.
  *
  * Enqueued by the poll task with concurrencyKey = requestId; queue concurrencyLimit 1 means no two
  * runs of the SAME request execute concurrently (D-22). The DB claim makes a retry after success a
@@ -24,9 +28,15 @@ export const runRequestTask = task({
   run: async (payload: { tenantId: string; requestId: string }) => {
     const { tenantId, requestId } = payload;
     const store = new SupabaseRunStore(createServiceClient());
+    const llm = createLlmFromEnv();
+    if (llm.mode === "demo") {
+      throw new Error("run-request needs a live LLM provider (set ANTHROPIC_API_KEY or QUOTEAGENT_MODEL)");
+    }
     const deps = {
-      client: new AnthropicLlmClient(),
+      client: llm.client,
+      routing: llm.routing,
       engine: createSupabaseRateEngine(tenantId),
+      retriever: createKnowledgeRetrieverFromEnv(tenantId),
     };
     return await runAndPersist(tenantId, requestId, deps, store);
   },

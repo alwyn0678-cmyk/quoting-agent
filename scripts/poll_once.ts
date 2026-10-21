@@ -7,7 +7,8 @@ import {
 } from "../packages/ingest/src/supabase-store.js";
 import { createOutlookMailboxFromEnv, hasGraphEnv } from "../packages/graph/src/graph-transport.js";
 import {
-  AnthropicLlmClient,
+  createLlmFromEnv,
+  createKnowledgeRetrieverFromEnv,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
 } from "../packages/agents/src/index.js";
@@ -36,14 +37,16 @@ async function main(): Promise<void> {
       `reEnqueued=${result.reEnqueued.length} toRun=${result.toRun.length} cursor=${result.cursor}`,
   );
 
-  const client = new AnthropicLlmClient();
+  const llm = createLlmFromEnv();
+  if (llm.mode === "demo") throw new Error("poll_once needs a live LLM provider (ANTHROPIC_API_KEY or QUOTEAGENT_MODEL)");
+  const client = llm.client;
   const engine = createSupabaseRateEngine(tenantId);
   const store = new SupabaseRunStore(supabase);
   let failed = 0;
   for (const requestId of result.toRun) {
     // Per-id isolation: one failing run must not abort the rest of the batch.
     try {
-      const summary = await runAndPersist(tenantId, requestId, { client, engine }, store);
+      const summary = await runAndPersist(tenantId, requestId, { client, engine, routing: llm.routing, retriever: createKnowledgeRetrieverFromEnv(tenantId) }, store);
       console.log(`run ${requestId}: ${JSON.stringify(summary)}`);
     } catch (e) {
       failed += 1;

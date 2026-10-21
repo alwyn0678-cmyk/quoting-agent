@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { runAndPersist } from "../packages/ingest/src/run.js";
 import { SupabaseRunStore, createServiceClient } from "../packages/ingest/src/supabase-store.js";
 import {
-  AnthropicLlmClient,
+  createLlmFromEnv,
+  createKnowledgeRetrieverFromEnv,
   createSupabaseRateEngine,
   LINKPORT_TENANT_ID,
   type EmailInput,
@@ -36,6 +37,13 @@ async function main(): Promise<void> {
   const tenantId = LINKPORT_TENANT_ID;
   const supabase = createServiceClient();
 
+/** The env-configured LLM; this script processes real mail, so demo (recorded) mode is refused. */
+function liveLlm() {
+  const llm = createLlmFromEnv();
+  if (llm.mode === "demo") throw new Error("ingest needs a live LLM provider (ANTHROPIC_API_KEY or QUOTEAGENT_MODEL)");
+  return { client: llm.client, routing: llm.routing };
+}
+
   const { data, error } = await supabase
     .from("quote_requests")
     .insert({ tenant_id: tenantId, source: "paste", from_email: email.from, subject: email.subject, body: email.body, status: "received" })
@@ -53,7 +61,7 @@ async function main(): Promise<void> {
     summary = await runAndPersist(
       tenantId,
       requestId,
-      { client: new AnthropicLlmClient(), engine: createSupabaseRateEngine(tenantId) },
+      { ...liveLlm(), engine: createSupabaseRateEngine(tenantId), retriever: createKnowledgeRetrieverFromEnv(tenantId) },
       store,
     );
   } catch (err) {

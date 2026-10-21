@@ -96,7 +96,8 @@ const usageSchema = z.object({
   model: z.string(),
   input_tokens: z.number().int().nonnegative(),
   output_tokens: z.number().int().nonnegative(),
-  est_cost_usd: z.number().nonnegative(),
+  /** null when the serving model's price is unknown — never a fabricated 0. */
+  est_cost_usd: z.number().nonnegative().nullable(),
 });
 
 /**

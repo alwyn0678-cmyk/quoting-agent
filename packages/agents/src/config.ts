@@ -1,14 +1,14 @@
 /**
- * Per-step model routing (D-07). Extraction is ambiguity/security-sensitive → the stronger model;
- * drafting is constrained prose over already-verified figures → the cheaper/faster one. Changing
- * any id is a logged change that re-runs the golden set. These are Phase-1 routing targets — VERIFY
- * against the live model list before relying on them (ASSUMPTIONS.md E3). No `temperature` is sent
- * for any model (Opus 4.8 deprecates it and determinism never relied on it).
+ * Default per-step model routing (D-07, revised D-31). Models are "provider/model-id" refs, so any
+ * provider can be configured (llm/resolve.ts reads QUOTEAGENT_MODEL / _EXTRACT_MODEL / _DRAFT_MODEL).
+ * The default is the strongest generally available Claude model for both steps; a cheaper drafting
+ * model is a per-deployment choice that must pass the eval gate first. Changing any default is a
+ * logged change that re-runs the golden set (ASSUMPTIONS.md E3). No sampling parameters are sent.
  */
-export const EXTRACTION_MODEL = "claude-sonnet-4-6";
-export const DRAFT_MODEL = "claude-haiku-4-5-20251001";
-/** Single-model fallback: one model for both steps when per-step routing is disabled. */
-export const FALLBACK_MODEL = "claude-sonnet-4-6";
+export const EXTRACTION_MODEL = "anthropic/claude-opus-5-5";
+export const DRAFT_MODEL = "anthropic/claude-opus-5-5";
+/** Single-model routing: one model for both steps. */
+export const FALLBACK_MODEL = "anthropic/claude-opus-5-5";
 
 export interface ModelRouting {
   extraction: string;
@@ -27,21 +27,6 @@ export const LINKPORT_TENANT_ID = "11111111-1111-4111-8111-111111111111";
  */
 export const SYSTEM_CANARY = "LINKPORT-CANARY-9F3A21";
 
-/**
- * Placeholder Anthropic prices (USD per million tokens) for the stdout cost log. INVENTED —
- * verify against current Anthropic pricing before quoting any cost as fact (ASSUMPTIONS.md E3).
- * A single pair across all routed models — a deliberate placeholder, not per-model; per-model
- * pricing is a 1C.6 (observability) refinement.
- */
-export const PRICE_INPUT_USD_PER_MTOK = 15;
-export const PRICE_OUTPUT_USD_PER_MTOK = 75;
-
-export function estimateCostUsd(inputTokens: number, outputTokens: number): number {
-  const usd =
-    (inputTokens / 1_000_000) * PRICE_INPUT_USD_PER_MTOK +
-    (outputTokens / 1_000_000) * PRICE_OUTPUT_USD_PER_MTOK;
-  return Math.round(usd * 1_000_000) / 1_000_000; // round to micro-dollars
-}
 
 /**
  * Gemini Embedding 2 (Q3 RAG). The model-id string is a VERIFY assumption (ASSUMPTIONS.md G) —

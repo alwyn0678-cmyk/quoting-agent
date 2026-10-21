@@ -13,7 +13,7 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["packages", "apps", "evals"],
+  "include": ["packages", "apps", "evals", "scripts", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": [
     "**/node_modules",
     "dist",

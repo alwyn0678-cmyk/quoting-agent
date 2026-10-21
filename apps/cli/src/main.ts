@@ -1,16 +1,17 @@
 import { readFileSync } from "node:fs";
 import {
   runAgent,
-  AnthropicLlmClient,
+  createLlmFromEnv,
   createKnowledgeRetrieverFromEnv,
   type EmailInput,
 } from "../../../packages/agents/src/index.js";
 import { formatAgentOutput } from "./format.js";
 
 /**
- * Phase 0 CLI: `quoteagent <email.json>`. The JSON may be a plain {from,subject,body} or a
- * golden-set fixture (which nests those under `input`). Runs the live pipeline against the
- * pinned model (requires ANTHROPIC_API_KEY) and prints the draft or escalation + usage.
+ * CLI: `quoteagent <email.json>`. The JSON may be a plain {from,subject,body} or a golden-set
+ * fixture (which nests those under `input`). Uses whichever LLM the environment configures (any
+ * provider — see llm/resolve.ts); with no provider configured it runs in DEMO mode, replaying
+ * recorded model responses for the bundled example emails, so a fresh clone works with no keys.
  */
 function loadEmail(path: string): EmailInput {
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -29,9 +30,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const email = loadEmail(path);
-  const client = new AnthropicLlmClient();
-  // engine + routing keep their defaults; the knowledge retriever is env-gated (ungrounded if unset).
-  const output = await runAgent(email, client, undefined, undefined, createKnowledgeRetrieverFromEnv());
+  const llm = createLlmFromEnv();
+  if (llm.mode === "demo") {
+    console.log("DEMO MODE — replaying recorded model responses (no API key set). Pricing, gate and guards run live.\n");
+  }
+  // The engine keeps its default; the knowledge retriever is env-gated (ungrounded if unset).
+  const output = await runAgent(email, llm.client, undefined, llm.routing, createKnowledgeRetrieverFromEnv());
   console.log(formatAgentOutput(output));
 }
 

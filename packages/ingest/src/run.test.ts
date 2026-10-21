@@ -150,3 +150,24 @@ describe("1C.2 — durable agent-run (claim + idempotent persistence)", () => {
     expect(store.drafts.get(REQ)?.tenant_id).toBe(TENANT);
   });
 });
+
+describe("P0.3 — the production run path grounds the draft (RAG wired, not CLI-only)", () => {
+  it("passes the injected retriever through to the agent on the quote path", async () => {
+    const store = new FakeRunStore();
+    store.seed({ id: REQ, tenant_id: TENANT });
+    const queries: string[] = [];
+    const retriever = {
+      retrieve: async (q: string) => {
+        queries.push(q);
+        return [{ source: "surcharges.md", title: "BAF", content: "Bunker adjustment factor explained." }];
+      },
+    };
+    const client = routed(baseExtraction);
+    const summary = await runAndPersist(TENANT, REQ, { ...deps(client), retriever }, store);
+    expect(summary.ran).toBe(true);
+    expect(queries).toHaveLength(1);
+    // the grounding reached the draft prompt
+    const draftCall = client.calls.find((c) => c.toolName === "submit_draft");
+    expect(draftCall?.userContent).toContain("Bunker adjustment factor explained.");
+  });
+});
